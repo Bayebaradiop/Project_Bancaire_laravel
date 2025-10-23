@@ -4,16 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\CompteController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
+
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -50,6 +41,39 @@ Route::prefix('v1')->group(function () {
         }
     });
     
+    // Route de debug pour essayer de render la vue Swagger UI
+    Route::get('/swagger-render-test', function () {
+        try {
+            $documentation = 'default';
+            $urlToDocs = route('l5-swagger.'.$documentation.'.docs', [], true);
+            $configUrl = null;
+            $validatorUrl = null;
+            $operationsSorter = null;
+            $useAbsolutePath = config('l5-swagger.defaults.paths.use_absolute_path', true);
+            
+            // Essayer de rendre la vue
+            $html = view('l5-swagger::index', compact(
+                'documentation',
+                'urlToDocs',
+                'configUrl',
+                'validatorUrl',
+                'operationsSorter',
+                'useAbsolutePath'
+            ))->render();
+            
+            return response($html)
+                ->header('Content-Type', 'text/html; charset=utf-8');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => explode("\n", $e->getTraceAsString()),
+            ], 500);
+        }
+    });
+    
     // Routes publiques (sans authentification)
     Route::get('/health', function () {
         return response()->json([
@@ -60,10 +84,7 @@ Route::prefix('v1')->group(function () {
         ]);
     });
 
-    // Routes protégées par authentification
-    // TODO: Réactiver l'authentification plus tard
-    // Route::middleware(['auth:sanctum'])->group(function () {
-        
+ 
         // Routes Comptes
         Route::prefix('comptes')->group(function () {
             Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
