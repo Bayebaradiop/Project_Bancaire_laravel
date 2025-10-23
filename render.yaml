@@ -1,10 +1,12 @@
 # Configuration PostgreSQL pour Render
 # Branche de déploiement : production
+# Plan GRATUIT (Free)
 
 services:
   - type: web
     name: project-laravel
     env: docker
+    plan: starter  # Plan gratuit
     branch: production
     dockerfilePath: ./Dockerfile
     envVars:
