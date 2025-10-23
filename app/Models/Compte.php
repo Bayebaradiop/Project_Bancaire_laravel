@@ -299,4 +299,5 @@ class Compte extends Model
 
         return $query->orderBy($sort, $order);
     }
+
 }
