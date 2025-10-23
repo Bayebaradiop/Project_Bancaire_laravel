@@ -1,14 +1,19 @@
-# Configuration PostgreSQL pour Render
+# Configuration pour Render
 # Branche de déploiement : production
-# Plan GRATUIT (Free)
+# Plan GRATUIT (Free) - Sans Docker
 
 services:
   - type: web
     name: project-laravel
-    env: docker
+    env: php
     plan: starter  # Plan gratuit
     branch: production
-    dockerfilePath: ./Dockerfile
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+    startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
     envVars:
       - key: APP_KEY
         generateValue: true

@@ -1,0 +1,212 @@
+═══════════════════════════════════════════════════════════════════
+ RENDER PLAN GRATUIT - DÉTAILS ET LIMITATIONS
+═══════════════════════════════════════════════════════════════════
+
+✅ CE QUI EST GRATUIT
+
+1. Web Service (Starter/Free)
+   • 750 heures gratuites par mois par workspace
+   • Suffisant pour 1 service 24/7 (744h par mois)
+   • Aucune carte bancaire requise
+
+2. PostgreSQL Database (Free)
+   • ⚠️ LIMITE : 30 jours seulement (puis expire)
+   • 1 GB de stockage maximum
+   • Après 30 jours : upgrader vers plan payant ou perdre les données
+   • Grace period de 14 jours pour upgrader
+
+3. Static Sites
+   • 100% gratuit, illimité
+
+═══════════════════════════════════════════════════════════════════
+
+⚠️ LIMITATIONS IMPORTANTES
+
+🔴 WEB SERVICE GRATUIT :
+────────────────────────────────────────────────────────────────
+• Mise en veille après 15 min d'inactivité
+• Redémarrage : ~1 minute (première requête lente)
+• Render peut redémarrer le service à tout moment
+• Pas de SSH/Shell access
+• Pas de persistent disk
+• Pas de scaling (1 instance seulement)
+• Ports SMTP bloqués (25, 465, 587)
+
+🔴 POSTGRESQL GRATUIT :
+────────────────────────────────────────────────────────────────
+• ⚠️ EXPIRE APRÈS 30 JOURS (pas 90 jours !)
+• 1 seule database Free par workspace
+• 1 GB de stockage maximum
+• Pas de backups
+• Peut être redémarré à tout moment
+• Après 30 jours : 14 jours pour upgrader, sinon suppression
+
+🔴 BANDWIDTH & BUILD :
+────────────────────────────────────────────────────────────────
+• 100 GB outbound bandwidth/mois (inclus)
+• 500 pipeline minutes/mois (inclus)
+• Si dépassement sans carte : service suspendu
+
+═══════════════════════════════════════════════════════════════════
+
+🎯 RECOMMANDATION POUR TON PROJET
+
+Option 1 : TEST RAPIDE (30 JOURS MAX)
+──────────────────────────────────────────────────────────────────
+✅ Utiliser Free Web Service + Free PostgreSQL
+✅ Parfait pour tester/démontrer ton API
+⚠️ ATTENTION : Database expire après 30 jours
+⚠️ Sauvegarder tes données avant expiration
+
+Option 2 : SOLUTION GRATUITE DURABLE (RECOMMANDÉ)
+──────────────────────────────────────────────────────────────────
+✅ Web Service : Free (Render)
+✅ Database : Supabase (PostgreSQL gratuit illimité)
+
+Avantages :
+• 100% gratuit à long terme
+• Pas d'expiration de database
+• Supabase : 500 MB gratuit (extensible)
+
+Configuration :
+1. Créer compte Supabase (https://supabase.com)
+2. Créer une database PostgreSQL
+3. Copier les credentials
+4. Dans render.yaml : supprimer section "databases"
+5. Configurer DB_* manuellement dans Render Environment
+
+Option 3 : BASE DE DONNÉES EXTERNE GRATUITE
+──────────────────────────────────────────────────────────────────
+Alternatives à Supabase :
+
+• ElephantSQL : PostgreSQL gratuit (20 MB)
+• Neon : PostgreSQL gratuit (3 GB)
+• Aiven : PostgreSQL gratuit (limité)
+• PlanetScale : MySQL gratuit (5 GB)
+
+═══════════════════════════════════════════════════════════════════
+
+📋 CONFIGURATION RECOMMANDÉE : SUPABASE + RENDER
+
+ÉTAPE 1 : Créer Database sur Supabase
+──────────────────────────────────────────────────────────────────
+1. Aller sur https://supabase.com
+2. Sign up (gratuit)
+3. New Project → Créer un projet
+4. Récupérer les credentials :
+   • Host
+   • Database name
+   • Port (5432)
+   • User
+   • Password
+
+ÉTAPE 2 : Modifier render.yaml
+──────────────────────────────────────────────────────────────────
+Supprimer ou commenter la section "databases" :
+
+# databases:
+#   - name: project-laravel-db
+#     databaseName: laravel
+#     user: laravel
+#     plan: free
+
+ÉTAPE 3 : Configurer sur Render
+──────────────────────────────────────────────────────────────────
+Dans Render Dashboard → Environment, ajouter :
+
+DB_CONNECTION=pgsql
+DB_HOST=db.xxx.supabase.co
+DB_PORT=5432
+DB_DATABASE=postgres
+DB_USERNAME=postgres
+DB_PASSWORD=ton_password_supabase
+
+ÉTAPE 4 : Déployer
+──────────────────────────────────────────────────────────────────
+• New Blueprint Instance
+• Connecter GitHub : production
+• Instance Type : Free
+• Apply
+
+═══════════════════════════════════════════════════════════════════
+
+💰 COÛTS À LONG TERME
+
+GRATUIT À VIE (Supabase + Render Free) :
+────────────────────────────────────────────────────────────────
+• Web Service Render : 0€ (avec limitations)
+• Database Supabase : 0€ (500 MB, suffisant pour projet bancaire)
+• Total : 0€/mois
+
+GRATUIT 30 JOURS (PostgreSQL Free Render) :
+────────────────────────────────────────────────────────────────
+• Jour 1-30 : 0€
+• Après 30 jours : $7/mois ou migration nécessaire
+
+═══════════════════════════════════════════════════════════════════
+
+🚀 ACTION RECOMMANDÉE MAINTENANT
+
+1. Décider de ta stratégie :
+   
+   A) Test court (30 jours) :
+      → Déployer avec Free PostgreSQL Render
+      → Parfait pour démo/présentation
+   
+   B) Solution durable :
+      → Créer compte Supabase
+      → Modifier render.yaml
+      → Déployer avec database externe
+
+2. Suivre le guide correspondant ci-dessous
+
+═══════════════════════════════════════════════════════════════════
+
+📝 GUIDE A : DÉPLOIEMENT RAPIDE (30 JOURS)
+
+1. New Blueprint Instance sur Render
+2. Connecter GitHub : Bayebaradiop/Project_Bancaire_laravel
+3. Branche : production
+4. Instance Type : Free
+5. Database : Free (expire dans 30 jours)
+6. Apply
+7. Attendre 5-10 minutes
+8. API disponible !
+
+⚠️ RAPPEL : Exporter tes données avant 30 jours
+
+═══════════════════════════════════════════════════════════════════
+
+📝 GUIDE B : SOLUTION DURABLE (SUPABASE + RENDER)
+
+1. Créer compte Supabase : https://supabase.com
+2. New Project → Choisir region proche
+3. Récupérer credentials (Settings → Database)
+4. Modifier render.yaml (supprimer section databases)
+5. Committer et pousser
+6. New Blueprint Instance sur Render
+7. Instance Type : Free
+8. Ajouter variables DB_* dans Environment
+9. Deploy !
+
+═══════════════════════════════════════════════════════════════════
+
+💡 CONSEIL FINAL
+
+Pour un projet bancaire professionnel à long terme :
+→ Utiliser Supabase (gratuit) + Render Free
+→ Solution 100% gratuite et durable
+→ Pas d'expiration
+→ Suffisant pour portfolio/démonstration
+
+Pour un test rapide (démo, présentation) :
+→ Utiliser Free PostgreSQL Render
+→ Plus simple à configurer
+→ ⚠️ Limité à 30 jours
+
+═══════════════════════════════════════════════════════════════════
+
+Quel option préfères-tu ?
+A) Test rapide 30 jours (Free PostgreSQL Render)
+B) Solution durable (Supabase + Render)
+

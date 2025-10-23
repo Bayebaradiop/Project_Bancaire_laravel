@@ -1,0 +1,147 @@
+═══════════════════════════════════════════════════════════════════
+ DÉPLOIEMENT 100% GRATUIT SANS CARTE BANCAIRE
+═══════════════════════════════════════════════════════════════════
+
+✅ MODIFICATIONS EFFECTUÉES
+
+1. render.yaml mis à jour avec plan: starter (gratuit)
+2. Section database supprimée (évite demande de paiement)
+3. Code poussé sur GitHub (branche production)
+
+═══════════════════════════════════════════════════════════════════
+
+🚀 DÉPLOYER MAINTENANT SUR RENDER (GRATUIT)
+
+ÉTAPE 1 : Sur Render Dashboard
+──────────────────────────────────────────────────────────────────
+• Clique "Cancel" sur la popup de paiement
+• Rafraîchis la page ou va à : https://dashboard.render.com
+
+ÉTAPE 2 : New Blueprint Instance
+──────────────────────────────────────────────────────────────────
+• Clique : New + → Blueprint
+• Connecte GitHub
+• Dépôt : Bayebaradiop/Project_Bancaire_laravel
+• Branche : production
+• Render détecte render.yaml
+• Vérifie : Instance Type = Starter (FREE) ✅
+• Apply
+
+ÉTAPE 3 : Attendre le build (5-10 min)
+──────────────────────────────────────────────────────────────────
+• Surveiller les logs
+• Le service se déploie automatiquement
+• Pas de database = Pas de demande de paiement !
+
+═══════════════════════════════════════════════════════════════════
+
+🗄️ CONFIGURER UNE BASE DE DONNÉES GRATUITE
+
+Tu as besoin d'une base PostgreSQL ? Voici les options GRATUITES :
+
+Option 1 : Supabase (RECOMMANDÉ)
+──────────────────────────────────────────────────────────────────
+✅ PostgreSQL gratuit ILLIMITÉ
+✅ 500 MB stockage
+✅ Pas d'expiration
+
+1. Aller sur : https://supabase.com
+2. Sign Up (gratuit)
+3. New Project
+4. Récupérer credentials :
+   • Host : db.xxx.supabase.co
+   • Database : postgres
+   • Port : 5432
+   • User : postgres
+   • Password : ton_password
+
+5. Sur Render Dashboard → Environment, ajouter :
+   DB_HOST=db.xxx.supabase.co
+   DB_PORT=5432
+   DB_DATABASE=postgres
+   DB_USERNAME=postgres
+   DB_PASSWORD=ton_password_supabase
+
+6. Save → Render redéploie automatiquement
+
+Option 2 : Neon (PostgreSQL gratuit)
+──────────────────────────────────────────────────────────────────
+✅ PostgreSQL gratuit
+✅ 3 GB stockage
+✅ Serverless
+
+1. https://neon.tech
+2. Sign Up
+3. Créer database
+4. Copier connection string
+5. Configurer dans Render Environment
+
+Option 3 : ElephantSQL
+──────────────────────────────────────────────────────────────────
+✅ PostgreSQL gratuit
+⚠️ Seulement 20 MB (limité)
+
+1. https://www.elephantsql.com
+2. Sign Up
+3. Create New Instance (Tiny Turtle - Free)
+4. Copier credentials
+5. Configurer dans Render
+
+═══════════════════════════════════════════════════════════════════
+
+📋 CONFIGURATION RENDER ENVIRONMENT (après déploiement)
+
+Aller dans : Dashboard → project-laravel → Environment
+
+Ajouter ces variables :
+──────────────────────────────────────────────────────────────────
+APP_URL=https://ton-service.onrender.com
+L5_SWAGGER_CONST_HOST=https://ton-service.onrender.com
+
+# Base de données Supabase (exemple)
+DB_HOST=db.xxx.supabase.co
+DB_PORT=5432
+DB_DATABASE=postgres
+DB_USERNAME=postgres
+DB_PASSWORD=ton_password
+
+# Autres (optionnel)
+CACHE_DRIVER=file
+QUEUE_CONNECTION=database
+SESSION_DRIVER=file
+
+Sauvegarder → Render redéploie automatiquement
+
+═══════════════════════════════════════════════════════════════════
+
+✅ RÉSUMÉ : DÉPLOIEMENT 100% GRATUIT
+
+1. Render Web Service : FREE (Starter) ✅
+2. Base de données : Supabase FREE ✅
+3. Total : 0€/mois ✅
+4. Pas de carte bancaire requise ✅
+
+Limitations :
+• Service se met en veille après 15 min
+• Premier appel après veille : ~30 secondes
+• Suffisant pour portfolio/démonstration
+
+═══════════════════════════════════════════════════════════════════
+
+🎯 PROCHAINE ACTION
+
+1. Sur Render : Cancel la popup de paiement
+2. New Blueprint Instance
+3. GitHub : production
+4. Apply (GRATUIT)
+5. (Optionnel) Configurer Supabase pour la database
+6. API en ligne ! 🎉
+
+═══════════════════════════════════════════════════════════════════
+
+💡 URLs APRÈS DÉPLOIEMENT
+
+API : https://project-laravel.onrender.com/api
+Swagger : https://project-laravel.onrender.com/api/documentation
+
+═══════════════════════════════════════════════════════════════════
