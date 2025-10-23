@@ -17,7 +17,7 @@ Assurez-vous que tous les fichiers sont commités et poussés sur votre dépôt 
 ```bash
 git add .
 git commit -m "Add Render deployment configuration"
-git push origin dev/v1.0.0
+git push origin production
 ```
 
 ### 2. Créer un nouveau service Web sur Render

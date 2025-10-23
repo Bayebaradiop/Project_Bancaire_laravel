@@ -73,7 +73,7 @@ git status
 ```bash
 git add .
 git commit -m "Configure PostgreSQL for Render deployment"
-git push origin dev/v1.0.0
+git push origin production
 ```
 
 ### Étape 3 : Créer le service sur Render
@@ -81,7 +81,7 @@ git push origin dev/v1.0.0
 1. **Aller sur** [https://dashboard.render.com](https://dashboard.render.com)
 2. **Cliquer sur** "New +" → "Blueprint"
 3. **Connecter** votre dépôt : `Bayebaradiop/Project_Bancaire_laravel`
-4. **Sélectionner** la branche : `dev/v1.0.0`
+4. **Sélectionner** la branche : `production`
 5. **Render détecte** automatiquement `render.yaml`
 6. **Cliquer** sur "Apply"
 
@@ -176,13 +176,13 @@ php artisan l5-swagger:generate
 
 ## 🔄 Mises à jour automatiques
 
-À chaque push sur `dev/v1.0.0`, Render redéploie automatiquement ! 🎉
+À chaque push sur `production`, Render redéploie automatiquement ! 🎉
 
 ```bash
 # Faire des modifications
 git add .
 git commit -m "Update feature"
-git push origin dev/v1.0.0
+git push origin production
 # Render redéploie automatiquement en 5-10 minutes
 ```
 

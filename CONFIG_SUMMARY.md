@@ -33,7 +33,7 @@ L5_SWAGGER_CONST_HOST=https://votre-app.onrender.com
 ```bash
 git add .
 git commit -m "Configure PostgreSQL for Render deployment"
-git push origin dev/v1.0.0
+git push origin production
 ```
 
 ### 2️⃣ Créer le service sur Render
@@ -41,7 +41,7 @@ git push origin dev/v1.0.0
 1. **Connexion** : [https://dashboard.render.com](https://dashboard.render.com)
 2. **Nouveau service** : New + → Blueprint
 3. **Dépôt** : `Bayebaradiop/Project_Bancaire_laravel`
-4. **Branche** : `dev/v1.0.0`
+4. **Branche** : `production`
 5. **Cliquer** : Apply
 
 ### 3️⃣ Attendre le déploiement (5-10 min)
@@ -119,7 +119,7 @@ DB_CONNECTION=pgsql
 
 ## 🔄 Déploiement Automatique
 
-À chaque `git push` sur `dev/v1.0.0`, Render redéploie automatiquement ! 🎉
+À chaque `git push` sur `production`, Render redéploie automatiquement ! 🎉
 
 ## 🐛 Troubleshooting Rapide
 
@@ -157,7 +157,7 @@ Exécutez simplement :
 ```bash
 git add .
 git commit -m "Ready for Render deployment"
-git push origin dev/v1.0.0
+git push origin production
 ```
 
 Puis allez sur [dashboard.render.com](https://dashboard.render.com) ! 🚀

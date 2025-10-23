@@ -83,7 +83,7 @@ Ce projet est prêt à être déployé sur Render en quelques minutes !
 ./prepare-deploy.sh
 
 # 2. Pousser sur Git
-git push origin dev/v1.0.0
+git push origin production
 
 # 3. Déployer sur Render
 # Voir QUICK_DEPLOY.md pour les instructions complètes
@@ -137,7 +137,8 @@ php artisan serve
 ## 🔗 Liens utiles
 
 - **Repository** : [https://github.com/Bayebaradiop/Project_Bancaire_laravel](https://github.com/Bayebaradiop/Project_Bancaire_laravel)
-- **Branch principale** : `dev/v1.0.0`
+- **Branch de production** : `production`
+- **Branch de développement** : `dev/v1.0.0`
 
 ## 👥 Contributeurs
 

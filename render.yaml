@@ -1,10 +1,11 @@
-# Alternative avec PostgreSQL (Recommandé pour Render)
-# Renommez ce fichier en 'render.yaml' pour l'utiliser
+# Configuration PostgreSQL pour Render
+# Branche de déploiement : production
 
 services:
   - type: web
     name: project-laravel
     env: docker
+    branch: production
     dockerfilePath: ./Dockerfile
     envVars:
       - key: APP_KEY

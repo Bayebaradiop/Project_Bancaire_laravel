@@ -10,7 +10,7 @@
 # Ou manuellement :
 git add .
 git commit -m "Add Render deployment configuration"
-git push origin dev/v1.0.0
+git push origin production
 ```
 
 ### ✅ Étape 2 : Créer un compte Render
@@ -22,7 +22,7 @@ git push origin dev/v1.0.0
 1. Dans le Dashboard Render, cliquez sur **"New +"**
 2. Sélectionnez **"Blueprint"**
 3. Connectez le dépôt : `Bayebaradiop/Project_Bancaire_laravel`
-4. Branch : `dev/v1.0.0`
+4. Branch : `production`
 5. Render détectera automatiquement `render.yaml`
 6. Cliquez sur **"Apply"**
 
@@ -104,7 +104,7 @@ Render déploie automatiquement à chaque push sur la branche configurée !
 ```bash
 git add .
 git commit -m "Update feature"
-git push origin dev/v1.0.0
+git push origin production
 # Render redéploie automatiquement
 ```
 

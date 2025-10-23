@@ -6,16 +6,16 @@ echo ""
 
 # Vérifier si on est sur la bonne branche
 current_branch=$(git branch --show-current)
-if [ "$current_branch" != "dev/v1.0.0" ]; then
+if [ "$current_branch" != "production" ]; then
     echo "⚠️  Vous êtes sur la branche: $current_branch"
-    echo "   Render attend la branche: dev/v1.0.0"
+    echo "   Render attend la branche: production"
     echo ""
-    read -p "Voulez-vous basculer sur dev/v1.0.0 ? (o/n) " -n 1 -r
+    read -p "Voulez-vous basculer sur production ? (o/n) " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Oo]$ ]]; then
-        git checkout dev/v1.0.0 || {
-            echo "❌ Impossible de basculer sur dev/v1.0.0"
-            echo "   Créez la branche avec: git checkout -b dev/v1.0.0"
+        git checkout production || {
+            echo "❌ Impossible de basculer sur production"
+            echo "   Créez la branche avec: git checkout -b production"
             exit 1
         }
     else
@@ -31,7 +31,7 @@ if [ -z "$(git status --porcelain)" ]; then
     read -p "Voulez-vous pousser les changements existants ? (o/n) " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Oo]$ ]]; then
-        git push origin dev/v1.0.0
+        git push origin production
         echo ""
         echo "✅ Code poussé sur GitHub !"
     else
@@ -59,7 +59,7 @@ else
     
     # Pousser
     echo "🚀 Push vers GitHub..."
-    git push origin dev/v1.0.0
+    git push origin production
     
     if [ $? -eq 0 ]; then
         echo ""
@@ -79,7 +79,7 @@ echo ""
 echo "1. Aller sur https://dashboard.render.com"
 echo "2. Cliquer sur 'New +' → 'Blueprint'"
 echo "3. Connecter le dépôt : Bayebaradiop/Project_Bancaire_laravel"
-echo "4. Branche : dev/v1.0.0"
+echo "4. Branche : production"
 echo "5. Render détectera render.yaml automatiquement"
 echo "6. Cliquer 'Apply' et attendre 5-10 minutes"
 echo ""

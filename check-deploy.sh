@@ -176,10 +176,10 @@ if [ -d ".git" ]; then
     
     # Vérifier la branche
     current_branch=$(git branch --show-current 2>/dev/null)
-    if [ "$current_branch" == "dev/v1.0.0" ]; then
-        ok "Sur la branche dev/v1.0.0"
+    if [ "$current_branch" == "production" ]; then
+        ok "Sur la branche production"
     else
-        warn "Branche actuelle: $current_branch (Render attend: dev/v1.0.0)"
+        warn "Branche actuelle: $current_branch (Render attend: production)"
     fi
     
     # Vérifier si des fichiers ne sont pas commitées
@@ -210,7 +210,7 @@ if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
     echo -e "${GREEN}🎉 Parfait ! Tout est prêt pour le déploiement !${NC}"
     echo ""
     echo "Prochaines étapes :"
-    echo "1. git push origin dev/v1.0.0"
+    echo "1. git push origin production"
     echo "2. Aller sur https://dashboard.render.com"
     echo "3. New + → Blueprint"
     echo "4. Connecter votre dépôt"
