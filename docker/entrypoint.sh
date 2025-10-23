@@ -52,13 +52,21 @@ if ! php artisan migrate --force; then
     echo "Migrations failed or database unavailable. Continuing startup."
 fi
 
+# Optimiser l'application avec les bonnes variables d'env
+echo "Caching configs with production environment..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
 # Créer le lien symbolique du storage
 php artisan storage:link || true
 
 # Publier les assets Swagger
+echo "Publishing Swagger assets..."
 php artisan vendor:publish --provider="L5Swagger\L5SwaggerServiceProvider" --force || true
 
 # Générer la documentation Swagger
+echo "Generating Swagger documentation..."
 php artisan l5-swagger:generate || true
 
 echo "Application ready!"

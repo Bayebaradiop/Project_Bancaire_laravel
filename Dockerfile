@@ -48,11 +48,6 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
     bootstrap/cache \
     && chmod -R 0777 storage bootstrap/cache
 
-# Pré-compiler les vues Blade au build (évite les erreurs de permission au runtime)
-RUN php artisan config:cache || true \
-    && php artisan route:cache || true \
-    && php artisan view:cache || true
-
 # Copier les configurations
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
