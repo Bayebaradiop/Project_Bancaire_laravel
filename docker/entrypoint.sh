@@ -3,10 +3,25 @@ set -e
 
 echo "Starting Laravel application..."
 
-# Définir les permissions correctes pour storage et bootstrap/cache
+# Ensure required directories exist and are writable
+echo "Preparing storage and cache directories..."
+mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/storage/framework/{sessions,views,cache} /var/www/html/storage/logs || true
+
+# Use a permissive umask so created files are group-writable
+umask 0002
+
+# Set ownership if www-data exists (common in php-fpm images)
+if id -u www-data >/dev/null 2>&1; then
+    echo "Setting ownership to www-data:www-data..."
+    chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
+else
+    echo "User www-data not found, skipping chown."
+fi
+
+# Ensure permissions allow php-fpm to write
 echo "Setting permissions..."
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache || true
+chmod -R g+s /var/www/html/storage /var/www/html/bootstrap/cache || true
 
 # Attendre que la base de données soit prête (si configurée)
 if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
