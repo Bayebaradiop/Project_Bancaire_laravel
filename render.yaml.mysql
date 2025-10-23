@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: project-laravel
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: project-laravel-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: project-laravel-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: project-laravel-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: project-laravel-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: project-laravel-db
+          property: password
+      - key: CACHE_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: SESSION_DRIVER
+        value: file
+
+databases:
+  - name: project-laravel-db
+    databaseName: laravel
+    user: laravel

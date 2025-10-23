@@ -64,4 +64,81 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# Project_Bancaire_laravel
+
+---
+
+# 🏦 Project Bancaire Laravel
+
+Système de gestion bancaire développé avec Laravel 10.
+
+## 🚀 Déploiement
+
+### Déploiement sur Render
+
+Ce projet est prêt à être déployé sur Render en quelques minutes !
+
+#### 🎯 Démarrage rapide
+```bash
+# 1. Préparer le projet
+./prepare-deploy.sh
+
+# 2. Pousser sur Git
+git push origin dev/v1.0.0
+
+# 3. Déployer sur Render
+# Voir QUICK_DEPLOY.md pour les instructions complètes
+```
+
+#### 📚 Documentation de déploiement
+- **[Guide rapide (5 minutes)](./QUICK_DEPLOY.md)** - Pour déployer rapidement
+- **[Guide complet](./DEPLOYMENT.md)** - Documentation détaillée avec troubleshooting
+
+#### ⚙️ Fichiers de configuration
+- `render.yaml` - Configuration Blueprint pour Render (MySQL)
+- `render.yaml.postgres` - Alternative avec PostgreSQL (recommandé)
+- `Dockerfile` - Image Docker pour le déploiement
+- `docker-entrypoint.sh` - Script de démarrage
+- `.dockerignore` - Fichiers à exclure du build Docker
+
+### Autres plateformes de déploiement
+- Heroku
+- AWS
+- DigitalOcean
+- Voir la [documentation Laravel](https://laravel.com/docs/10.x/deployment)
+
+## 📖 Documentation
+
+- [API Documentation](./API_DOCUMENTATION.md)
+- [Swagger Documentation](./SWAGGER_DOCUMENTATION.md)
+- [Scopes Documentation](./SCOPES_DOCUMENTATION.md)
+
+## 🛠️ Installation locale
+
+```bash
+# Cloner le projet
+git clone https://github.com/Bayebaradiop/Project_Bancaire_laravel.git
+cd Project_Bancaire_laravel
+
+# Installer les dépendances
+composer install
+
+# Configurer l'environnement
+cp .env.example .env
+php artisan key:generate
+
+# Configurer la base de données dans .env
+# Puis exécuter les migrations
+php artisan migrate
+
+# Démarrer le serveur
+php artisan serve
+```
+
+## 🔗 Liens utiles
+
+- **Repository** : [https://github.com/Bayebaradiop/Project_Bancaire_laravel](https://github.com/Bayebaradiop/Project_Bancaire_laravel)
+- **Branch principale** : `dev/v1.0.0`
+
+## 👥 Contributeurs
+
+- Bayebaradiop
