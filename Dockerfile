@@ -11,6 +11,7 @@ RUN apk add --no-cache \
     postgresql-dev \
     freetype-dev \
     libjpeg-turbo-dev \
+    netcat-openbsd \
     zip \
     unzip \
     nginx \
@@ -31,6 +32,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 
 # Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Reduce Composer permissions warning when run as root in container
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Créer le répertoire de travail
 WORKDIR /var/www/html

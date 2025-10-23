@@ -3,14 +3,20 @@ set -e
 
 echo "Starting Laravel application..."
 
-# Attendre que la base de données soit prête (optionnel)
-# if [ -n "$DB_HOST" ]; then
-#     echo "Waiting for database..."
-#     while ! nc -z $DB_HOST $DB_PORT; do
-#         sleep 0.1
-#     done
-#     echo "Database is ready!"
-# fi
+# Attendre que la base de données soit prête (si configurée)
+if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
+    echo "Waiting for database at $DB_HOST:$DB_PORT ..."
+    for i in $(seq 1 60); do
+        if nc -z "$DB_HOST" "$DB_PORT"; then
+            echo "Database is ready!"
+            break
+        fi
+        sleep 1
+        if [ "$i" -eq 60 ]; then
+            echo "Database not reachable after 60s, continuing without blocking startup."
+        fi
+    done
+fi
 
 # Générer la clé d'application si nécessaire
 if [ -z "$APP_KEY" ]; then
@@ -18,9 +24,11 @@ if [ -z "$APP_KEY" ]; then
     php artisan key:generate --force
 fi
 
-# Exécuter les migrations
+# Exécuter les migrations (non bloquant si échec)
 echo "Running migrations..."
-php artisan migrate --force
+if ! php artisan migrate --force; then
+    echo "Migrations failed or database unavailable. Continuing startup."
+fi
 
 # Optimiser l'application
 echo "Optimizing application..."
