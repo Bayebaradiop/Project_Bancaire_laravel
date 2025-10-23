@@ -52,15 +52,6 @@ if ! php artisan migrate --force; then
     echo "Migrations failed or database unavailable. Continuing startup."
 fi
 
-# Optimiser l'application
-echo "Optimizing application..."
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-
 # Créer le lien symbolique du storage
 php artisan storage:link || true
 
