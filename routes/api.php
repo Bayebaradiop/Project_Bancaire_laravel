@@ -43,7 +43,6 @@ Route::prefix('v1')->group(function () {
         // Routes Comptes
         Route::prefix('comptes')->group(function () {
             Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
-            Route::get('/{id}', [CompteController::class, 'show'])->name('comptes.show');
             Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
         });
         

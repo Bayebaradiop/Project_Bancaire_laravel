@@ -167,64 +167,6 @@
                 ]
             }
         },
-        "/comptes/{id}": {
-            "get": {
-                "tags": [
-                    "Comptes"
-                ],
-                "summary": "Obtenir un compte par ID",
-                "description": "Récupère les détails d'un compte spécifique",
-                "operationId": "getCompteById",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID du compte",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Compte récupéré avec succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Compte récupéré avec succès"
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/Compte"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Compte non trouvé"
-                    },
-                    "401": {
-                        "description": "Non autorisé"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/comptes/numero/{numero}": {
             "get": {
                 "tags": [

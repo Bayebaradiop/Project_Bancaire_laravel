@@ -136,48 +136,6 @@ class CompteController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/comptes/{id}",
-     *     summary="Obtenir un compte par ID",
-     *     description="Récupère les détails d'un compte spécifique",
-     *     operationId="getCompteById",
-     *     tags={"Comptes"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="ID du compte",
-     *         required=true,
-     *         @OA\Schema(type="string", format="uuid")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Compte récupéré avec succès",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Compte récupéré avec succès"),
-     *             @OA\Property(property="data", ref="#/components/schemas/Compte")
-     *         )
-     *     ),
-     *     @OA\Response(response=404, description="Compte non trouvé"),
-     *     @OA\Response(response=401, description="Non autorisé")
-     * )
-     */
-    public function show(string $id): JsonResponse
-    {
-        $compte = Compte::with(['client.user'])->find($id);
-
-        if (!$compte) {
-            return $this->notFound('Compte non trouvé');
-        }
-
-        return $this->success(
-            new CompteResource($compte),
-            'Compte récupéré avec succès'
-        );
-    }
-
-    /**
-     * @OA\Get(
      *     path="/comptes/numero/{numero}",
      *     summary="Obtenir un compte par numéro",
      *     description="Récupère les détails d'un compte par son numéro",
