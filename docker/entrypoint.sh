@@ -39,7 +39,10 @@ php artisan view:cache
 # Créer le lien symbolique du storage
 php artisan storage:link || true
 
-# Générer la documentation Swagger (optionnel)
+# Publier les assets Swagger
+php artisan vendor:publish --provider="L5Swagger\L5SwaggerServiceProvider" --force || true
+
+# Générer la documentation Swagger
 php artisan l5-swagger:generate || true
 
 echo "Application ready!"
