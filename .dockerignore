@@ -18,6 +18,4 @@ yarn-error.log
 README.md
 tests/
 .editorconfig
-docker/
-Dockerfile
 GUIDE_DOCKER_RENDER.txt
