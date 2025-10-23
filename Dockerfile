@@ -15,7 +15,6 @@ RUN apk add --no-cache \
     zip \
     unzip \
     nginx \
-    supervisor \
     build-base
 
 # Installer les extensions PHP
@@ -32,8 +31,6 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 
 # Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Reduce Composer permissions warning when run as root in container
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Créer le répertoire de travail
@@ -51,10 +48,9 @@ RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Copier les configurations
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 80
+EXPOSE 10000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

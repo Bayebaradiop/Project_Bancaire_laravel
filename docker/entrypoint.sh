@@ -44,5 +44,8 @@ php artisan l5-swagger:generate || true
 
 echo "Application ready!"
 
-# Démarrer supervisor
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+# Démarrer PHP-FPM en arrière-plan
+php-fpm -D
+
+# Démarrer Nginx en premier plan (Render attend sur port 10000)
+exec nginx -g 'daemon off;'
