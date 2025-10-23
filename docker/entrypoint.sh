@@ -3,6 +3,11 @@ set -e
 
 echo "Starting Laravel application..."
 
+# Définir les permissions correctes pour storage et bootstrap/cache
+echo "Setting permissions..."
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
 # Attendre que la base de données soit prête (si configurée)
 if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
     echo "Waiting for database at $DB_HOST:$DB_PORT ..."
