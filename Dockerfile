@@ -1,4 +1,4 @@
-FROM php:8.1-fpm-alpine
+FROM php:8.2-fpm-alpine
 
 # Installer les dépendances système
 RUN apk add --no-cache \
@@ -9,13 +9,17 @@ RUN apk add --no-cache \
     libzip-dev \
     oniguruma-dev \
     postgresql-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
     zip \
     unzip \
     nginx \
-    supervisor
+    supervisor \
+    build-base
 
 # Installer les extensions PHP
-RUN docker-php-ext-install \
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
     pdo_pgsql \
     pgsql \
     mbstring \
