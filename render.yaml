@@ -24,26 +24,8 @@ services:
         value: info
       - key: DB_CONNECTION
         value: pgsql
-      - key: DB_HOST
-        fromDatabase:
-          name: project-laravel-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: project-laravel-db
-          property: port
-      - key: DB_DATABASE
-        fromDatabase:
-          name: project-laravel-db
-          property: database
-      - key: DB_USERNAME
-        fromDatabase:
-          name: project-laravel-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: project-laravel-db
-          property: password
+      # Configurer DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD
+      # dans le Dashboard Render → Environment (pour base externe)
       - key: CACHE_DRIVER
         value: file
       - key: QUEUE_CONNECTION
@@ -53,8 +35,11 @@ services:
       - key: SESSION_LIFETIME
         value: 120
 
-databases:
-  - name: project-laravel-db
-    databaseName: laravel
-    user: laravel
-    plan: free
+# Base de données externe (Supabase, ElephantSQL, etc.)
+# Configurer les variables DB_* dans le Dashboard Render
+
+# databases:
+#   - name: project-laravel-db
+#     databaseName: laravel
+#     user: laravel
+#     plan: free
