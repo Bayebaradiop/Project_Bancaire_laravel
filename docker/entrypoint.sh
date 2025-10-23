@@ -18,10 +18,12 @@ else
     echo "User www-data not found, skipping chown."
 fi
 
-# Ensure permissions allow php-fpm to write
+# Ensure permissions allow php-fpm to write (ensure widest compatibility on hosted runtimes)
 echo "Setting permissions..."
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache || true
 chmod -R g+s /var/www/html/storage /var/www/html/bootstrap/cache || true
+# Fallback: make world-writable so containers with different runtime users can still write
+chmod -R 0777 /var/www/html/storage /var/www/html/bootstrap/cache || true
 
 # Attendre que la base de données soit prête (si configurée)
 if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
