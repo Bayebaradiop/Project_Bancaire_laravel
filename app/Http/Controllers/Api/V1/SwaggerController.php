@@ -32,8 +32,8 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Server(
- *     url="http://localhost:8001/api/v1",
- *     description="Serveur local de développement"
+ *     url="http://127.0.0.1:8000/api/v1",
+ *     description="Serveur local de développement (Laravel serve)"
  * )
  *
  * @OA\Tag(
