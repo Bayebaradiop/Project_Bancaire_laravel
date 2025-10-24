@@ -14,9 +14,9 @@ umask 0002
 echo "Setting ownership to current user ($(id -u):$(id -g))..."
 chown -R $(id -u):$(id -g) /var/www/html/storage /var/www/html/bootstrap/cache || true
 
-# Ensure permissions allow the current user to write
+# Ensure permissions allow writing (world-writable for compatibility)
 echo "Setting permissions..."
-chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache || true
+chmod -R 0777 /var/www/html/storage /var/www/html/bootstrap/cache || true
 
 # Attendre que la base de données soit prête (si configurée)
 if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then

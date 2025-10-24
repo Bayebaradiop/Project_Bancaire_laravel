@@ -20,20 +20,8 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Server(
- *     url="http://127.0.0.1:8000/api/v1",
- *     description="Serveur local de développement (Laravel serve)"
- * )
- *
- * @OA\Server(
- *     url="{APP_URL}/api/v1",
- *     description="Serveur de production",
- *     variables={
- *         @OA\ServerVariable(
- *             serverVariable="APP_URL",
- *             default="https://project-bancaire-laravel.onrender.com",
- *             description="URL de base de l'API"
- *         )
- *     }
+ *     url="https://project-bancaire-laravel.onrender.com/api/v1",
+ *     description="Serveur de production"
  * )
  *
  * @OA\Tag(
