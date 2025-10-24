@@ -10,6 +10,7 @@ use App\Models\Compte;
 use App\Models\Client;
 use App\Models\User;
 use App\Traits\ApiResponseFormat;
+use App\Traits\Cacheable;
 use App\Exceptions\CompteNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\Hash;
  */
 class CompteController extends Controller
 {
-    use ApiResponseFormat;
+    use ApiResponseFormat, Cacheable;
 
     /**
      * @OA\Get(
@@ -106,28 +107,35 @@ class CompteController extends Controller
         $search = $request->getSearch();
         $sort = $request->getSort();
         $order = $request->getOrder();
+        $page = $request->input('page', 1);
 
-        // Construction de la requête
-        $query = Compte::with(['client.user']);
+        // Clé de cache basée sur les paramètres
+        $cacheKey = "comptes:list:{$type}:{$statut}:{$search}:{$sort}:{$order}";
 
-        // Appliquer les filtres
-        if ($type) {
-            $query->type($type);
-        }
+        // Utiliser le cache avec pagination (5 minutes)
+        $comptes = $this->rememberPaginated($cacheKey, $page, $limit, function () use ($type, $statut, $search, $sort, $order, $limit) {
+            // Construction de la requête
+            $query = Compte::with(['client.user']);
 
-        if ($statut) {
-            $query->statut($statut);
-        }
+            // Appliquer les filtres
+            if ($type) {
+                $query->type($type);
+            }
 
-        if ($search) {
-            $query->search($search);
-        }
+            if ($statut) {
+                $query->statut($statut);
+            }
 
-        // Appliquer le tri
-        $query->sortBy($sort, $order);
+            if ($search) {
+                $query->search($search);
+            }
 
-        // Pagination
-        $comptes = $query->paginate($limit);
+            // Appliquer le tri
+            $query->sortBy($sort, $order);
+
+            // Pagination
+            return $query->paginate($limit);
+        }, 300); // Cache pendant 5 minutes
 
         // Formater la réponse
         $data = CompteResource::collection($comptes);
@@ -170,7 +178,10 @@ class CompteController extends Controller
      */
     public function showByNumero(string $numero): JsonResponse
     {
-        $compte = Compte::with(['client.user'])->numero($numero)->first();
+        // Utiliser le cache pour 10 minutes
+        $compte = $this->remember("compte:numero:{$numero}", function () use ($numero) {
+            return Compte::with(['client.user', 'transactions'])->numero($numero)->first();
+        }, 600);
 
         if (!$compte) {
             throw new CompteNotFoundException('Compte non trouvé');
@@ -265,6 +276,9 @@ class CompteController extends Controller
 
             // Charger les relations
             $compte->load(['client.user', 'transactions']);
+
+            // Invalider le cache de la liste des comptes
+            $this->forgetPaginatedCache('comptes:list');
 
             DB::commit();
 
