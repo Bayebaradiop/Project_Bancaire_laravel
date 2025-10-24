@@ -1,0 +1,81 @@
+services:
+  - type: web
+    name: project-bancaire-laravel
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: frankfurt
+    buildCommand: |
+      chmod -R 775 storage bootstrap/cache
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+      php artisan l5-swagger:generate
+    startCommand: |
+      php artisan migrate --force
+      supervisord -c /etc/supervisor/supervisord.conf
+    envVars:
+      - key: APP_NAME
+        value: Project Bancaire Laravel
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        value: https://project-bancaire-laravel.onrender.com
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: project-bancaire-laravel-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: project-bancaire-laravel-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: project-bancaire-laravel-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: project-bancaire-laravel-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: project-bancaire-laravel-db
+          property: password
+      - key: CACHE_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: SESSION_DRIVER
+        value: file
+      - key: SESSION_LIFETIME
+        value: 120
+      - key: BROADCAST_DRIVER
+        value: log
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: L5_SWAGGER_GENERATE_ALWAYS
+        value: true
+      - key: L5_SWAGGER_USE_ABSOLUTE_PATH
+        value: true
+      - key: L5_SWAGGER_CONST_HOST
+        value: https://project-bancaire-laravel.onrender.com
+      - key: APP_TIMEZONE
+        value: UTC
+
+databases:
+  - name: project-bancaire-laravel-db
+    databaseName: project_bancaire
+    user: laravel_user
+    plan: free
+    region: frankfurt

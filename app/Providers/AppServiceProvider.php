@@ -21,12 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (app()->environment('production')) {
-            try {
-                Artisan::call('l5-swagger:generate');
-            } catch (\Exception $e) {
-                Log::error('Swagger generation failed: '.$e->getMessage());
-            }
-        }
+        // La génération de Swagger est gérée par L5_SWAGGER_GENERATE_ALWAYS
+        // Ne pas générer au boot pour éviter les problèmes de performance et permissions
     }
 }
