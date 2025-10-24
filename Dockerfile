@@ -46,7 +46,8 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN mkdir -p storage/framework/{sessions,views,cache} \
     storage/logs \
     bootstrap/cache \
-    && chmod -R 0777 storage bootstrap/cache
+    && chmod -R 775 storage bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
 
 # Copier les configurations
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
