@@ -48,10 +48,16 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
     bootstrap/cache \
     && chmod -R 0777 storage bootstrap/cache
 
+
 # Copier les configurations
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Correction permissions avant démarrage
+RUN mkdir -p storage/framework/views \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 0777 storage bootstrap/cache
 
 EXPOSE 10000
 
