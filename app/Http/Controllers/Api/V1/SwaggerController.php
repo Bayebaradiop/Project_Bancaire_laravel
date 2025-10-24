@@ -20,6 +20,11 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Server(
+ *     url="http://127.0.0.1:8000/api/v1",
+ *     description="Serveur local de développement (Laravel serve)"
+ * )
+ *
+ * @OA\Server(
  *     url="{APP_URL}/api/v1",
  *     description="Serveur de production",
  *     variables={
@@ -29,11 +34,6 @@ use App\Http\Controllers\Controller;
  *             description="URL de base de l'API"
  *         )
  *     }
- * )
- *
- * @OA\Server(
- *     url="http://127.0.0.1:8000/api/v1",
- *     description="Serveur local de développement (Laravel serve)"
  * )
  *
  * @OA\Tag(
