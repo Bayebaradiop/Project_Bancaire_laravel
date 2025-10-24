@@ -70,6 +70,10 @@ services:
         value: true
       - key: L5_SWAGGER_CONST_HOST
         value: https://project-bancaire-laravel.onrender.com
+      - key: L5_SWAGGER_ASSET_ABSOLUTE_PATH
+        value: https://project-bancaire-laravel.onrender.com
+      - key: ASSET_URL
+        value: https://project-bancaire-laravel.onrender.com
       - key: APP_TIMEZONE
         value: UTC
 

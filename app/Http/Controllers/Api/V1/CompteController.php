@@ -16,35 +16,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
-/**
- * @OA\Info(
- *     version="1.0.0",
- *     title="API Bancaire - Gestion des Comptes",
- *     description="API REST pour la gestion des comptes bancaires. Permet de créer, lister et consulter des comptes avec validation complète.",
- *     @OA\Contact(
- *         email="support@banque.sn"
- *     ),
- *     @OA\License(
- *         name="MIT",
- *         url="https://opensource.org/licenses/MIT"
- *     )
- * )
- * 
- * @OA\Server(
- *     url="http://localhost:8000/api",
- *     description="Serveur de développement local"
- * )
- * 
- * @OA\Server(
- *     url="https://project-bancaire-laravel.onrender.com/api",
- *     description="Serveur de production"
- * )
- * 
- * @OA\Tag(
- *     name="Comptes",
- *     description="Endpoints pour gérer les comptes bancaires"
- * )
- */
 class CompteController extends Controller
 {
     use ApiResponseFormat, Cacheable;

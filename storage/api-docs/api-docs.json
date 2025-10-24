@@ -222,11 +222,11 @@
     "tags": [
         {
             "name": "Comptes",
-            "description": "Endpoints pour gérer les comptes bancaires"
+            "description": "Opérations sur les comptes bancaires"
         },
         {
             "name": "Health",
-            "description": "Health"
+            "description": "Vérification de l'état de l'API"
         }
     ]
 }
