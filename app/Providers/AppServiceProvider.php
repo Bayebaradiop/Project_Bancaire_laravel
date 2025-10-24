@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Log;
+use App\Models\Compte;
+use App\Observers\CompteObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // La génération de Swagger est gérée par L5_SWAGGER_GENERATE_ALWAYS
-        // Ne pas générer au boot pour éviter les problèmes de performance et permissions
+        // Enregistrer l'observer pour le modèle Compte
+        Compte::observe(CompteObserver::class);
     }
 }

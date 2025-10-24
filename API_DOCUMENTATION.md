@@ -30,7 +30,6 @@
 - **Route 1** : `GET /api/v1/comptes` - Liste paginée avec filtres
 - **Route 2** : `GET /api/v1/comptes/{id}` - Détails par ID
 - **Route 3** : `GET /api/v1/comptes/numero/{numero}` - Détails par numéro
-- Annotations Swagger complètes
 - Fichier : `app/Http/Controllers/Api/V1/CompteController.php`
 
 #### 5. **Routes API V1** ✅
@@ -246,9 +245,8 @@ curl -H "Authorization: Bearer {token}" \
 ## 📦 Prochaines étapes
 
 1. **Authentification complète** : Endpoints login/register
-2. **Swagger UI** : Interface visuelle de documentation
-3. **Tests unitaires** : PHPUnit pour tous les endpoints
-4. **Déploiement** : Docker ou Render
+2. **Tests unitaires** : PHPUnit pour tous les endpoints
+3. **Déploiement** : Docker ou Render
 
 ---
 

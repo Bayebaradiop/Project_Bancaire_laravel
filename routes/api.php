@@ -19,7 +19,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 | API V1 Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->middleware(['logging', 'track.requests'])->group(function () {
     
     // Health check endpoint
     Route::get('/health', function () {
@@ -34,6 +34,7 @@ Route::prefix('v1')->group(function () {
     // Routes Comptes (publiques pour l'instant)
     Route::prefix('comptes')->group(function () {
         Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
+        Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
         Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
     });
 });

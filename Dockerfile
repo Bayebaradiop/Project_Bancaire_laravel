@@ -45,8 +45,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Créer les répertoires requis et configurer les permissions
 RUN mkdir -p storage/framework/{sessions,views,cache} \
     storage/logs \
-    bootstrap/cache \
-    && chmod -R 0777 storage bootstrap/cache
+    bootstrap/cache
 
 
 # Copier les configurations

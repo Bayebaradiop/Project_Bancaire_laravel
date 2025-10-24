@@ -5,9 +5,16 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CompteResource;
 use App\Http\Requests\ListCompteRequest;
+use App\Http\Requests\StoreCompteRequest;
 use App\Models\Compte;
+use App\Models\Client;
+use App\Models\User;
 use App\Traits\ApiResponseFormat;
+use App\Traits\Cacheable;
+use App\Exceptions\CompteNotFoundException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * @OA\Tag(
@@ -17,7 +24,7 @@ use Illuminate\Http\JsonResponse;
  */
 class CompteController extends Controller
 {
-    use ApiResponseFormat;
+    use ApiResponseFormat, Cacheable;
 
     /**
      * @OA\Get(
@@ -100,28 +107,35 @@ class CompteController extends Controller
         $search = $request->getSearch();
         $sort = $request->getSort();
         $order = $request->getOrder();
+        $page = $request->input('page', 1);
 
-        // Construction de la requête
-        $query = Compte::with(['client.user']);
+        // Clé de cache basée sur les paramètres
+        $cacheKey = "comptes:list:{$type}:{$statut}:{$search}:{$sort}:{$order}";
 
-        // Appliquer les filtres
-        if ($type) {
-            $query->type($type);
-        }
+        // Utiliser le cache avec pagination (5 minutes)
+        $comptes = $this->rememberPaginated($cacheKey, $page, $limit, function () use ($type, $statut, $search, $sort, $order, $limit) {
+            // Construction de la requête
+            $query = Compte::with(['client.user']);
 
-        if ($statut) {
-            $query->statut($statut);
-        }
+            // Appliquer les filtres
+            if ($type) {
+                $query->type($type);
+            }
 
-        if ($search) {
-            $query->search($search);
-        }
+            if ($statut) {
+                $query->statut($statut);
+            }
 
-        // Appliquer le tri
-        $query->sortBy($sort, $order);
+            if ($search) {
+                $query->search($search);
+            }
 
-        // Pagination
-        $comptes = $query->paginate($limit);
+            // Appliquer le tri
+            $query->sortBy($sort, $order);
+
+            // Pagination
+            return $query->paginate($limit);
+        }, 300); // Cache pendant 5 minutes
 
         // Formater la réponse
         $data = CompteResource::collection($comptes);
@@ -164,15 +178,137 @@ class CompteController extends Controller
      */
     public function showByNumero(string $numero): JsonResponse
     {
-        $compte = Compte::with(['client.user'])->numero($numero)->first();
+        // Utiliser le cache pour 10 minutes
+        $compte = $this->remember("compte:numero:{$numero}", function () use ($numero) {
+            return Compte::with(['client.user', 'transactions'])->numero($numero)->first();
+        }, 600);
 
         if (!$compte) {
-            return $this->notFound('Compte non trouvé');
+            throw new CompteNotFoundException('Compte non trouvé');
         }
 
         return $this->success(
             new CompteResource($compte),
             'Compte récupéré avec succès'
         );
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/v1/comptes",
+     *     summary="Créer un nouveau compte bancaire",
+     *     tags={"Comptes"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"type", "devise", "client"},
+     *             @OA\Property(property="type", type="string", enum={"epargne", "courant", "cheque"}),
+     *             @OA\Property(property="devise", type="string", enum={"FCFA", "USD", "EUR"}),
+     *             @OA\Property(
+     *                 property="client",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", nullable=true),
+     *                 @OA\Property(property="titulaire", type="string"),
+     *                 @OA\Property(property="nci", type="string"),
+     *                 @OA\Property(property="email", type="string", format="email"),
+     *                 @OA\Property(property="telephone", type="string"),
+     *                 @OA\Property(property="adresse", type="string")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Compte créé avec succès"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Erreur de validation"
+     *     )
+     * )
+     */
+    public function store(StoreCompteRequest $request): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $password = null;
+            $code = null;
+
+            // 1. Vérifier l'existence du client
+            if (!empty($request->client['id'])) {
+                $client = Client::findOrFail($request->client['id']);
+            } else {
+                // 2. Créer l'utilisateur et le client s'il n'existe pas
+                $password = Client::generatePassword();
+                $code = Client::generateCode();
+
+                // Créer l'utilisateur
+                $user = User::create([
+                    'nomComplet' => $request->client['titulaire'],
+                    'nci' => $request->client['nci'],
+                    'email' => $request->client['email'],
+                    'telephone' => $request->client['telephone'],
+                    'adresse' => $request->client['adresse'],
+                    'password' => Hash::make($password),
+                    'code' => $code,
+                ]);
+
+                // Créer le client
+                $client = Client::create([
+                    'user_id' => $user->id,
+                ]);
+
+                // Stocker temporairement pour l'observer
+                session([
+                    'temp_client_password' => $password,
+                    'temp_client_code' => $code,
+                ]);
+            }
+
+            // 3. Créer le compte
+            $compte = Compte::create([
+                'numeroCompte' => Compte::generateNumeroCompte(),
+                'type' => $request->type,
+                'devise' => $request->devise,
+                'statut' => 'actif',
+                'client_id' => $client->id,
+            ]);
+
+            // Charger les relations
+            $compte->load(['client.user', 'transactions']);
+
+            // Invalider le cache de la liste des comptes
+            $this->forgetPaginatedCache('comptes:list');
+
+            DB::commit();
+
+            // Utiliser le trait pour formater la réponse
+            return $this->created([
+                'id' => $compte->id,
+                'numeroCompte' => $compte->numeroCompte,
+                'titulaire' => $compte->client->user->nomComplet ?? 'N/A',
+                'type' => $compte->type,
+                'solde' => $compte->solde,
+                'devise' => $compte->devise,
+                'dateCreation' => $compte->dateCreation->toIso8601String(),
+                'statut' => $compte->statut,
+                'metadata' => [
+                    'derniereModification' => $compte->derniereModification->toIso8601String(),
+                    'version' => 1,
+                ],
+            ], 'Compte créé avec succès');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return $this->validationError($e->errors(), 'Les données fournies sont invalides');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors de la création du compte'
+            );
+        }
     }
 }

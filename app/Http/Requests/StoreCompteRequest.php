@@ -4,6 +4,8 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Rules\ValidNciSenegalais;
+use App\Rules\ValidTelephoneSenegalais;
 
 class StoreCompteRequest extends FormRequest
 {
@@ -23,11 +25,27 @@ class StoreCompteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'client_id' => ['required', 'uuid', 'exists:clients,id'],
-            'type' => ['required', Rule::in(['cheque', 'epargne'])],
-            'devise' => ['sometimes', 'string', 'max:10'],
-            'statut' => ['sometimes', Rule::in(['actif', 'bloque', 'ferme'])],
-            'motifBlocage' => ['nullable', 'string'],
+            'type' => 'required|in:epargne,courant,cheque',
+            'devise' => 'required|in:FCFA,USD,EUR',
+            
+            // Client
+            'client' => 'required|array',
+            'client.id' => 'nullable|exists:clients,id',
+            'client.titulaire' => 'required_if:client.id,null|string|max:255',
+            'client.nci' => [
+                'required_if:client.id,null',
+                'string',
+                new ValidNciSenegalais(),
+                'unique:users,nci'
+            ],
+            'client.email' => 'required_if:client.id,null|email|unique:users,email',
+            'client.telephone' => [
+                'required_if:client.id,null',
+                'string',
+                new ValidTelephoneSenegalais(),
+                'unique:users,telephone'
+            ],
+            'client.adresse' => 'required_if:client.id,null|string|max:500',
         ];
     }
 
@@ -39,13 +57,23 @@ class StoreCompteRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'client_id.required' => 'Le client est obligatoire.',
-            'client_id.uuid' => 'L\'identifiant du client doit être un UUID valide.',
-            'client_id.exists' => 'Le client spécifié n\'existe pas.',
-            'type.required' => 'Le type de compte est obligatoire.',
-            'type.in' => 'Le type de compte doit être soit "cheque" soit "epargne".',
-            'devise.max' => 'La devise ne peut pas dépasser 10 caractères.',
-            'statut.in' => 'Le statut doit être "actif", "bloque" ou "ferme".',
+            'type.required' => 'Le type de compte est requis',
+            'type.in' => 'Le type de compte doit être epargne, courant ou cheque',
+            'devise.required' => 'La devise est requise',
+            'devise.in' => 'La devise doit être FCFA, USD ou EUR',
+            
+            // Client
+            'client.required' => 'Les informations du client sont requises',
+            'client.id.exists' => 'Le client spécifié n\'existe pas',
+            'client.titulaire.required_if' => 'Le nom du titulaire est requis',
+            'client.nci.required_if' => 'Le NCI est requis',
+            'client.nci.unique' => 'Ce NCI est déjà utilisé',
+            'client.email.required_if' => 'L\'email est requis',
+            'client.email.email' => 'L\'email doit être valide',
+            'client.email.unique' => 'Cet email est déjà utilisé',
+            'client.telephone.required_if' => 'Le téléphone est requis',
+            'client.telephone.unique' => 'Ce numéro de téléphone est déjà utilisé',
+            'client.adresse.required_if' => 'L\'adresse est requise',
         ];
     }
 }
