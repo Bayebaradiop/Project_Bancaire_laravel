@@ -1,0 +1,232 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API Bancaire - Gestion des Comptes",
+        "description": "API REST pour la gestion des comptes bancaires. Permet de créer, lister et consulter des comptes avec validation complète.",
+        "contact": {
+            "email": "support@banque.sn"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api",
+            "description": "Serveur de développement local"
+        },
+        {
+            "url": "https://project-bancaire-laravel.onrender.com/api",
+            "description": "Serveur de production"
+        }
+    ],
+    "paths": {
+        "/v1/comptes": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "summary": "Lister tous les comptes",
+                "description": "Récupère la liste de tous les comptes avec pagination et filtres",
+                "operationId": "getComptes",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filtrer par type (epargne, cheque)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des comptes récupérée avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/v1/comptes/numero/{numero}": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "summary": "Obtenir un compte par numéro",
+                "description": "Récupère les détails d'un compte par son numéro",
+                "operationId": "getCompteByNumero",
+                "parameters": [
+                    {
+                        "name": "numero",
+                        "in": "path",
+                        "description": "Numéro du compte",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Compte récupéré avec succès"
+                    },
+                    "404": {
+                        "description": "Compte non trouvé"
+                    }
+                }
+            }
+        },
+        "/api/v1/comptes": {
+            "post": {
+                "tags": [
+                    "Comptes"
+                ],
+                "summary": "Créer un nouveau compte bancaire",
+                "operationId": "c4b9822f8407aeeaa6ed3cf36ed4ad35",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type",
+                                    "devise",
+                                    "client"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "epargne",
+                                            "courant",
+                                            "cheque"
+                                        ]
+                                    },
+                                    "devise": {
+                                        "type": "string",
+                                        "enum": [
+                                            "FCFA",
+                                            "USD",
+                                            "EUR"
+                                        ]
+                                    },
+                                    "client": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "string",
+                                                "nullable": true
+                                            },
+                                            "titulaire": {
+                                                "type": "string"
+                                            },
+                                            "nci": {
+                                                "type": "string"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "format": "email"
+                                            },
+                                            "telephone": {
+                                                "type": "string"
+                                            },
+                                            "adresse": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Compte créé avec succès"
+                    },
+                    "400": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Vérifier l'état de l'API",
+                "description": "Endpoint pour vérifier si l'API fonctionne correctement",
+                "operationId": "healthCheck",
+                "responses": {
+                    "200": {
+                        "description": "L'API fonctionne correctement",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "API is running"
+                                        },
+                                        "version": {
+                                            "type": "string",
+                                            "example": "v1"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-10-23T12:29:16+00:00"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Comptes",
+            "description": "Endpoints pour gérer les comptes bancaires"
+        },
+        {
+            "name": "Health",
+            "description": "Health"
+        }
+    ]
+}
