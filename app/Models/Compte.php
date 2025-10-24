@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Compte extends Model
 {
@@ -75,6 +77,13 @@ class Compte extends Model
     protected $hidden = [];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['solde'];
+
+    /**
      * The model's default values for attributes.
      *
      * @var array
@@ -104,6 +113,11 @@ class Compte extends Model
     protected static function boot()
     {
         parent::boot();
+
+        // Scope global : Récupérer uniquement les comptes non supprimés
+        static::addGlobalScope('nonSupprime', function (Builder $builder) {
+            $builder->whereNull('deleted_at');
+        });
 
         // Générer automatiquement le numéro de compte lors de la création
         static::creating(function ($compte) {
@@ -298,6 +312,53 @@ class Compte extends Model
         $order = in_array($order, $allowedOrders) ? $order : 'desc';
 
         return $query->orderBy($sort, $order);
+    }
+
+    /**
+     * Attribut calculé : Solde
+     * Solde = Total des dépôts - Total des retraits
+     */
+    protected function solde(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                // Si la relation n'est pas chargée, faire une requête directe
+                if (!$this->relationLoaded('transactions')) {
+                    $depots = $this->transactions()
+                        ->where('type', 'depot')
+                        ->where('statut', 'complete')
+                        ->sum('montant');
+                    
+                    $retraits = $this->transactions()
+                        ->where('type', 'retrait')
+                        ->where('statut', 'complete')
+                        ->sum('montant');
+                    
+                    return $depots - $retraits;
+                }
+                
+                // Si la relation est déjà chargée, utiliser la collection
+                $depots = $this->transactions
+                    ->where('type', 'depot')
+                    ->where('statut', 'complete')
+                    ->sum('montant');
+                
+                $retraits = $this->transactions
+                    ->where('type', 'retrait')
+                    ->where('statut', 'complete')
+                    ->sum('montant');
+                
+                return $depots - $retraits;
+            }
+        );
+    }
+
+    /**
+     * Relation avec les transactions
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'compte_id');
     }
 
 }
