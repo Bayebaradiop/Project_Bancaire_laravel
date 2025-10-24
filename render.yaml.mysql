@@ -3,6 +3,8 @@ services:
     name: project-laravel
     env: docker
     dockerfilePath: ./Dockerfile
+    buildCommand: |
+      chmod -R 775 storage bootstrap/cache
     envVars:
       - key: APP_KEY
         generateValue: true
