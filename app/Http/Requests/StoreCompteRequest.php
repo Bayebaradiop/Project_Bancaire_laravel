@@ -31,21 +31,21 @@ class StoreCompteRequest extends FormRequest
             // Client
             'client' => 'required|array',
             'client.id' => 'nullable|exists:clients,id',
-            'client.titulaire' => 'required_if:client.id,null|string|max:255',
+            'client.titulaire' => 'required_without:client.id|string|max:255',
             'client.nci' => [
-                'required_if:client.id,null',
+                'required_without:client.id',
                 'string',
                 new ValidNciSenegalais(),
                 'unique:users,nci'
             ],
-            'client.email' => 'required_if:client.id,null|email|unique:users,email',
+            'client.email' => 'required_without:client.id|email|unique:users,email',
             'client.telephone' => [
-                'required_if:client.id,null',
+                'required_without:client.id',
                 'string',
                 new ValidTelephoneSenegalais(),
                 'unique:users,telephone'
             ],
-            'client.adresse' => 'required_if:client.id,null|string|max:500',
+            'client.adresse' => 'required_without:client.id|string|max:500',
         ];
     }
 
@@ -65,15 +65,15 @@ class StoreCompteRequest extends FormRequest
             // Client
             'client.required' => 'Les informations du client sont requises',
             'client.id.exists' => 'Le client spécifié n\'existe pas',
-            'client.titulaire.required_if' => 'Le nom du titulaire est requis',
-            'client.nci.required_if' => 'Le NCI est requis',
+            'client.titulaire.required_without' => 'Le nom du titulaire est requis',
+            'client.nci.required_without' => 'Le NCI est requis',
             'client.nci.unique' => 'Ce NCI est déjà utilisé',
-            'client.email.required_if' => 'L\'email est requis',
+            'client.email.required_without' => 'L\'email est requis',
             'client.email.email' => 'L\'email doit être valide',
             'client.email.unique' => 'Cet email est déjà utilisé',
-            'client.telephone.required_if' => 'Le téléphone est requis',
+            'client.telephone.required_without' => 'Le téléphone est requis',
             'client.telephone.unique' => 'Ce numéro de téléphone est déjà utilisé',
-            'client.adresse.required_if' => 'L\'adresse est requise',
+            'client.adresse.required_without' => 'L\'adresse est requise',
         ];
     }
 }
