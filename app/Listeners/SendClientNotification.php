@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\CompteCreated;
+use App\Mail\CompteCreatedMail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -17,15 +18,14 @@ class SendClientNotification
 
         // Envoi de l'email avec le mot de passe
         try {
-            // Simuler l'envoi d'email (à remplacer par votre logique d'envoi)
+            // Envoi réel de l'email
+            Mail::to($client->user->email)->send(new CompteCreatedMail($compte, $password));
+            
             Log::info("Email envoyé", [
                 'destinataire' => $client->user->email ?? 'N/A',
                 'type' => 'Création de compte',
                 'password' => $password,
             ]);
-            
-            // TODO: Implémenter l'envoi réel d'email
-            // Mail::to($client->user->email)->send(new CompteCreatedMail($compte, $password));
             
         } catch (\Exception $e) {
             Log::error("Erreur lors de l'envoi de l'email: " . $e->getMessage());

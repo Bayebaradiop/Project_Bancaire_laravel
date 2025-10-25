@@ -35,7 +35,8 @@ Route::prefix('v1')->middleware(['logging', 'track.requests'])->group(function (
     Route::prefix('comptes')->group(function () {
         Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
         Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
-        Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
+        // Utilise Route Model Binding avec 'compte:numeroCompte'
+        Route::get('/numero/{compte:numeroCompte}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
     });
 });
 

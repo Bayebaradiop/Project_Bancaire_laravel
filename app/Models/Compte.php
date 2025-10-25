@@ -361,4 +361,30 @@ class Compte extends Model
         return $this->hasMany(Transaction::class, 'compte_id');
     }
 
+    /**
+     * Get the route key for the model.
+     * Permet d'utiliser le numéro de compte dans les routes au lieu de l'ID
+     *
+     * @return string
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'numeroCompte';
+    }
+
+    /**
+     * Retrieve the model for a bound value.
+     * Utilisé pour Route Model Binding avec eager loading
+     *
+     * @param  mixed  $value
+     * @param  string|null  $field
+     * @return \Illuminate\Database\Eloquent\Model|null
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->with(['client.user', 'transactions'])
+            ->where($field ?? $this->getRouteKeyName(), $value)
+            ->firstOrFail();
+    }
+
 }

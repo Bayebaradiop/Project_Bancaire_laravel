@@ -71,44 +71,13 @@
                         "description": "Erreur de validation"
                     }
                 }
-            }
-        },
-        "/v1/comptes/numero/{numero}": {
-            "get": {
-                "tags": [
-                    "Comptes"
-                ],
-                "summary": "Obtenir un compte par numéro",
-                "description": "Récupère les détails d'un compte par son numéro",
-                "operationId": "getCompteByNumero",
-                "parameters": [
-                    {
-                        "name": "numero",
-                        "in": "path",
-                        "description": "Numéro du compte",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Compte récupéré avec succès"
-                    },
-                    "404": {
-                        "description": "Compte non trouvé"
-                    }
-                }
-            }
-        },
-        "/api/v1/comptes": {
+            },
             "post": {
                 "tags": [
                     "Comptes"
                 ],
                 "summary": "Créer un nouveau compte bancaire",
-                "operationId": "c4b9822f8407aeeaa6ed3cf36ed4ad35",
+                "operationId": "1ec0ce255279af65d9481a1deab7bed1",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -173,6 +142,35 @@
                     },
                     "400": {
                         "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/v1/comptes/numero/{numero}": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "summary": "Obtenir un compte par numéro",
+                "description": "Récupère les détails d'un compte par son numéro",
+                "operationId": "getCompteByNumero",
+                "parameters": [
+                    {
+                        "name": "numero",
+                        "in": "path",
+                        "description": "Numéro du compte",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Compte récupéré avec succès"
+                    },
+                    "404": {
+                        "description": "Compte non trouvé"
                     }
                 }
             }

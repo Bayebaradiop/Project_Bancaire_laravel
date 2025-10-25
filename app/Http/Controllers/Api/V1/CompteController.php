@@ -126,26 +126,28 @@ class CompteController extends Controller
      *     @OA\Response(response=404, description="Compte non trouvé")
      * )
      */
-    public function showByNumero(string $numero): JsonResponse
+    public function showByNumero(Compte $compte): JsonResponse
     {
+        // Le compte est automatiquement chargé via Route Model Binding
+        // avec les relations (client.user, transactions) grâce à resolveRouteBinding()
+        // Si le compte n'existe pas, Laravel retourne automatiquement une 404
+        
         // Utiliser le cache pour 10 minutes
-        $compte = $this->remember("compte:numero:{$numero}", function () use ($numero) {
-            return Compte::with(['client.user', 'transactions'])->numero($numero)->first();
+        $cacheKey = "compte:numero:{$compte->numeroCompte}";
+        
+        $cachedCompte = $this->remember($cacheKey, function () use ($compte) {
+            return $compte;
         }, 600);
 
-        if (!$compte) {
-            throw new CompteNotFoundException('Compte non trouvé');
-        }
-
         return $this->success(
-            new CompteResource($compte),
+            new CompteResource($cachedCompte),
             'Compte récupéré avec succès'
         );
     }
 
     /**
      * @OA\Post(
-     *     path="/api/v1/comptes",
+     *     path="/v1/comptes",
      *     summary="Créer un nouveau compte bancaire",
      *     tags={"Comptes"},
      *     @OA\RequestBody(
