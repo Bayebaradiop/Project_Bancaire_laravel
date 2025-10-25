@@ -89,7 +89,19 @@ class CompteController extends Controller
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Liste des comptes récupérée avec succès"),
-     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Compte")),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string"),
+     *                     @OA\Property(property="numeroCompte", type="string"),
+     *                     @OA\Property(property="type", type="string"),
+     *                     @OA\Property(property="solde", type="number"),
+     *                     @OA\Property(property="devise", type="string"),
+     *                     @OA\Property(property="statut", type="string")
+     *                 )
+     *             ),
      *             @OA\Property(property="pagination", type="object"),
      *             @OA\Property(property="links", type="object")
      *         )
@@ -169,7 +181,17 @@ class CompteController extends Controller
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Compte récupéré avec succès"),
-     *             @OA\Property(property="data", ref="#/components/schemas/Compte")
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string"),
+     *                 @OA\Property(property="numeroCompte", type="string"),
+     *                 @OA\Property(property="titulaire", type="string"),
+     *                 @OA\Property(property="type", type="string"),
+     *                 @OA\Property(property="solde", type="number"),
+     *                 @OA\Property(property="devise", type="string"),
+     *                 @OA\Property(property="statut", type="string")
+     *             )
      *         )
      *     ),
      *     @OA\Response(response=404, description="Compte non trouvé"),
