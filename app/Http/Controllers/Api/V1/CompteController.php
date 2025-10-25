@@ -219,22 +219,25 @@ class CompteController extends Controller
      * @OA\Post(
      *     path="/api/v1/comptes",
      *     summary="Créer un nouveau compte bancaire",
+     *     description="Créer un nouveau compte pour un client existant (avec client.id) ou un nouveau client (avec titulaire, nci, email, telephone, adresse)",
      *     tags={"Comptes"},
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Pour un nouveau client, omettez 'client.id' et fournissez tous les autres champs. Pour un client existant, fournissez uniquement 'client.id'",
      *         @OA\JsonContent(
      *             required={"type", "devise", "client"},
-     *             @OA\Property(property="type", type="string", enum={"epargne", "courant", "cheque"}),
-     *             @OA\Property(property="devise", type="string", enum={"FCFA", "USD", "EUR"}),
+     *             @OA\Property(property="type", type="string", enum={"epargne", "courant", "cheque"}, example="epargne", description="Type de compte"),
+     *             @OA\Property(property="devise", type="string", enum={"FCFA", "USD", "EUR"}, example="FCFA", description="Devise du compte"),
      *             @OA\Property(
      *                 property="client",
      *                 type="object",
-     *                 @OA\Property(property="id", type="string", nullable=true),
-     *                 @OA\Property(property="titulaire", type="string"),
-     *                 @OA\Property(property="nci", type="string"),
-     *                 @OA\Property(property="email", type="string", format="email"),
-     *                 @OA\Property(property="telephone", type="string"),
-     *                 @OA\Property(property="adresse", type="string")
+     *                 description="Informations du client - Fournir soit 'id' pour client existant, soit tous les autres champs pour nouveau client",
+     *                 @OA\Property(property="id", type="string", format="uuid", example=null, nullable=true, description="UUID du client existant (optionnel - si fourni, les autres champs client sont ignorés)"),
+     *                 @OA\Property(property="titulaire", type="string", example="Amadou Sall", description="Nom complet du titulaire (requis si client.id absent)"),
+     *                 @OA\Property(property="nci", type="string", example="1234567890123", description="Numéro NCI sénégalais valide - 13 chiffres commençant par 1 ou 2 (requis si client.id absent)"),
+     *                 @OA\Property(property="email", type="string", format="email", example="amadou.sall@example.com", description="Email unique du client (requis si client.id absent)"),
+     *                 @OA\Property(property="telephone", type="string", example="+221771234567", description="Téléphone sénégalais valide au format +221 suivi de 70/75/76/77/78 (requis si client.id absent)"),
+     *                 @OA\Property(property="adresse", type="string", example="Dakar, Plateau", description="Adresse complète du client (requis si client.id absent)")
      *             )
      *         )
      *     ),

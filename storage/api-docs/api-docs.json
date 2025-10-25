@@ -272,8 +272,10 @@
                     "Comptes"
                 ],
                 "summary": "Créer un nouveau compte bancaire",
+                "description": "Créer un nouveau compte pour un client existant (avec client.id) ou un nouveau client (avec titulaire, nci, email, telephone, adresse)",
                 "operationId": "c4b9822f8407aeeaa6ed3cf36ed4ad35",
                 "requestBody": {
+                    "description": "Pour un nouveau client, omettez 'client.id' et fournissez tous les autres champs. Pour un client existant, fournissez uniquement 'client.id'",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -285,42 +287,60 @@
                                 ],
                                 "properties": {
                                     "type": {
+                                        "description": "Type de compte",
                                         "type": "string",
                                         "enum": [
                                             "epargne",
                                             "courant",
                                             "cheque"
-                                        ]
+                                        ],
+                                        "example": "epargne"
                                     },
                                     "devise": {
+                                        "description": "Devise du compte",
                                         "type": "string",
                                         "enum": [
                                             "FCFA",
                                             "USD",
                                             "EUR"
-                                        ]
+                                        ],
+                                        "example": "FCFA"
                                     },
                                     "client": {
+                                        "description": "Informations du client - Fournir soit 'id' pour client existant, soit tous les autres champs pour nouveau client",
                                         "properties": {
                                             "id": {
+                                                "description": "UUID du client existant (optionnel - si fourni, les autres champs client sont ignorés)",
                                                 "type": "string",
+                                                "format": "uuid",
+                                                "example": null,
                                                 "nullable": true
                                             },
                                             "titulaire": {
-                                                "type": "string"
+                                                "description": "Nom complet du titulaire (requis si client.id absent)",
+                                                "type": "string",
+                                                "example": "Amadou Sall"
                                             },
                                             "nci": {
-                                                "type": "string"
+                                                "description": "Numéro NCI sénégalais valide - 13 chiffres commençant par 1 ou 2 (requis si client.id absent)",
+                                                "type": "string",
+                                                "example": "1234567890123"
                                             },
                                             "email": {
+                                                "description": "Email unique du client (requis si client.id absent)",
                                                 "type": "string",
-                                                "format": "email"
+                                                "format": "email",
+                                                "example": "amadou.sall@example.com"
                                             },
                                             "telephone": {
-                                                "type": "string"
+                                                "description": "Téléphone sénégalais valide au format +221 suivi de 70/75/76/77/78 (requis si client.id absent)",
+                                                "type": "string",
+                                                "example": "+221771234567"
                                             },
                                             "adresse": {
-                                                "type": "string"
+                                                "description": "Adresse complète du client (requis si client.id absent)",
+                                                "type": "string",
+                                                "example": "Dakar, Plateau"
                                             }
                                         },
                                         "type": "object"
