@@ -24,35 +24,77 @@ class CompteController extends Controller
      * @OA\Get(
      *     path="/v1/comptes",
      *     summary="Lister tous les comptes",
-     *     description="Récupère la liste de tous les comptes avec pagination et filtres",
+     *     description="Récupère la liste de tous les comptes avec pagination et filtres optionnels",
      *     operationId="getComptes",
      *     tags={"Comptes"},
      *     @OA\Parameter(
      *         name="page",
      *         in="query",
-     *         description="Numéro de page",
+     *         description="Numéro de page pour la pagination",
      *         required=false,
-     *         @OA\Schema(type="integer", default=1)
+     *         @OA\Schema(type="integer", default=1, example=1)
      *     ),
      *     @OA\Parameter(
      *         name="limit",
      *         in="query",
-     *         description="Nombre d'éléments par page",
+     *         description="Nombre d'éléments par page (maximum 100)",
      *         required=false,
-     *         @OA\Schema(type="integer", default=10, maximum=100)
+     *         @OA\Schema(type="integer", default=10, maximum=100, example=10)
      *     ),
      *     @OA\Parameter(
      *         name="type",
      *         in="query",
-     *         description="Filtrer par type (epargne, cheque)",
+     *         description="Filtrer par type de compte",
      *         required=false,
-     *         @OA\Schema(type="string")
+     *         @OA\Schema(type="string", enum={"epargne", "cheque"}, example="epargne")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Liste des comptes récupérée avec succès"
+     *         description="Liste des comptes récupérée avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Comptes récupérés avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", example="a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"),
+     *                     @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                     @OA\Property(property="titulaire", type="string", example="Mamadou Diop"),
+     *                     @OA\Property(property="type", type="string", example="epargne"),
+     *                     @OA\Property(property="solde", type="number", example=150000),
+     *                     @OA\Property(property="devise", type="string", example="FCFA")
+     *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="pagination",
+     *                 type="object",
+     *                 @OA\Property(property="total", type="integer", example=45),
+     *                 @OA\Property(property="count", type="integer", example=10),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="total_pages", type="integer", example=5)
+     *             )
+     *         )
      *     ),
-     *     @OA\Response(response=422, description="Erreur de validation")
+     *     @OA\Response(
+     *         response=422, 
+     *         description="Erreur de validation - Paramètres invalides",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Les données fournies sont invalides"),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="limit",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="Le limit ne peut pas dépasser 100")
+     *                 )
+     *             )
+     *         )
+     *     )
      * )
      */
     public function index(ListCompteRequest $request): JsonResponse
@@ -109,21 +151,45 @@ class CompteController extends Controller
      * @OA\Get(
      *     path="/v1/comptes/numero/{numero}",
      *     summary="Obtenir un compte par numéro",
-     *     description="Récupère les détails d'un compte par son numéro",
+     *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte",
      *     operationId="getCompteByNumero",
      *     tags={"Comptes"},
      *     @OA\Parameter(
      *         name="numero",
      *         in="path",
-     *         description="Numéro du compte",
+     *         description="Numéro du compte (format: CPxxxxxxxxxx)",
      *         required=true,
-     *         @OA\Schema(type="string")
+     *         @OA\Schema(type="string", example="CP3105472638")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Compte récupéré avec succès"
+     *         description="Compte récupéré avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte récupéré avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", example="a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                 @OA\Property(property="titulaire", type="string", example="Mamadou Diop"),
+     *                 @OA\Property(property="type", type="string", example="epargne"),
+     *                 @OA\Property(property="solde", type="number", example=150000),
+     *                 @OA\Property(property="devise", type="string", example="FCFA"),
+     *                 @OA\Property(property="dateCreation", type="string", format="date-time"),
+     *                 @OA\Property(property="statut", type="string", example="actif")
+     *             )
+     *         )
      *     ),
-     *     @OA\Response(response=404, description="Compte non trouvé")
+     *     @OA\Response(
+     *         response=404, 
+     *         description="Compte non trouvé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Compte non trouvé"),
+     *             @OA\Property(property="error", type="string", example="Le compte avec le numéro CP9999999999 n'existe pas")
+     *         )
+     *     )
      * )
      */
     public function showByNumero(Compte $compte): JsonResponse
@@ -149,32 +215,117 @@ class CompteController extends Controller
      * @OA\Post(
      *     path="/v1/comptes",
      *     summary="Créer un nouveau compte bancaire",
+     *     description="Crée un nouveau compte bancaire avec validation complète (NCI, téléphone, email). Le mot de passe est généré automatiquement et envoyé par email.",
      *     tags={"Comptes"},
      *     @OA\RequestBody(
      *         required=true,
+     *         description="Données du compte à créer",
      *         @OA\JsonContent(
      *             required={"type", "devise", "client"},
-     *             @OA\Property(property="type", type="string", enum={"epargne", "courant", "cheque"}),
-     *             @OA\Property(property="devise", type="string", enum={"FCFA", "USD", "EUR"}),
+     *             @OA\Property(
+     *                 property="type", 
+     *                 type="string", 
+     *                 enum={"epargne", "cheque"}, 
+     *                 description="Type de compte (epargne ou cheque uniquement)",
+     *                 example="epargne"
+     *             ),
+     *             @OA\Property(
+     *                 property="devise", 
+     *                 type="string", 
+     *                 enum={"FCFA", "USD", "EUR"}, 
+     *                 description="Devise du compte",
+     *                 example="FCFA"
+     *             ),
      *             @OA\Property(
      *                 property="client",
      *                 type="object",
-     *                 @OA\Property(property="id", type="string", nullable=true),
-     *                 @OA\Property(property="titulaire", type="string"),
-     *                 @OA\Property(property="nci", type="string"),
-     *                 @OA\Property(property="email", type="string", format="email"),
-     *                 @OA\Property(property="telephone", type="string"),
-     *                 @OA\Property(property="adresse", type="string")
+     *                 description="Informations du client",
+     *                 required={"titulaire", "nci", "email", "telephone", "adresse"},
+     *                 @OA\Property(property="id", type="string", nullable=true, description="ID du client existant (optionnel)", example=null),
+     *                 @OA\Property(property="titulaire", type="string", description="Nom complet du titulaire", example="Mamadou Diop"),
+     *                 @OA\Property(property="nci", type="string", description="Numéro NCI sénégalais (13 chiffres commençant par 1 ou 2)", example="1234567890123"),
+     *                 @OA\Property(property="email", type="string", format="email", description="Adresse email unique", example="mamadou.diop@example.com"),
+     *                 @OA\Property(property="telephone", type="string", description="Téléphone sénégalais (+221 suivi de 70/75/76/77/78)", example="+221771234567"),
+     *                 @OA\Property(property="adresse", type="string", description="Adresse complète", example="Dakar, Plateau")
      *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="Compte créé avec succès"
+     *         description="Compte créé avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte créé avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", example="a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                 @OA\Property(property="titulaire", type="string", example="Mamadou Diop"),
+     *                 @OA\Property(property="type", type="string", example="epargne"),
+     *                 @OA\Property(property="solde", type="number", example=0),
+     *                 @OA\Property(property="devise", type="string", example="FCFA"),
+     *                 @OA\Property(property="dateCreation", type="string", format="date-time", example="2025-10-25T15:35:06+00:00"),
+     *                 @OA\Property(property="statut", type="string", example="actif")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Erreur de validation - Données invalides",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Les données fournies sont invalides"),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="client.nci",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="Ce NCI est déjà utilisé")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.email",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="Cet email est déjà utilisé")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.telephone",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="Ce numéro de téléphone est déjà utilisé")
+     *                 )
+     *             )
+     *         )
      *     ),
      *     @OA\Response(
      *         response=400,
-     *         description="Erreur de validation"
+     *         description="Erreur de format - NCI ou téléphone invalide",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Les données fournies sont invalides"),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="client.nci",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="Le NCI doit être un numéro NCI sénégalais valide (13 chiffres commençant par 1 ou 2)")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.telephone",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="Le téléphone doit être un numéro de téléphone sénégalais valide (+221 suivi de 70/75/76/77/78)")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur serveur interne",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Une erreur est survenue : [détails de l'erreur]")
+     *         )
      *     )
      * )
      */

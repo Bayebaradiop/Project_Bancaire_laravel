@@ -29,46 +29,156 @@
                     "Comptes"
                 ],
                 "summary": "Lister tous les comptes",
-                "description": "Récupère la liste de tous les comptes avec pagination et filtres",
+                "description": "Récupère la liste de tous les comptes avec pagination et filtres optionnels",
                 "operationId": "getComptes",
                 "parameters": [
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Numéro de page",
+                        "description": "Numéro de page pour la pagination",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "default": 1
+                            "default": 1,
+                            "example": 1
                         }
                     },
                     {
                         "name": "limit",
                         "in": "query",
-                        "description": "Nombre d'éléments par page",
+                        "description": "Nombre d'éléments par page (maximum 100)",
                         "required": false,
                         "schema": {
                             "type": "integer",
                             "default": 10,
-                            "maximum": 100
+                            "maximum": 100,
+                            "example": 10
                         }
                     },
                     {
                         "name": "type",
                         "in": "query",
-                        "description": "Filtrer par type (epargne, cheque)",
+                        "description": "Filtrer par type de compte",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "enum": [
+                                "epargne",
+                                "cheque"
+                            ],
+                            "example": "epargne"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Liste des comptes récupérée avec succès"
+                        "description": "Liste des comptes récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Comptes récupérés avec succès"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string",
+                                                        "example": "a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"
+                                                    },
+                                                    "numeroCompte": {
+                                                        "type": "string",
+                                                        "example": "CP3105472638"
+                                                    },
+                                                    "titulaire": {
+                                                        "type": "string",
+                                                        "example": "Mamadou Diop"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "example": "epargne"
+                                                    },
+                                                    "solde": {
+                                                        "type": "number",
+                                                        "example": 150000
+                                                    },
+                                                    "devise": {
+                                                        "type": "string",
+                                                        "example": "FCFA"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "pagination": {
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 45
+                                                },
+                                                "count": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "total_pages": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "422": {
-                        "description": "Erreur de validation"
+                        "description": "Erreur de validation - Paramètres invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Les données fournies sont invalides"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "limit": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Le limit ne peut pas dépasser 100"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -77,8 +187,10 @@
                     "Comptes"
                 ],
                 "summary": "Créer un nouveau compte bancaire",
+                "description": "Crée un nouveau compte bancaire avec validation complète (NCI, téléphone, email). Le mot de passe est généré automatiquement et envoyé par email.",
                 "operationId": "1ec0ce255279af65d9481a1deab7bed1",
                 "requestBody": {
+                    "description": "Données du compte à créer",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -90,42 +202,65 @@
                                 ],
                                 "properties": {
                                     "type": {
+                                        "description": "Type de compte (epargne ou cheque uniquement)",
                                         "type": "string",
                                         "enum": [
                                             "epargne",
-                                            "courant",
                                             "cheque"
-                                        ]
+                                        ],
+                                        "example": "epargne"
                                     },
                                     "devise": {
+                                        "description": "Devise du compte",
                                         "type": "string",
                                         "enum": [
                                             "FCFA",
                                             "USD",
                                             "EUR"
-                                        ]
+                                        ],
+                                        "example": "FCFA"
                                     },
                                     "client": {
+                                        "description": "Informations du client",
+                                        "required": [
+                                            "titulaire",
+                                            "nci",
+                                            "email",
+                                            "telephone",
+                                            "adresse"
+                                        ],
                                         "properties": {
                                             "id": {
+                                                "description": "ID du client existant (optionnel)",
                                                 "type": "string",
+                                                "example": null,
                                                 "nullable": true
                                             },
                                             "titulaire": {
-                                                "type": "string"
+                                                "description": "Nom complet du titulaire",
+                                                "type": "string",
+                                                "example": "Mamadou Diop"
                                             },
                                             "nci": {
-                                                "type": "string"
+                                                "description": "Numéro NCI sénégalais (13 chiffres commençant par 1 ou 2)",
+                                                "type": "string",
+                                                "example": "1234567890123"
                                             },
                                             "email": {
+                                                "description": "Adresse email unique",
                                                 "type": "string",
-                                                "format": "email"
+                                                "format": "email",
+                                                "example": "mamadou.diop@example.com"
                                             },
                                             "telephone": {
-                                                "type": "string"
+                                                "description": "Téléphone sénégalais (+221 suivi de 70/75/76/77/78)",
+                                                "type": "string",
+                                                "example": "+221771234567"
                                             },
                                             "adresse": {
-                                                "type": "string"
+                                                "description": "Adresse complète",
+                                                "type": "string",
+                                                "example": "Dakar, Plateau"
                                             }
                                         },
                                         "type": "object"
@@ -138,10 +273,167 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Compte créé avec succès"
+                        "description": "Compte créé avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Compte créé avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "example": "a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"
+                                                },
+                                                "numeroCompte": {
+                                                    "type": "string",
+                                                    "example": "CP3105472638"
+                                                },
+                                                "titulaire": {
+                                                    "type": "string",
+                                                    "example": "Mamadou Diop"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "epargne"
+                                                },
+                                                "solde": {
+                                                    "type": "number",
+                                                    "example": 0
+                                                },
+                                                "devise": {
+                                                    "type": "string",
+                                                    "example": "FCFA"
+                                                },
+                                                "dateCreation": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-10-25T15:35:06+00:00"
+                                                },
+                                                "statut": {
+                                                    "type": "string",
+                                                    "example": "actif"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation - Données invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Les données fournies sont invalides"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "client.nci": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Ce NCI est déjà utilisé"
+                                                    }
+                                                },
+                                                "client.email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Cet email est déjà utilisé"
+                                                    }
+                                                },
+                                                "client.telephone": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Ce numéro de téléphone est déjà utilisé"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "400": {
-                        "description": "Erreur de validation"
+                        "description": "Erreur de format - NCI ou téléphone invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Les données fournies sont invalides"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "client.nci": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Le NCI doit être un numéro NCI sénégalais valide (13 chiffres commençant par 1 ou 2)"
+                                                    }
+                                                },
+                                                "client.telephone": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Le téléphone doit être un numéro de téléphone sénégalais valide (+221 suivi de 70/75/76/77/78)"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erreur serveur interne",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Une erreur est survenue : [détails de l'erreur]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -152,25 +444,101 @@
                     "Comptes"
                 ],
                 "summary": "Obtenir un compte par numéro",
-                "description": "Récupère les détails d'un compte par son numéro",
+                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte",
                 "operationId": "getCompteByNumero",
                 "parameters": [
                     {
                         "name": "numero",
                         "in": "path",
-                        "description": "Numéro du compte",
+                        "description": "Numéro du compte (format: CPxxxxxxxxxx)",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "example": "CP3105472638"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Compte récupéré avec succès"
+                        "description": "Compte récupéré avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Compte récupéré avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "example": "a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"
+                                                },
+                                                "numeroCompte": {
+                                                    "type": "string",
+                                                    "example": "CP3105472638"
+                                                },
+                                                "titulaire": {
+                                                    "type": "string",
+                                                    "example": "Mamadou Diop"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "epargne"
+                                                },
+                                                "solde": {
+                                                    "type": "number",
+                                                    "example": 150000
+                                                },
+                                                "devise": {
+                                                    "type": "string",
+                                                    "example": "FCFA"
+                                                },
+                                                "dateCreation": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "statut": {
+                                                    "type": "string",
+                                                    "example": "actif"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
-                        "description": "Compte non trouvé"
+                        "description": "Compte non trouvé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Compte non trouvé"
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Le compte avec le numéro CP9999999999 n'existe pas"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
