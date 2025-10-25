@@ -345,22 +345,22 @@
                                             "example": "Les données fournies sont invalides"
                                         },
                                         "errors": {
-                                            "description": "Exemples de tous les cas d'erreur possibles",
+                                            "description": "Exemples de tous les cas d'erreur possibles. Chaque champ peut avoir plusieurs types d'erreurs (requis, format, unicité).",
                                             "properties": {
                                                 "type": {
-                                                    "description": "Erreurs sur le champ type",
+                                                    "description": "Erreurs possibles : champ manquant, valeur invalide",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "Le champ type est obligatoire."
+                                                        "example": "Le type de compte est requis"
                                                     }
                                                 },
                                                 "devise": {
-                                                    "description": "Erreurs sur le champ devise",
+                                                    "description": "Erreurs possibles : champ manquant, valeur invalide",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "Le champ devise est obligatoire."
+                                                        "example": "La devise est requise"
                                                     }
                                                 },
                                                 "client": {
@@ -368,19 +368,19 @@
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "Le champ client est obligatoire."
+                                                        "example": "Les informations du client sont requises"
                                                     }
                                                 },
                                                 "client.titulaire": {
-                                                    "description": "Erreurs sur le nom du titulaire",
+                                                    "description": "Erreur : champ manquant",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "Le champ client.titulaire est obligatoire."
+                                                        "example": "Le nom du titulaire est requis"
                                                     }
                                                 },
                                                 "client.nci": {
-                                                    "description": "Erreurs sur le NCI (requis, format, unicité)",
+                                                    "description": "Erreurs possibles : 1) champ manquant 'Le NCI est requis', 2) format invalide 'Le NCI doit être un numéro NCI sénégalais valide (13 chiffres commençant par 1 ou 2)', 3) déjà utilisé 'Ce NCI est déjà utilisé'",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
@@ -388,7 +388,7 @@
                                                     }
                                                 },
                                                 "client.email": {
-                                                    "description": "Erreurs sur l'email (requis, format, unicité)",
+                                                    "description": "Erreurs possibles : 1) champ manquant 'L'email est requis', 2) format invalide 'L'email doit être valide', 3) déjà utilisé 'Cet email est déjà utilisé'",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
@@ -396,7 +396,7 @@
                                                     }
                                                 },
                                                 "client.telephone": {
-                                                    "description": "Erreurs sur le téléphone (requis, format, unicité)",
+                                                    "description": "Erreurs possibles : 1) champ manquant 'Le téléphone est requis', 2) format invalide 'Le téléphone doit être un numéro de téléphone sénégalais valide (+221 suivi de 70/75/76/77/78)', 3) déjà utilisé 'Ce numéro de téléphone est déjà utilisé'",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
@@ -404,11 +404,11 @@
                                                     }
                                                 },
                                                 "client.adresse": {
-                                                    "description": "Erreur si l'adresse est manquante",
+                                                    "description": "Erreur : champ manquant",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "Le champ client.adresse est obligatoire."
+                                                        "example": "L'adresse est requise"
                                                     }
                                                 }
                                             },

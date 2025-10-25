@@ -279,54 +279,54 @@ class CompteController extends Controller
      *             @OA\Property(
      *                 property="errors",
      *                 type="object",
-     *                 description="Exemples de tous les cas d'erreur possibles",
+     *                 description="Exemples de tous les cas d'erreur possibles. Chaque champ peut avoir plusieurs types d'erreurs (requis, format, unicité).",
      *                 @OA\Property(
      *                     property="type",
      *                     type="array",
-     *                     description="Erreurs sur le champ type",
-     *                     @OA\Items(type="string", example="Le champ type est obligatoire.")
+     *                     description="Erreurs possibles : champ manquant, valeur invalide",
+     *                     @OA\Items(type="string", example="Le type de compte est requis")
      *                 ),
      *                 @OA\Property(
      *                     property="devise",
      *                     type="array",
-     *                     description="Erreurs sur le champ devise",
-     *                     @OA\Items(type="string", example="Le champ devise est obligatoire.")
+     *                     description="Erreurs possibles : champ manquant, valeur invalide",
+     *                     @OA\Items(type="string", example="La devise est requise")
      *                 ),
      *                 @OA\Property(
      *                     property="client",
      *                     type="array",
      *                     description="Erreur si l'objet client est manquant",
-     *                     @OA\Items(type="string", example="Le champ client est obligatoire.")
+     *                     @OA\Items(type="string", example="Les informations du client sont requises")
      *                 ),
      *                 @OA\Property(
      *                     property="client.titulaire",
      *                     type="array",
-     *                     description="Erreurs sur le nom du titulaire",
-     *                     @OA\Items(type="string", example="Le champ client.titulaire est obligatoire.")
+     *                     description="Erreur : champ manquant",
+     *                     @OA\Items(type="string", example="Le nom du titulaire est requis")
      *                 ),
      *                 @OA\Property(
      *                     property="client.nci",
      *                     type="array",
-     *                     description="Erreurs sur le NCI (requis, format, unicité)",
+     *                     description="Erreurs possibles : 1) champ manquant 'Le NCI est requis', 2) format invalide 'Le NCI doit être un numéro NCI sénégalais valide (13 chiffres commençant par 1 ou 2)', 3) déjà utilisé 'Ce NCI est déjà utilisé'",
      *                     @OA\Items(type="string", example="Ce NCI est déjà utilisé")
      *                 ),
      *                 @OA\Property(
      *                     property="client.email",
      *                     type="array",
-     *                     description="Erreurs sur l'email (requis, format, unicité)",
+     *                     description="Erreurs possibles : 1) champ manquant 'L'email est requis', 2) format invalide 'L'email doit être valide', 3) déjà utilisé 'Cet email est déjà utilisé'",
      *                     @OA\Items(type="string", example="Cet email est déjà utilisé")
      *                 ),
      *                 @OA\Property(
      *                     property="client.telephone",
      *                     type="array",
-     *                     description="Erreurs sur le téléphone (requis, format, unicité)",
+     *                     description="Erreurs possibles : 1) champ manquant 'Le téléphone est requis', 2) format invalide 'Le téléphone doit être un numéro de téléphone sénégalais valide (+221 suivi de 70/75/76/77/78)', 3) déjà utilisé 'Ce numéro de téléphone est déjà utilisé'",
      *                     @OA\Items(type="string", example="Ce numéro de téléphone est déjà utilisé")
      *                 ),
      *                 @OA\Property(
      *                     property="client.adresse",
      *                     type="array",
-     *                     description="Erreur si l'adresse est manquante",
-     *                     @OA\Items(type="string", example="Le champ client.adresse est obligatoire.")
+     *                     description="Erreur : champ manquant",
+     *                     @OA\Items(type="string", example="L'adresse est requise")
      *                 )
      *             )
      *         )
