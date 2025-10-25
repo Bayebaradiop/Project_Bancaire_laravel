@@ -331,7 +331,7 @@
                         }
                     },
                     "422": {
-                        "description": "Erreur de validation - Données invalides",
+                        "description": "Erreur de validation - Données invalides ou champs requis manquants",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -345,8 +345,42 @@
                                             "example": "Les données fournies sont invalides"
                                         },
                                         "errors": {
+                                            "description": "Exemples de tous les cas d'erreur possibles",
                                             "properties": {
+                                                "type": {
+                                                    "description": "Erreurs sur le champ type",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Le champ type est obligatoire."
+                                                    }
+                                                },
+                                                "devise": {
+                                                    "description": "Erreurs sur le champ devise",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Le champ devise est obligatoire."
+                                                    }
+                                                },
+                                                "client": {
+                                                    "description": "Erreur si l'objet client est manquant",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Le champ client est obligatoire."
+                                                    }
+                                                },
+                                                "client.titulaire": {
+                                                    "description": "Erreurs sur le nom du titulaire",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Le champ client.titulaire est obligatoire."
+                                                    }
+                                                },
                                                 "client.nci": {
+                                                    "description": "Erreurs sur le NCI (requis, format, unicité)",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
@@ -354,6 +388,7 @@
                                                     }
                                                 },
                                                 "client.email": {
+                                                    "description": "Erreurs sur l'email (requis, format, unicité)",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
@@ -361,10 +396,19 @@
                                                     }
                                                 },
                                                 "client.telephone": {
+                                                    "description": "Erreurs sur le téléphone (requis, format, unicité)",
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
                                                         "example": "Ce numéro de téléphone est déjà utilisé"
+                                                    }
+                                                },
+                                                "client.adresse": {
+                                                    "description": "Erreur si l'adresse est manquante",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Le champ client.adresse est obligatoire."
                                                     }
                                                 }
                                             },

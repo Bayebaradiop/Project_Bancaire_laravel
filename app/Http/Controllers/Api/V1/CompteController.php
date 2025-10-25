@@ -272,27 +272,61 @@ class CompteController extends Controller
      *     ),
      *     @OA\Response(
      *         response=422,
-     *         description="Erreur de validation - Données invalides",
+     *         description="Erreur de validation - Données invalides ou champs requis manquants",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Les données fournies sont invalides"),
      *             @OA\Property(
      *                 property="errors",
      *                 type="object",
+     *                 description="Exemples de tous les cas d'erreur possibles",
+     *                 @OA\Property(
+     *                     property="type",
+     *                     type="array",
+     *                     description="Erreurs sur le champ type",
+     *                     @OA\Items(type="string", example="Le champ type est obligatoire.")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="devise",
+     *                     type="array",
+     *                     description="Erreurs sur le champ devise",
+     *                     @OA\Items(type="string", example="Le champ devise est obligatoire.")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client",
+     *                     type="array",
+     *                     description="Erreur si l'objet client est manquant",
+     *                     @OA\Items(type="string", example="Le champ client est obligatoire.")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.titulaire",
+     *                     type="array",
+     *                     description="Erreurs sur le nom du titulaire",
+     *                     @OA\Items(type="string", example="Le champ client.titulaire est obligatoire.")
+     *                 ),
      *                 @OA\Property(
      *                     property="client.nci",
      *                     type="array",
+     *                     description="Erreurs sur le NCI (requis, format, unicité)",
      *                     @OA\Items(type="string", example="Ce NCI est déjà utilisé")
      *                 ),
      *                 @OA\Property(
      *                     property="client.email",
      *                     type="array",
+     *                     description="Erreurs sur l'email (requis, format, unicité)",
      *                     @OA\Items(type="string", example="Cet email est déjà utilisé")
      *                 ),
      *                 @OA\Property(
      *                     property="client.telephone",
      *                     type="array",
+     *                     description="Erreurs sur le téléphone (requis, format, unicité)",
      *                     @OA\Items(type="string", example="Ce numéro de téléphone est déjà utilisé")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.adresse",
+     *                     type="array",
+     *                     description="Erreur si l'adresse est manquante",
+     *                     @OA\Items(type="string", example="Le champ client.adresse est obligatoire.")
      *                 )
      *             )
      *         )
