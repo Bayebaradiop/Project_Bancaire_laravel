@@ -19,12 +19,12 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Server(
- *     url="http://localhost:8000/api",
+ *     url="http://localhost:8000",
  *     description="Serveur de développement local"
  * )
  *
  * @OA\Server(
- *     url="https://project-bancaire-laravel.onrender.com/api",
+ *     url="https://project-bancaire-laravel.onrender.com",
  *     description="Serveur de production"
  * )
  *
