@@ -218,7 +218,84 @@ class CompteController extends Controller
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="Compte créé avec succès"
+     *         description="Compte créé avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte créé avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", example="a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                 @OA\Property(property="titulaire", type="string", example="Mamadou Diop"),
+     *                 @OA\Property(property="type", type="string", example="epargne"),
+     *                 @OA\Property(property="solde", type="number", example=0),
+     *                 @OA\Property(property="devise", type="string", example="FCFA"),
+     *                 @OA\Property(property="dateCreation", type="string", format="date-time", example="2025-10-25T15:35:06+00:00"),
+     *                 @OA\Property(property="statut", type="string", example="actif")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Erreur de validation - Données invalides ou champs requis manquants",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Les données fournies sont invalides"),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 description="Exemples de tous les cas d'erreur possibles. Chaque champ peut avoir plusieurs types d'erreurs (requis, format, unicité).",
+     *                 @OA\Property(
+     *                     property="type",
+     *                     type="array",
+     *                     description="Erreurs possibles : champ manquant, valeur invalide",
+     *                     @OA\Items(type="string", example="Le type de compte est requis")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="devise",
+     *                     type="array",
+     *                     description="Erreurs possibles : champ manquant, valeur invalide",
+     *                     @OA\Items(type="string", example="La devise est requise")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client",
+     *                     type="array",
+     *                     description="Erreur si l'objet client est manquant",
+     *                     @OA\Items(type="string", example="Les informations du client sont requises")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.titulaire",
+     *                     type="array",
+     *                     description="Erreur : champ manquant",
+     *                     @OA\Items(type="string", example="Le nom du titulaire est requis")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.nci",
+     *                     type="array",
+     *                     description="Erreurs possibles : 1) champ manquant 'Le NCI est requis', 2) format invalide 'Le NCI doit être un numéro NCI sénégalais valide (13 chiffres commençant par 1 ou 2)', 3) déjà utilisé 'Ce NCI est déjà utilisé'",
+     *                     @OA\Items(type="string", example="Ce NCI est déjà utilisé")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.email",
+     *                     type="array",
+     *                     description="Erreurs possibles : 1) champ manquant 'L'email est requis', 2) format invalide 'L'email doit être valide', 3) déjà utilisé 'Cet email est déjà utilisé'",
+     *                     @OA\Items(type="string", example="Cet email est déjà utilisé")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.telephone",
+     *                     type="array",
+     *                     description="Erreurs possibles : 1) champ manquant 'Le téléphone est requis', 2) format invalide 'Le téléphone doit être un numéro de téléphone sénégalais valide (+221 suivi de 70/75/76/77/78)', 3) déjà utilisé 'Ce numéro de téléphone est déjà utilisé'",
+     *                     @OA\Items(type="string", example="Ce numéro de téléphone est déjà utilisé")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="client.adresse",
+     *                     type="array",
+     *                     description="Erreur : champ manquant",
+     *                     @OA\Items(type="string", example="L'adresse est requise")
+     *                 )
+     *             )
+     *         )
      *     ),
      *     @OA\Response(
      *         response=400,
