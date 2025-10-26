@@ -16,6 +16,7 @@ class ListCompteRequest extends PaginationRequest
         return array_merge(parent::rules(), [
             'type' => ['sometimes', 'string', Rule::in(['epargne', 'cheque'])],
             'statut' => ['sometimes', 'string', Rule::in(['actif', 'bloque', 'ferme'])],
+            'devise' => ['sometimes', 'string', 'max:10'],
             'search' => ['sometimes', 'string', 'max:255'],
         ]);
     }
@@ -30,6 +31,7 @@ class ListCompteRequest extends PaginationRequest
         return array_merge(parent::messages(), [
             'type.in' => 'Le type doit être "epargne" ou "cheque".',
             'statut.in' => 'Le statut doit être "actif", "bloque" ou "ferme".',
+            'devise.max' => 'La devise ne peut pas dépasser 10 caractères.',
             'search.max' => 'La recherche ne peut pas dépasser 255 caractères.',
         ]);
     }
@@ -52,6 +54,16 @@ class ListCompteRequest extends PaginationRequest
     public function getStatut(): ?string
     {
         return $this->input('statut');
+    }
+
+    /**
+     * Get the devise filter.
+     *
+     * @return string|null
+     */
+    public function getDevise(): ?string
+    {
+        return $this->input('devise');
     }
 
     /**

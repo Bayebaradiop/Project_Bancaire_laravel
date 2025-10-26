@@ -10,18 +10,14 @@ use App\Http\Controllers\Api\V1\CompteController;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
 /*
 |--------------------------------------------------------------------------
 | API V1 Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1')->middleware(['logging', 'track.requests'])->group(function () {
+Route::prefix('v1')->group(function () {
     
-    // Health check endpoint
+    // Health check endpoint (public)
     Route::get('/health', function () {
         return response()->json([
             'success' => true,
@@ -31,13 +27,19 @@ Route::prefix('v1')->middleware(['logging', 'track.requests'])->group(function (
         ]);
     });
 
-    // Routes Comptes (publiques pour l'instant)
+    /*
+    |--------------------------------------------------------------------------
+    | Routes Comptes (publiques pour cette branche)
+    |--------------------------------------------------------------------------
+    */
     Route::prefix('comptes')->group(function () {
         Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
         Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
-        // Utilise Route Model Binding avec 'compte:numeroCompte'
-        Route::get('/numero/{compte:numeroCompte}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
+        Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
+        
+        // Routes pour les archives (cloud)
+        Route::get('/archives', [CompteController::class, 'archives'])->name('comptes.archives');
+        Route::post('/{numeroCompte}/archive', [CompteController::class, 'archive'])->name('comptes.archive');
     });
 });
-
 

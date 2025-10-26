@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;
 use App\Models\Compte;
 use App\Observers\CompteObserver;
 
@@ -22,12 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Forcer HTTPS en production
-        if ($this->app->environment('production')) {
-            URL::forceScheme('https');
-        }
-
-        // Enregistrer l'observer pour le modèle Compte
+        // Enregistrer l'observer pour archiver automatiquement les comptes fermés/bloqués
         Compte::observe(CompteObserver::class);
     }
 }

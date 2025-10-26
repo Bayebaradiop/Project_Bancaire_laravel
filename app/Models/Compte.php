@@ -6,10 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Compte extends Model
 {
@@ -56,6 +54,8 @@ class Compte extends Model
         'statut',
         'motifBlocage',
         'version',
+        'archived_at',
+        'cloud_storage_path',
     ];
 
     /**
@@ -66,6 +66,7 @@ class Compte extends Model
     protected $casts = [
         'dateCreation' => 'datetime',
         'derniereModification' => 'datetime',
+        'archived_at' => 'datetime',
         'version' => 'integer',
     ];
 
@@ -75,13 +76,6 @@ class Compte extends Model
      * @var array<int, string>
      */
     protected $hidden = [];
-
-    /**
-     * The accessors to append to the model's array form.
-     *
-     * @var array
-     */
-    protected $appends = ['solde'];
 
     /**
      * The model's default values for attributes.
@@ -113,11 +107,6 @@ class Compte extends Model
     protected static function boot()
     {
         parent::boot();
-
-        // Scope global : Récupérer uniquement les comptes non supprimés
-        static::addGlobalScope('nonSupprime', function (Builder $builder) {
-            $builder->whereNull('deleted_at');
-        });
 
         // Générer automatiquement le numéro de compte lors de la création
         static::creating(function ($compte) {
@@ -279,6 +268,18 @@ class Compte extends Model
     }
 
     /**
+     * Scope pour filtrer par devise.
+     *
+     * @param Builder $query
+     * @param string $devise
+     * @return Builder
+     */
+    public function scopeDevise(Builder $query, string $devise): Builder
+    {
+        return $query->where('devise', $devise);
+    }
+
+    /**
      * Scope pour rechercher par titulaire ou numéro de compte.
      *
      * @param Builder $query
@@ -315,76 +316,61 @@ class Compte extends Model
     }
 
     /**
-     * Attribut calculé : Solde
-     * Solde = Total des dépôts - Total des retraits
-     */
-    protected function solde(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                // Si la relation n'est pas chargée, faire une requête directe
-                if (!$this->relationLoaded('transactions')) {
-                    $depots = $this->transactions()
-                        ->where('type', 'depot')
-                        ->where('statut', 'complete')
-                        ->sum('montant');
-                    
-                    $retraits = $this->transactions()
-                        ->where('type', 'retrait')
-                        ->where('statut', 'complete')
-                        ->sum('montant');
-                    
-                    return $depots - $retraits;
-                }
-                
-                // Si la relation est déjà chargée, utiliser la collection
-                $depots = $this->transactions
-                    ->where('type', 'depot')
-                    ->where('statut', 'complete')
-                    ->sum('montant');
-                
-                $retraits = $this->transactions
-                    ->where('type', 'retrait')
-                    ->where('statut', 'complete')
-                    ->sum('montant');
-                
-                return $depots - $retraits;
-            }
-        );
-    }
-
-    /**
-     * Relation avec les transactions
-     */
-    public function transactions(): HasMany
-    {
-        return $this->hasMany(Transaction::class, 'compte_id');
-    }
-
-    /**
-     * Get the route key for the model.
-     * Permet d'utiliser le numéro de compte dans les routes au lieu de l'ID
+     * Scope pour récupérer uniquement les comptes actifs (non archivés).
      *
-     * @return string
+     * @param Builder $query
+     * @return Builder
      */
-    public function getRouteKeyName(): string
+    public function scopeActive(Builder $query): Builder
     {
-        return 'numeroCompte';
+        return $query->whereNull('archived_at');
     }
 
     /**
-     * Retrieve the model for a bound value.
-     * Utilisé pour Route Model Binding avec eager loading
+     * Scope pour récupérer uniquement les comptes archivés.
      *
-     * @param  mixed  $value
-     * @param  string|null  $field
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @param Builder $query
+     * @return Builder
      */
-    public function resolveRouteBinding($value, $field = null)
+    public function scopeArchived(Builder $query): Builder
     {
-        return $this->with(['client.user', 'transactions'])
-            ->where($field ?? $this->getRouteKeyName(), $value)
-            ->firstOrFail();
+        return $query->whereNotNull('archived_at');
     }
 
+    /**
+     * Archiver le compte (prépare pour stockage cloud).
+     *
+     * @param string|null $cloudPath
+     * @return void
+     */
+    public function archive(?string $cloudPath = null): void
+    {
+        $this->update([
+            'archived_at' => now(),
+            'cloud_storage_path' => $cloudPath,
+            'statut' => 'ferme', // Un compte archivé est fermé
+        ]);
+    }
+
+    /**
+     * Vérifier si le compte est archivé.
+     *
+     * @return bool
+     */
+    public function isArchived(): bool
+    {
+        return !is_null($this->archived_at);
+    }
+
+    /**
+     * Vérifier si le compte est actif (non archivé, non supprimé).
+     *
+     * @return bool
+     */
+    public function isActive(): bool
+    {
+        return is_null($this->archived_at) 
+            && is_null($this->deleted_at) 
+            && $this->statut === 'actif';
+    }
 }
