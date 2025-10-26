@@ -27,7 +27,7 @@ class CookieManager
      * @param string $token Token d'accès
      * @return Cookie
      */
-    private function createAccessTokenCookie(string $token): Cookie
+    public function createAccessTokenCookie(string $token): Cookie
     {
         return cookie(
             'access_token',
@@ -48,7 +48,7 @@ class CookieManager
      * @param string $token Token de rafraîchissement
      * @return Cookie
      */
-    private function createRefreshTokenCookie(string $token): Cookie
+    public function createRefreshTokenCookie(string $token): Cookie
     {
         return cookie(
             'refresh_token',
@@ -74,5 +74,25 @@ class CookieManager
             'access_token' => cookie()->forget('access_token'),
             'refresh_token' => cookie()->forget('refresh_token'),
         ];
+    }
+
+    /**
+     * Supprime le cookie access_token
+     *
+     * @return Cookie
+     */
+    public function clearAccessTokenCookie(): Cookie
+    {
+        return cookie()->forget('access_token');
+    }
+
+    /**
+     * Supprime le cookie refresh_token
+     *
+     * @return Cookie
+     */
+    public function clearRefreshTokenCookie(): Cookie
+    {
+        return cookie()->forget('refresh_token');
     }
 }

@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\CompteController;
+use App\Http\Controllers\Api\V1\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,11 +30,25 @@ Route::prefix('v1')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Routes Comptes (publiques pour cette branche)
+    | Routes d'Authentification (publiques)
     |--------------------------------------------------------------------------
     */
-    Route::prefix('comptes')->group(function () {
+    Route::prefix('auth')->group(function () {
+        Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
+        Route::post('/refresh', [AuthController::class, 'refresh'])->name('auth.refresh');
+        Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('auth.logout');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Routes Comptes Protégées (auth:api)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('comptes')->middleware('auth:api')->group(function () {
+        // 1. Admin peut récupérer la liste de tous les comptes
+        // 2. Client peut récupérer la liste de ses propres comptes
         Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
+        
         Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
         Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
         

@@ -119,8 +119,11 @@ class CompteController extends Controller
      */
     public function index(ListCompteRequest $request): JsonResponse
     {
-        // Déléguer toute la logique au service
-        $response = $this->compteService->getComptesList($request);
+        // Récupérer l'utilisateur authentifié
+        $user = $request->user();
+        
+        // Déléguer toute la logique au service avec autorisation
+        $response = $this->compteService->getComptesList($request, $user);
         
         // Retourner la réponse
         return response()->json($response);

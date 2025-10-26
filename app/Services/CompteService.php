@@ -3,21 +3,24 @@
 namespace App\Services;
 
 use App\Models\Compte;
+use App\Models\User;
 use App\Http\Requests\ListCompteRequest;
 use App\Http\Resources\CompteResource;
 
 class CompteService
 {
     /**
-     * Récupérer la liste des comptes
+     * Récupérer la liste des comptes avec autorisation
+     * - Admin : voit tous les comptes
+     * - Client : voit uniquement ses propres comptes
      */
-    public function getComptesList(ListCompteRequest $request): array
+    public function getComptesList(ListCompteRequest $request, ?User $user = null): array
     {
         // 1. Extraire les filtres
         $filters = $this->extractFilters($request);
         
-        // 2. Récupérer les comptes
-        $paginator = $this->fetchComptes($filters);
+        // 2. Récupérer les comptes avec autorisation
+        $paginator = $this->fetchComptes($filters, $user);
         
         // 3. Transformer avec Resource
         $data = CompteResource::collection($paginator->items())->resolve();
@@ -39,11 +42,24 @@ class CompteService
         ];
     }
 
-    private function fetchComptes(array $filters)
+    private function fetchComptes(array $filters, ?User $user = null)
     {
         $query = Compte::with(['client.user'])
             ->whereNull('archived_at')
             ->where('statut', 'actif');
+
+        // Autorisation : Client voit uniquement ses comptes
+        if ($user && $user->role === 'client') {
+            // Récupérer le client_id de l'utilisateur
+            $client = $user->client;
+            if ($client) {
+                $query->where('client_id', $client->id);
+            } else {
+                // Si l'utilisateur n'a pas de client associé, retourner vide
+                $query->whereRaw('1 = 0'); // Aucun résultat
+            }
+        }
+        // Admin voit tous les comptes (pas de filtre supplémentaire)
 
         $query = $this->applyFilters($query, $filters);
 
