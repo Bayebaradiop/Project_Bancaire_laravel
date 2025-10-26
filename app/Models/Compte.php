@@ -54,6 +54,8 @@ class Compte extends Model
         'statut',
         'motifBlocage',
         'version',
+        'archived_at',
+        'cloud_storage_path',
     ];
 
     /**
@@ -64,6 +66,7 @@ class Compte extends Model
     protected $casts = [
         'dateCreation' => 'datetime',
         'derniereModification' => 'datetime',
+        'archived_at' => 'datetime',
         'version' => 'integer',
     ];
 
@@ -265,6 +268,18 @@ class Compte extends Model
     }
 
     /**
+     * Scope pour filtrer par devise.
+     *
+     * @param Builder $query
+     * @param string $devise
+     * @return Builder
+     */
+    public function scopeDevise(Builder $query, string $devise): Builder
+    {
+        return $query->where('devise', $devise);
+    }
+
+    /**
      * Scope pour rechercher par titulaire ou numéro de compte.
      *
      * @param Builder $query
@@ -298,5 +313,64 @@ class Compte extends Model
         $order = in_array($order, $allowedOrders) ? $order : 'desc';
 
         return $query->orderBy($sort, $order);
+    }
+
+    /**
+     * Scope pour récupérer uniquement les comptes actifs (non archivés).
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    /**
+     * Scope pour récupérer uniquement les comptes archivés.
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeArchived(Builder $query): Builder
+    {
+        return $query->whereNotNull('archived_at');
+    }
+
+    /**
+     * Archiver le compte (prépare pour stockage cloud).
+     *
+     * @param string|null $cloudPath
+     * @return void
+     */
+    public function archive(?string $cloudPath = null): void
+    {
+        $this->update([
+            'archived_at' => now(),
+            'cloud_storage_path' => $cloudPath,
+            'statut' => 'ferme', // Un compte archivé est fermé
+        ]);
+    }
+
+    /**
+     * Vérifier si le compte est archivé.
+     *
+     * @return bool
+     */
+    public function isArchived(): bool
+    {
+        return !is_null($this->archived_at);
+    }
+
+    /**
+     * Vérifier si le compte est actif (non archivé, non supprimé).
+     *
+     * @return bool
+     */
+    public function isActive(): bool
+    {
+        return is_null($this->archived_at) 
+            && is_null($this->deleted_at) 
+            && $this->statut === 'actif';
     }
 }

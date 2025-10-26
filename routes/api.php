@@ -8,16 +8,7 @@ use App\Http\Controllers\Api\V1\CompteController;
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
 */
-
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +17,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 */
 Route::prefix('v1')->group(function () {
     
-    // Routes publiques (sans authentification)
+    // Health check endpoint (public)
     Route::get('/health', function () {
         return response()->json([
             'success' => true,
@@ -36,16 +27,19 @@ Route::prefix('v1')->group(function () {
         ]);
     });
 
-    // Routes protégées par authentification
-    // TODO: Réactiver l'authentification plus tard
-    // Route::middleware(['auth:sanctum'])->group(function () {
+    /*
+    |--------------------------------------------------------------------------
+    | Routes Comptes (publiques pour cette branche)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('comptes')->group(function () {
+        Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
+        Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
+        Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
         
-        // Routes Comptes
-        Route::prefix('comptes')->group(function () {
-            Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
-            Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
-        });
-        
-    // });
+        // Routes pour les archives (cloud)
+        Route::get('/archives', [CompteController::class, 'archives'])->name('comptes.archives');
+        Route::post('/{numeroCompte}/archive', [CompteController::class, 'archive'])->name('comptes.archive');
+    });
 });
 
