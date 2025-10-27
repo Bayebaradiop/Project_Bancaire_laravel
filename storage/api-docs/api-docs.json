@@ -47,7 +47,7 @@
                                         "description": "Email de l'utilisateur",
                                         "type": "string",
                                         "format": "email",
-                                        "example": "client@banque.sn"
+                                        "example": "admin@banque.sn"
                                     },
                                     "password": {
                                         "description": "Mot de passe de l'utilisateur",

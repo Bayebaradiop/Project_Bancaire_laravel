@@ -52,7 +52,7 @@ class AuthController extends Controller
          *         description="Identifiants de connexion",
      *         @OA\JsonContent(
      *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="client@banque.sn", description="Email de l'utilisateur"),
+     *             @OA\Property(property="email", type="string", format="email", example="admin@banque.sn", description="Email de l'utilisateur"),
      *             @OA\Property(property="password", type="string", format="password", example="password", description="Mot de passe de l'utilisateur")
      *         )
      *     ),
