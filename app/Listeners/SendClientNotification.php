@@ -4,11 +4,15 @@ namespace App\Listeners;
 
 use App\Events\CompteCreated;
 use App\Mail\CompteCreatedMail;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class SendClientNotification
+class SendClientNotification implements ShouldQueue
 {
+    use InteractsWithQueue;
+
     public function handle(CompteCreated $event)
     {
         $compte = $event->compte;
