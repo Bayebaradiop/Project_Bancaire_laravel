@@ -47,7 +47,8 @@ Route::prefix('v1')->group(function () {
     Route::prefix('comptes')->middleware('auth:api')->group(function () {
         // 1. Admin peut récupérer la liste de tous les comptes
         // 2. Client peut récupérer la liste de ses propres comptes
-        Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
+    Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
+    Route::get('/{id}', [CompteController::class, 'show'])->name('comptes.show');
         
         Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
         Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');

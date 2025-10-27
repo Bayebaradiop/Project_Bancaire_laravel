@@ -1,74 +1,21 @@
-<?php
-
-namespace App\Http\Controllers\Api\V1;
-
-use App\Http\Controllers\Controller;
-use App\Http\Resources\CompteResource;
-use App\Http\Requests\ListCompteRequest;
-use App\Http\Requests\StoreCompteRequest;
-use App\Services\CompteService;
-use App\Services\CompteArchiveService;
-use App\Traits\ApiResponseFormat;
-use App\Traits\Cacheable;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-
-class CompteController extends Controller
-{
-    use ApiResponseFormat, Cacheable;
-
-    protected CompteService $compteService;
-    protected CompteArchiveService $archiveService;
-
-    public function __construct(CompteService $compteService, CompteArchiveService $archiveService)
-    {
-        $this->compteService = $compteService;
-        $this->archiveService = $archiveService;
-    }
-
     /**
      * @OA\Get(
-     *     path="/v1/comptes",
-     *     summary="Lister les comptes",
-     *     description="Récupère la liste des comptes avec pagination et filtres optionnels. Les administrateurs voient tous les comptes, les clients ne voient que leurs propres comptes.",
-     *     operationId="getComptes",
+     *     path="/v1/comptes/{id}",
+     *     summary="Obtenir un compte par ID",
+     *     description="Récupère les détails d'un compte bancaire par son ID. Cherche d'abord dans la base locale (Render), puis dans les archives (Neon) si non trouvé. Admin peut voir tous les comptes, Client uniquement ses propres comptes.",
+     *     operationId="getCompteById",
      *     tags={"Comptes"},
-     *     security={{"bearerAuth": {}}},
+     *     security={{"cookieAuth": {}}},
      *     @OA\Parameter(
-     *         name="page",
-     *         in="query",
-     *         description="Numéro de page pour la pagination",
-     *         required=false,
-     *         @OA\Schema(type="integer", default=1, example=1)
-     *     ),
-     *     @OA\Parameter(
-     *         name="limit",
-     *         in="query",
-     *         description="Nombre d'éléments par page (maximum 100)",
-     *         required=false,
-     *         @OA\Schema(type="integer", default=10, maximum=100, example=10)
-     *     ),
-     *     @OA\Parameter(
-     *         name="type",
-     *         in="query",
-     *         description="Filtrer par type de compte",
-     *         required=false,
-     *         @OA\Schema(type="string", enum={"epargne", "cheque"}, example="epargne")
+     *         name="id",
+     *         in="path",
+     *         description="ID UUID du compte",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Liste des comptes récupérée avec succès",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Comptes récupérés avec succès"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     @OA\Property(property="id", type="string", example="a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"),
-     *                     @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
-     *                     @OA\Property(property="titulaire", type="string", example="Mamadou Diop"),
+     *         description="Compte récupéré avec succès",
      *                     @OA\Property(property="type", type="string", example="epargne"),
      *                     @OA\Property(property="solde", type="number", example=150000),
      *                     @OA\Property(property="devise", type="string", example="FCFA")

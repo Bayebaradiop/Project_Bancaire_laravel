@@ -1,3 +1,102 @@
+    /**
+     * Récupère un compte par son ID
+     * Stratégie : Recherche d'abord en local (Render), puis dans les archives (Neon)
+     *
+     * @param string $id
+     * @param User|null $user
+     * @return array
+     */
+    public function getCompteById(string $id, ?\App\Models\User $user = null): array
+    {
+        // 1. Recherche dans la base locale (Render)
+        $compte = Compte::with(['client.user'])->find($id);
+
+        if ($compte) {
+            // Vérification des autorisations
+            if ($user && $user->role === 'client') {
+                $client = $user->client;
+                if (!$client || $compte->client_id !== $client->id) {
+                    return [
+                        'error' => [
+                            'code' => 'ACCESS_DENIED',
+                            'message' => "Vous n'avez pas accès à ce compte",
+                            'details' => ['compteId' => $id]
+                        ],
+                        'status' => 403
+                    ];
+                }
+            }
+            // Compte trouvé en local
+            return [
+                'data' => new CompteResource($compte),
+                'archived' => false,
+                'source' => 'render'
+            ];
+        }
+
+        // 2. Recherche dans les archives (Neon)
+        $archivedCompte = $this->archiveService->getArchivedCompteById($id);
+
+        if ($archivedCompte) {
+            // Vérification des autorisations pour compte archivé
+            if ($user && $user->role === 'client') {
+                $client = $user->client;
+                if (!$client || $archivedCompte->client_id !== $client->id) {
+                    return [
+                        'error' => [
+                            'code' => 'ACCESS_DENIED',
+                            'message' => "Vous n'avez pas accès à ce compte archivé",
+                            'details' => ['compteId' => $id]
+                        ],
+                        'status' => 403
+                    ];
+                }
+            }
+            // Formater le compte archivé
+            return [
+                'data' => $this->formatArchivedCompte($archivedCompte),
+                'archived' => true,
+                'source' => 'neon'
+            ];
+        }
+
+        // 3. Compte non trouvé nulle part
+        return [
+            'error' => [
+                'code' => 'COMPTE_NOT_FOUND',
+                'message' => "Le compte avec l'ID spécifié n'existe pas",
+                'details' => ['compteId' => $id]
+            ],
+            'status' => 404
+        ];
+    }
+
+    /**
+     * Formate un compte archivé pour la réponse
+     */
+    private function formatArchivedCompte($archivedCompte): array
+    {
+        return [
+            'id' => $archivedCompte->id,
+            'numeroCompte' => $archivedCompte->numerocompte,
+            'titulaire' => $archivedCompte->client_nom ?? 'N/A',
+            'type' => $archivedCompte->type,
+            'solde' => (float) $archivedCompte->solde,
+            'devise' => $archivedCompte->devise,
+            'dateCreation' => $archivedCompte->created_at,
+            'statut' => $archivedCompte->statut,
+            'motifBlocage' => $archivedCompte->motifblocage,
+            'archived' => true,
+            'archived_at' => $archivedCompte->archived_at,
+            'archive_reason' => $archivedCompte->archive_reason,
+            'metadata' => [
+                'source' => 'neon',
+                'derniereModification' => $archivedCompte->updated_at,
+                'client_email' => $archivedCompte->client_email,
+                'client_telephone' => $archivedCompte->client_telephone,
+            ]
+        ];
+    }
 <?php
 
 namespace App\Services;
