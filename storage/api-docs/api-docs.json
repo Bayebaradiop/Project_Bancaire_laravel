@@ -908,23 +908,43 @@
                 "tags": [
                     "Comptes"
                 ],
-                "summary": "Lister les comptes archivés",
-                "description": "Récupère la liste des comptes épargne archivés depuis le cloud (Neon). Les administrateurs voient tous les comptes archivés, les clients ne voient que leurs propres comptes archivés.",
+                "summary": "Lister les comptes archivés dans Neon",
+                "description": "Récupère la liste complète des comptes archivés depuis la base de données Neon. Affiche tous les types de comptes (épargne, chèque, etc.) qui ont été supprimés et archivés. Les comptes sont triés par date de fermeture (du plus récent au plus ancien). Seuls les administrateurs peuvent accéder aux archives.",
                 "operationId": "getArchivedComptes",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de page pour la pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "example": 10
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Liste des comptes archivés récupérée avec succès",
+                        "description": "Liste des comptes archivés récupérée avec succès depuis Neon",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Comptes archivés récupérés avec succès"
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "data": {
                                             "type": "array",
@@ -932,29 +952,73 @@
                                                 "properties": {
                                                     "id": {
                                                         "type": "string",
-                                                        "format": "uuid"
+                                                        "format": "uuid",
+                                                        "example": "a035d839-2e9e-4aed-886e-2398a1ffd2f0"
                                                     },
                                                     "numeroCompte": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "example": "CP3162783468"
+                                                    },
+                                                    "client_id": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "example": "a035d836-d64e-439e-b997-16dffd01552b"
                                                     },
                                                     "type": {
                                                         "type": "string",
                                                         "example": "epargne"
                                                     },
                                                     "solde": {
-                                                        "type": "number",
-                                                        "format": "float"
-                                                    },
-                                                    "archived_at": {
                                                         "type": "string",
-                                                        "format": "date-time"
+                                                        "example": "0.00"
                                                     },
-                                                    "archive_reason": {
-                                                        "type": "string"
+                                                    "devise": {
+                                                        "type": "string",
+                                                        "example": "FCFA"
+                                                    },
+                                                    "statut": {
+                                                        "type": "string",
+                                                        "example": "ferme"
+                                                    },
+                                                    "dateFermeture": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-10-27 09:15:18"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-10-27 09:15:18"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-10-27 09:15:18"
                                                     }
                                                 },
                                                 "type": "object"
                                             }
+                                        },
+                                        "pagination": {
+                                            "properties": {
+                                                "currentPage": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "totalPages": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "totalItems": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "itemsPerPage": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -968,13 +1032,53 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
                                         },
                                         "message": {
                                             "type": "string",
                                             "example": "Non authentifié"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Action non autorisée - Seuls les administrateurs peuvent consulter les archives",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Action non autorisée"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erreur serveur",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Une erreur est survenue lors de la récupération des archives"
                                         }
                                     },
                                     "type": "object"
@@ -1108,8 +1212,8 @@
                 "tags": [
                     "Comptes"
                 ],
-                "summary": "Supprimer un compte (soft delete) et l'archiver",
-                "description": "Supprime un compte bancaire (soft delete) et l'archive automatiquement dans la base Neon. Seuls les administrateurs peuvent supprimer des comptes.",
+                "summary": "Supprimer un compte et l'archiver dans Neon",
+                "description": "Supprime définitivement un compte bancaire de la base principale (PostgreSQL) et l'archive automatiquement dans la base Neon. Cette opération est irréversible depuis PostgreSQL mais le compte peut être restauré depuis l'archive Neon. Seuls les administrateurs peuvent supprimer des comptes.",
                 "operationId": "deleteCompte",
                 "parameters": [
                     {
@@ -1142,11 +1246,12 @@
                                             "properties": {
                                                 "id": {
                                                     "type": "string",
-                                                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                                                    "format": "uuid",
+                                                    "example": "a035d140-7bf1-45cd-b5dd-5401faeda695"
                                                 },
                                                 "numeroCompte": {
                                                     "type": "string",
-                                                    "example": "CP3105472638"
+                                                    "example": "CP5091523552"
                                                 },
                                                 "statut": {
                                                     "type": "string",
@@ -1155,10 +1260,50 @@
                                                 "dateFermeture": {
                                                     "type": "string",
                                                     "format": "date-time",
-                                                    "example": "2025-10-27T11:15:00Z"
+                                                    "example": "2025-10-27T09:21:58+00:00"
                                                 }
                                             },
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Non authentifié"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Action non autorisée - Seuls les administrateurs peuvent supprimer des comptes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Action non autorisée"
                                         }
                                     },
                                     "type": "object"
@@ -1205,11 +1350,31 @@
                                 }
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Erreur serveur",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Une erreur est survenue lors de la suppression du compte"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "cookieAuth": []
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -1219,25 +1384,25 @@
                 "tags": [
                     "Comptes"
                 ],
-                "summary": "Restaurer un compte supprimé",
-                "description": "Restaure un compte bancaire précédemment supprimé. Le compte redevient actif et est supprimé de l'archive Neon.",
+                "summary": "Restaurer un compte archivé depuis Neon",
+                "description": "Restaure un compte bancaire précédemment supprimé et archivé dans Neon. Le compte est recréé dans PostgreSQL avec le statut 'actif' et supprimé de l'archive Neon. Seuls les administrateurs peuvent restaurer des comptes.",
                 "operationId": "restoreCompte",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID du compte à restaurer",
+                        "description": "ID UUID du compte archivé à restaurer",
                         "required": true,
                         "schema": {
                             "type": "string",
                             "format": "uuid",
-                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                            "example": "a035d140-7bf1-45cd-b5dd-5401faeda695"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Compte restauré avec succès",
+                        "description": "Compte restauré avec succès depuis l'archive Neon",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1254,15 +1419,32 @@
                                             "properties": {
                                                 "id": {
                                                     "type": "string",
-                                                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                                                    "format": "uuid",
+                                                    "example": "a0367188-21dd-4f37-9d55-c5cf90850058"
                                                 },
                                                 "numeroCompte": {
                                                     "type": "string",
-                                                    "example": "CP3105472638"
+                                                    "example": "CP5091523552"
                                                 },
                                                 "statut": {
                                                     "type": "string",
                                                     "example": "actif"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "cheque"
+                                                },
+                                                "titulaire": {
+                                                    "type": "string",
+                                                    "example": "Baye Bara Diop"
+                                                },
+                                                "solde": {
+                                                    "type": "number",
+                                                    "example": 0
+                                                },
+                                                "devise": {
+                                                    "type": "string",
+                                                    "example": "FCFA"
                                                 }
                                             },
                                             "type": "object"
@@ -1273,8 +1455,8 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "Compte non trouvé ou pas supprimé",
+                    "401": {
+                        "description": "Non authentifié",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1285,7 +1467,71 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Le compte avec l'ID 550e8400-e29b-41d4-a716-446655440000 n'existe pas ou n'est pas supprimé"
+                                            "example": "Non authentifié"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Action non autorisée - Seuls les administrateurs peuvent restaurer des comptes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Action non autorisée"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Compte non trouvé dans les archives",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le compte avec l'ID a035d140-7bf1-45cd-b5dd-5401faeda695 n'existe pas dans les archives"
+                                        },
+                                        "code": {
+                                            "type": "integer",
+                                            "example": 404
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erreur serveur",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Une erreur est survenue lors de la restauration du compte"
                                         }
                                     },
                                     "type": "object"
@@ -1296,7 +1542,7 @@
                 },
                 "security": [
                     {
-                        "cookieAuth": []
+                        "bearerAuth": []
                     }
                 ]
             }

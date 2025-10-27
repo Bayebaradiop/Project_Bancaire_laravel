@@ -374,30 +374,55 @@ class CompteController extends Controller
     /**
      * @OA\Get(
      *     path="/v1/comptes/archives",
-     *     summary="Lister les comptes archivés",
-     *     description="Récupère la liste des comptes épargne archivés depuis le cloud (Neon). Les administrateurs voient tous les comptes archivés, les clients ne voient que leurs propres comptes archivés.",
+     *     summary="Lister les comptes archivés dans Neon",
+     *     description="Récupère la liste complète des comptes archivés depuis la base de données Neon. Affiche tous les types de comptes (épargne, chèque, etc.) qui ont été supprimés et archivés. Les comptes sont triés par date de fermeture (du plus récent au plus ancien). Seuls les administrateurs peuvent accéder aux archives.",
      *     operationId="getArchivedComptes",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Numéro de page pour la pagination",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1, example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Nombre d'éléments par page",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=10, example=10)
+     *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Liste des comptes archivés récupérée avec succès",
+     *         description="Liste des comptes archivés récupérée avec succès depuis Neon",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Comptes archivés récupérés avec succès"),
+     *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
      *                 @OA\Items(
      *                     type="object",
-     *                     @OA\Property(property="id", type="string", format="uuid"),
-     *                     @OA\Property(property="numeroCompte", type="string"),
+     *                     @OA\Property(property="id", type="string", format="uuid", example="a035d839-2e9e-4aed-886e-2398a1ffd2f0"),
+     *                     @OA\Property(property="numeroCompte", type="string", example="CP3162783468"),
+     *                     @OA\Property(property="client_id", type="string", format="uuid", example="a035d836-d64e-439e-b997-16dffd01552b"),
      *                     @OA\Property(property="type", type="string", example="epargne"),
-     *                     @OA\Property(property="solde", type="number", format="float"),
-     *                     @OA\Property(property="archived_at", type="string", format="date-time"),
-     *                     @OA\Property(property="archive_reason", type="string")
+     *                     @OA\Property(property="solde", type="string", example="0.00"),
+     *                     @OA\Property(property="devise", type="string", example="FCFA"),
+     *                     @OA\Property(property="statut", type="string", example="ferme"),
+     *                     @OA\Property(property="dateFermeture", type="string", format="date-time", example="2025-10-27 09:15:18"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2025-10-27 09:15:18"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-10-27 09:15:18")
      *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="pagination",
+     *                 type="object",
+     *                 @OA\Property(property="currentPage", type="integer", example=1),
+     *                 @OA\Property(property="totalPages", type="integer", example=1),
+     *                 @OA\Property(property="totalItems", type="integer", example=3),
+     *                 @OA\Property(property="itemsPerPage", type="integer", example=10)
      *             )
      *         )
      *     ),
@@ -406,8 +431,26 @@ class CompteController extends Controller
      *         description="Non authentifié",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Action non autorisée - Seuls les administrateurs peuvent consulter les archives",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Action non autorisée")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur serveur",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Une erreur est survenue lors de la récupération des archives")
      *         )
      *     )
      * )
@@ -509,11 +552,11 @@ class CompteController extends Controller
     /**
      * @OA\Delete(
      *     path="/v1/comptes/{numeroCompte}",
-     *     summary="Supprimer un compte (soft delete) et l'archiver",
-     *     description="Supprime un compte bancaire (soft delete) et l'archive automatiquement dans la base Neon. Seuls les administrateurs peuvent supprimer des comptes.",
+     *     summary="Supprimer un compte et l'archiver dans Neon",
+     *     description="Supprime définitivement un compte bancaire de la base principale (PostgreSQL) et l'archive automatiquement dans la base Neon. Cette opération est irréversible depuis PostgreSQL mais le compte peut être restauré depuis l'archive Neon. Seuls les administrateurs peuvent supprimer des comptes.",
      *     operationId="deleteCompte",
      *     tags={"Comptes"},
-     *     security={{"cookieAuth": {}}},
+     *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="numeroCompte",
      *         in="path",
@@ -530,11 +573,27 @@ class CompteController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="id", type="string", example="550e8400-e29b-41d4-a716-446655440000"),
-     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                 @OA\Property(property="id", type="string", format="uuid", example="a035d140-7bf1-45cd-b5dd-5401faeda695"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP5091523552"),
      *                 @OA\Property(property="statut", type="string", example="ferme"),
-     *                 @OA\Property(property="dateFermeture", type="string", format="date-time", example="2025-10-27T11:15:00Z")
+     *                 @OA\Property(property="dateFermeture", type="string", format="date-time", example="2025-10-27T09:21:58+00:00")
      *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Action non autorisée - Seuls les administrateurs peuvent supprimer des comptes",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Action non autorisée")
      *         )
      *     ),
      *     @OA\Response(
@@ -552,6 +611,14 @@ class CompteController extends Controller
      *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Le compte CP3105472638 est déjà supprimé")
      *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur serveur",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Une erreur est survenue lors de la suppression du compte")
+     *         )
      *     )
      * )
      */
@@ -563,39 +630,68 @@ class CompteController extends Controller
     /**
      * @OA\Post(
      *     path="/v1/comptes/restore/{id}",
-     *     summary="Restaurer un compte supprimé",
-     *     description="Restaure un compte bancaire précédemment supprimé. Le compte redevient actif et est supprimé de l'archive Neon.",
+     *     summary="Restaurer un compte archivé depuis Neon",
+     *     description="Restaure un compte bancaire précédemment supprimé et archivé dans Neon. Le compte est recréé dans PostgreSQL avec le statut 'actif' et supprimé de l'archive Neon. Seuls les administrateurs peuvent restaurer des comptes.",
      *     operationId="restoreCompte",
      *     tags={"Comptes"},
-     *     security={{"cookieAuth": {}}},
+     *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="ID du compte à restaurer",
+     *         description="ID UUID du compte archivé à restaurer",
      *         required=true,
-     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *         @OA\Schema(type="string", format="uuid", example="a035d140-7bf1-45cd-b5dd-5401faeda695")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Compte restauré avec succès",
+     *         description="Compte restauré avec succès depuis l'archive Neon",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Compte restauré avec succès"),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="id", type="string", example="550e8400-e29b-41d4-a716-446655440000"),
-     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
-     *                 @OA\Property(property="statut", type="string", example="actif")
+     *                 @OA\Property(property="id", type="string", format="uuid", example="a0367188-21dd-4f37-9d55-c5cf90850058"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP5091523552"),
+     *                 @OA\Property(property="statut", type="string", example="actif"),
+     *                 @OA\Property(property="type", type="string", example="cheque"),
+     *                 @OA\Property(property="titulaire", type="string", example="Baye Bara Diop"),
+     *                 @OA\Property(property="solde", type="number", example=0),
+     *                 @OA\Property(property="devise", type="string", example="FCFA")
      *             )
      *         )
      *     ),
      *     @OA\Response(
-     *         response=404,
-     *         description="Compte non trouvé ou pas supprimé",
+     *         response=401,
+     *         description="Non authentifié",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Le compte avec l'ID 550e8400-e29b-41d4-a716-446655440000 n'existe pas ou n'est pas supprimé")
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Action non autorisée - Seuls les administrateurs peuvent restaurer des comptes",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Action non autorisée")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé dans les archives",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte avec l'ID a035d140-7bf1-45cd-b5dd-5401faeda695 n'existe pas dans les archives"),
+     *             @OA\Property(property="code", type="integer", example=404)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur serveur",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Une erreur est survenue lors de la restauration du compte")
      *         )
      *     )
      * )
