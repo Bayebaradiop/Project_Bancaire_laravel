@@ -94,12 +94,12 @@ class AuthController extends Controller
                 $request->input('password')
             );
 
-            return response()->json([
-                'success' => $result['success'],
-                'message' => $result['message'],
-                'data' => $result['data'],
-            ])->withCookie($result['cookies']['access_token'])
-              ->withCookie($result['cookies']['refresh_token']);
+                        return response()->json([
+                                'success' => $result['success'],
+                                'message' => $result['message'],
+                                'data' => $result['data'],
+                        ])->withCookie($result['access_cookie'])
+                            ->withCookie($result['refresh_cookie']);
 
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), $e->getCode() ?: 500);
