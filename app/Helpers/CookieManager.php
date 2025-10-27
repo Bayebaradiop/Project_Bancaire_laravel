@@ -35,7 +35,7 @@ class CookieManager
             60,                          // 60 minutes
             '/',                         // Path
             null,                        // Domain - null permet localhost
-            false,                       // Secure (false pour localhost, true en production)
+            app()->environment('production'), // Secure (true en production)
             true,                        // HttpOnly - protection XSS
             false,                       // Raw
             'lax'                        // SameSite - permet les requêtes same-site
@@ -56,7 +56,7 @@ class CookieManager
             43200,                       // 30 jours (en minutes)
             '/',
             null,
-            false,                       // Secure (false pour localhost, true en production)
+            app()->environment('production'), // Secure (true en production)
             true,                        // HttpOnly - protection XSS
             false,
             'lax'

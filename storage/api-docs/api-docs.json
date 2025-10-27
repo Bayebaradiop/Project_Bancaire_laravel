@@ -1149,8 +1149,8 @@
         "securitySchemes": {
             "cookieAuth": {
                 "type": "apiKey",
-                "description": "Authentification JWT stockée dans un cookie HttpOnly sécurisé. Le token est automatiquement envoyé avec chaque requête.",
-                "name": "token",
+                "description": "Authentification via cookie HttpOnly contenant le JWT token",
+                "name": "access_token",
                 "in": "cookie"
             }
         }
