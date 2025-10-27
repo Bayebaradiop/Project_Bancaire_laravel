@@ -1103,7 +1103,7 @@
                 ]
             }
         },
-        "/health": {
+        "/v1/health": {
             "get": {
                 "tags": [
                     "Health"

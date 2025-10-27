@@ -9,7 +9,7 @@ class HealthController extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/health",
+     *     path="/v1/health",
      *     operationId="healthCheck",
      *     tags={"Health"},
      *     summary="Vérifier l'état de l'API",

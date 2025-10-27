@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\CompteController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\HealthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,14 +20,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 Route::prefix('v1')->group(function () {
     
     // Health check endpoint (public)
-    Route::get('/health', function () {
-        return response()->json([
-            'success' => true,
-            'message' => 'API is running',
-            'version' => 'v1',
-            'timestamp' => now()->toIso8601String(),
-        ]);
-    });
+    Route::get('/health', [HealthController::class, 'check']);
 
     /*
     |--------------------------------------------------------------------------
