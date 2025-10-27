@@ -330,6 +330,7 @@ class CompteController extends Controller
      *     summary="Créer un nouveau compte bancaire",
      *     description="Crée un nouveau compte bancaire avec validation complète (NCI, téléphone, email). Le mot de passe est généré automatiquement et envoyé par email.",
      *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\RequestBody(
      *         required=true,
      *         description="Données du compte à créer",
