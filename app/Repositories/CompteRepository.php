@@ -107,12 +107,14 @@ class CompteRepository
             // Calculer le solde actuel
             $solde = $compte->solde;
 
-            // Archiver dans Neon
+            // Archiver dans Neon avec toutes les informations nécessaires
             DB::connection('neon')->table('archives_comptes')->insert([
                 'id' => $compte->id,
                 'numeroCompte' => $compte->numeroCompte,
+                'client_id' => $compte->client_id,
                 'type' => $compte->type,
                 'solde' => $solde,
+                'devise' => $compte->devise ?? 'FCFA',
                 'statut' => 'ferme',
                 'dateFermeture' => now(),
                 'created_at' => now(),
@@ -130,33 +132,41 @@ class CompteRepository
     }
 
     /**
-     * Restaurer un compte supprimé
+     * Restaurer un compte supprimé depuis Neon
      *
      * @param string $id
      * @return Compte|null
      */
     public function restore(string $id): ?Compte
     {
-        $compte = $this->model->withTrashed()->find($id);
+        // Récupérer le compte depuis l'archive Neon
+        $archivedCompte = DB::connection('neon')
+            ->table('archives_comptes')
+            ->where('id', $id)
+            ->first();
 
-        if ($compte && $compte->trashed()) {
-            DB::transaction(function () use ($compte) {
-                // Supprimer de l'archive Neon
-                DB::connection('neon')->table('archives_comptes')
-                    ->where('id', $compte->id)
-                    ->delete();
-
-                // Restaurer dans la base principale
-                $compte->update([
-                    'statut' => 'actif',
-                    'deleted_at' => null,
-                ]);
-            });
-
-            return $compte->fresh();
+        if (!$archivedCompte) {
+            return null;
         }
 
-        return null;
+        return DB::transaction(function () use ($archivedCompte) {
+            // Recréer le compte dans PostgreSQL
+            $compte = $this->model->create([
+                'id' => $archivedCompte->id,
+                'numeroCompte' => $archivedCompte->numeroCompte,
+                'type' => $archivedCompte->type,
+                'client_id' => $archivedCompte->client_id,
+                'statut' => 'actif', // Réactivé
+                'devise' => $archivedCompte->devise ?? 'FCFA',
+            ]);
+
+            // Supprimer de l'archive Neon
+            DB::connection('neon')->table('archives_comptes')
+                ->where('id', $archivedCompte->id)
+                ->delete();
+
+            return $compte->fresh(['client.user']);
+        });
     }
 
     /**
