@@ -251,6 +251,119 @@ class CompteService
      * Récupérer un compte par son numéro (base active ou archive)
      * Vérifie les autorisations en fonction du rôle de l'utilisateur
      */
+    /**
+     * Récupérer un compte par son ID (US 2.1)
+     * Stratégie de recherche dual-database:
+     * 1. Par défaut : recherche dans PostgreSQL (comptes actifs)
+     * 2. Si non trouvé : recherche dans Neon (comptes archivés)
+     * 
+     * Autorisation:
+     * - Admin : peut récupérer n'importe quel compte par ID
+     * - Client : peut récupérer uniquement ses propres comptes par ID
+     */
+    public function getCompteById(string $id, User $user): array
+    {
+        // 1. Chercher d'abord dans la base principale (PostgreSQL) - comptes actifs
+        $compte = Compte::where('id', $id)
+            ->where('statut', 'actif')
+            ->with(['client.user'])
+            ->first();
+
+        if ($compte) {
+            // Vérifier l'autorisation
+            if ($user->role === 'client') {
+                // Les clients ne peuvent voir que leurs propres comptes
+                if (!$compte->client || $compte->client->user_id !== $user->id) {
+                    return [
+                        'success' => false,
+                        'error' => [
+                            'code' => 'ACCESS_DENIED',
+                            'message' => 'Accès non autorisé à ce compte',
+                            'details' => [
+                                'compteId' => $id
+                            ]
+                        ],
+                        'http_code' => 403
+                    ];
+                }
+            }
+            
+            // Compte actif trouvé dans PostgreSQL
+            return [
+                'success' => true,
+                'data' => new CompteResource($compte),
+                'message' => 'Compte récupéré avec succès depuis la base principale'
+            ];
+        }
+
+        // 2. Si non trouvé dans PostgreSQL, chercher dans les archives Neon
+        $archivedCompte = DB::connection('neon')
+            ->table('archives_comptes')
+            ->where('id', $id)
+            ->first();
+
+        if ($archivedCompte) {
+            // Récupérer les infos du client depuis PostgreSQL si disponible
+            $clientInfo = null;
+            if ($archivedCompte->client_id) {
+                $client = Client::with('user')->find($archivedCompte->client_id);
+                if ($client) {
+                    // Vérifier l'autorisation pour les archives
+                    if ($user->role === 'client' && $client->user_id !== $user->id) {
+                        return [
+                            'success' => false,
+                            'error' => [
+                                'code' => 'ACCESS_DENIED',
+                                'message' => 'Accès non autorisé à ce compte archivé',
+                                'details' => [
+                                    'compteId' => $id
+                                ]
+                            ],
+                            'http_code' => 403
+                        ];
+                    }
+                    $clientInfo = $client->user->nomComplet ?? 'N/A';
+                }
+            }
+
+            // Compte archivé trouvé dans Neon
+            return [
+                'success' => true,
+                'data' => [
+                    'id' => $archivedCompte->id,
+                    'numeroCompte' => $archivedCompte->numeroCompte,
+                    'titulaire' => $clientInfo ?? 'N/A',
+                    'type' => $archivedCompte->type,
+                    'solde' => (float) $archivedCompte->solde,
+                    'devise' => $archivedCompte->devise ?? 'FCFA',
+                    'dateCreation' => $archivedCompte->created_at,
+                    'statut' => $archivedCompte->statut,
+                    'motifBlocage' => null,
+                    'metadata' => [
+                        'derniereModification' => $archivedCompte->updated_at,
+                        'version' => 1,
+                        'archived' => true,
+                        'dateFermeture' => $archivedCompte->dateFermeture
+                    ]
+                ],
+                'message' => 'Compte récupéré avec succès depuis les archives Neon'
+            ];
+        }
+
+        // 3. Compte introuvable dans les deux bases
+        return [
+            'success' => false,
+            'error' => [
+                'code' => 'COMPTE_NOT_FOUND',
+                'message' => "Le compte avec l'ID spécifié n'existe pas",
+                'details' => [
+                    'compteId' => $id
+                ]
+            ],
+            'http_code' => 404
+        ];
+    }
+
     public function getCompteByNumero(string $numero, User $user): ?array
     {
         // 1. Chercher d'abord dans la base principale (Render) - comptes actifs uniquement

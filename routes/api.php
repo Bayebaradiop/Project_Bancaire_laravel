@@ -44,6 +44,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
 
         Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
+        
+        // Récupérer un compte par ID (US 2.1 - Dual database: PostgreSQL -> Neon)
+        Route::get('/{id}', [CompteController::class, 'show'])->name('comptes.show')
+            ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+        
         Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
 
         // Routes pour les archives (cloud)
