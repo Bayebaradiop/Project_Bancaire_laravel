@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Api;
  * @OA\Info(
  *     version="1.0.0",
  *     title="API Bancaire - Documentation Complète",
-*     description="Documentation de l'API RESTful de gestion bancaire incluant l'authentification JWT avec cookies HttpOnly. Les endpoints protégés nécessitent un client API qui gère les cookies (Postman, Insomnia, cURL). Swagger UI ne permet pas de tester les cookies HttpOnly.",
+ *     description="Documentation de l'API RESTful de gestion bancaire.\n\n\n**Authentification :**\n- Les clients web utilisent un cookie HttpOnly sécurisé (invisible pour Swagger UI).\n- Pour tester les endpoints protégés dans Swagger UI, utilisez le bouton 'Authorize' et collez le Bearer Token JWT retourné par l'endpoint /v1/auth/login.\n- Le cookie HttpOnly continue de fonctionner pour les vraies applications web.\n\n**Limite :** Swagger UI ne peut pas tester les cookies HttpOnly, mais tous les endpoints protégés acceptent aussi le header Authorization: Bearer <token>.\n\nPour automatiser vos tests, privilégiez Postman, Insomnia ou cURL si vous souhaitez tester le flux cookie.",
  *     @OA\Contact(
  *         email="support@banque.sn",
  *         name="Support API Bancaire"
@@ -33,6 +33,14 @@ namespace App\Http\Controllers\Api;
  *     in="cookie",
  *     name="token",
  *     description="Authentification JWT stockée dans un cookie HttpOnly sécurisé. Le token est automatiquement envoyé avec chaque requête."
+ * )
+ *
+ * @OA\SecurityScheme(
+ *     securityScheme="bearerAuth",
+ *     type="http",
+ *     scheme="bearer",
+ *     bearerFormat="JWT",
+ *     description="Authentification via Bearer Token JWT pour Swagger UI."
  * )
  * 
  * @OA\Tag(
