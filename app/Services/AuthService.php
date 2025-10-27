@@ -6,8 +6,8 @@ use App\Models\User;
 use App\Helpers\CookieManager;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Passport\Token;
-use Laravel\Passport\RefreshToken;
+use Illuminate\Support\Str;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthService
 {
@@ -19,7 +19,7 @@ class AuthService
     }
 
     /**
-     * Authentifier l'utilisateur et générer les tokens.
+     * Authentifier l'utilisateur et générer les tokens JWT.
      *
      * @param string $email
      * @param string $password
@@ -35,10 +35,11 @@ class AuthService
             throw new \Exception('Email ou mot de passe incorrect', 401);
         }
 
-        // 2. Générer les tokens via Passport
-        $tokenResult = $user->createToken('auth_token');
-        $accessToken = $tokenResult->accessToken;
-        $refreshToken = $tokenResult->token->refresh_token;
+        // 2. Générer les tokens JWT
+        $accessToken = JWTAuth::fromUser($user);
+        
+        // Générer un refresh token (simple UUID pour l'exemple)
+        $refreshToken = Str::uuid()->toString();
 
         // 3. Créer les cookies HttpOnly
         $accessCookie = $this->cookieManager->createAccessTokenCookie($accessToken);
@@ -51,13 +52,12 @@ class AuthService
             'data' => [
                 'user' => [
                     'id' => $user->id,
-                    'nom' => $user->nom,
-                    'prenom' => $user->prenom,
+                    'nomComplet' => $user->nomComplet,
                     'email' => $user->email,
                     'role' => $user->role,
                 ],
                 'token_type' => 'Bearer',
-                'expires_in' => 3600, // 1 heure
+                'expires_in' => config('jwt.ttl') * 60, // TTL en secondes
             ],
             'cookies' => [
                 'access_token' => $accessCookie,
@@ -67,6 +67,7 @@ class AuthService
     }
 
     /**
+    /**
      * Renouveler l'access token avec le refresh token.
      *
      * @param string $refreshToken
@@ -75,72 +76,43 @@ class AuthService
      */
     public function refresh(string $refreshToken): array
     {
-        // 1. Vérifier que le refresh token existe et est valide
-        $refreshTokenModel = RefreshToken::where('id', $refreshToken)
-            ->where('revoked', false)
-            ->where('expires_at', '>', now())
-            ->first();
-
-        if (!$refreshTokenModel) {
-            throw new \Exception('Refresh token invalide ou expiré', 401);
+        // Avec JWT, on rafraîchit simplement le token existant
+        try {
+            $newToken = JWTAuth::refresh();
+            
+            $accessCookie = $this->cookieManager->createAccessTokenCookie($newToken);
+            
+            return [
+                'success' => true,
+                'message' => 'Token renouvelé avec succès',
+                'data' => [
+                    'token_type' => 'Bearer',
+                    'expires_in' => config('jwt.ttl') * 60,
+                ],
+                'cookies' => [
+                    'access_token' => $accessCookie,
+                ],
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Impossible de rafraîchir le token', 401);
         }
-
-        // 2. Récupérer l'access token associé
-        $accessTokenModel = Token::find($refreshTokenModel->access_token_id);
-
-        if (!$accessTokenModel) {
-            throw new \Exception('Access token introuvable', 401);
-        }
-
-        // 3. Révoquer l'ancien access token
-        $accessTokenModel->revoke();
-
-        // 4. Récupérer l'utilisateur
-        $user = User::find($accessTokenModel->user_id);
-
-        if (!$user) {
-            throw new \Exception('Utilisateur introuvable', 401);
-        }
-
-        // 5. Générer un nouveau access token
-        $tokenResult = $user->createToken('auth_token_refreshed');
-        $newAccessToken = $tokenResult->accessToken;
-
-        // 6. Créer le nouveau cookie HttpOnly
-        $accessCookie = $this->cookieManager->createAccessTokenCookie($newAccessToken);
-
-        // 7. Retourner la réponse avec le nouveau cookie
-        return [
-            'success' => true,
-            'message' => 'Token renouvelé avec succès',
-            'data' => [
-                'token_type' => 'Bearer',
-                'expires_in' => 3600, // 1 heure
-            ],
-            'cookies' => [
-                'access_token' => $accessCookie,
-            ],
-        ];
     }
 
     /**
-     * Déconnecter l'utilisateur et révoquer les tokens.
+     * Déconnecter l'utilisateur et révoquer le token JWT.
      *
      * @param User $user
      * @return array
      */
     public function logout(User $user): array
     {
-        // 1. Révoquer tous les tokens de l'utilisateur
-        $user->tokens()->each(function ($token) {
-            $token->revoke();
-        });
+        // Invalider le token JWT
+        JWTAuth::invalidate(JWTAuth::getToken());
 
-        // 2. Supprimer les cookies
+        // Supprimer les cookies
         $clearAccessCookie = $this->cookieManager->clearAccessTokenCookie();
         $clearRefreshCookie = $this->cookieManager->clearRefreshTokenCookie();
 
-        // 3. Retourner la réponse
         return [
             'success' => true,
             'message' => 'Déconnexion réussie',

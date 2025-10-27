@@ -178,6 +178,8 @@ class CompteController extends Controller
     public function showByNumero(string $numero): JsonResponse
     {
         try {
+            $user = auth()->user();
+            
             // 1. Chercher d'abord dans la base principale (Render) - comptes actifs uniquement
             $compte = Compte::where('numeroCompte', $numero)
                 ->whereNull('archived_at')
@@ -186,6 +188,14 @@ class CompteController extends Controller
                 ->first();
 
             if ($compte) {
+                // Vérifier si le client a le droit d'accéder à ce compte
+                if ($user->role === 'client') {
+                    // Les clients ne peuvent voir que leurs propres comptes
+                    if (!$compte->client || $compte->client->user_id !== $user->id) {
+                        return $this->error('Accès non autorisé à ce compte', 403);
+                    }
+                }
+                
                 // Compte actif trouvé dans la base principale
                 return $this->success(
                     new CompteResource($compte),
@@ -197,6 +207,11 @@ class CompteController extends Controller
             $archived = $this->archiveService->getArchivedCompte($numero);
 
             if ($archived) {
+                // Vérifier si le client a le droit d'accéder à ce compte archivé
+                if ($user->role === 'client' && $archived->client_email !== $user->email) {
+                    return $this->error('Accès non autorisé à ce compte', 403);
+                }
+                
                 // Compte trouvé dans les archives Neon
                 return $this->success(
                     [
