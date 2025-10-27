@@ -1047,7 +1047,7 @@
                     "Comptes"
                 ],
                 "summary": "Obtenir un compte par numéro",
-                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
+                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.\n     * \n     * **Contrôles d'accès:**\n     * - **Admin**: Peut voir tous les comptes (actifs et archivés)\n     * - **Client**: Ne peut voir que ses propres comptes (retourne 403 Forbidden pour les comptes d'autres clients)\n     * \n     * **Exemple de numéro de compte:** CP6617828903",
                 "operationId": "getCompteByNumero",
                 "parameters": [
                     {
@@ -1057,7 +1057,7 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "example": "CP3105472638"
+                            "example": "CP6617828903"
                         }
                     }
                 ],
@@ -1074,21 +1074,21 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Compte récupéré avec succès"
+                                            "example": "Compte actif récupéré avec succès"
                                         },
                                         "data": {
                                             "properties": {
                                                 "id": {
                                                     "type": "string",
-                                                    "example": "a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"
+                                                    "example": "a03747b4-b6cf-4216-878f-a250ddf44a6a"
                                                 },
                                                 "numeroCompte": {
                                                     "type": "string",
-                                                    "example": "CP3105472638"
+                                                    "example": "CP6617828903"
                                                 },
                                                 "titulaire": {
                                                     "type": "string",
-                                                    "example": "Mamadou Diop"
+                                                    "example": "Moussa Ndiaye Test"
                                                 },
                                                 "type": {
                                                     "type": "string",
@@ -1096,7 +1096,7 @@
                                                 },
                                                 "solde": {
                                                     "type": "number",
-                                                    "example": 150000
+                                                    "example": 0
                                                 },
                                                 "devise": {
                                                     "type": "string",
@@ -1124,6 +1124,26 @@
                             }
                         }
                     },
+                    "403": {
+                        "description": "Accès non autorisé - Le client tente d'accéder au compte d'un autre client",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Accès non autorisé à ce compte"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Compte non trouvé",
                         "content": {
@@ -1136,11 +1156,27 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Compte non trouvé"
-                                        },
-                                        "error": {
-                                            "type": "string",
                                             "example": "Le compte avec le numéro CP9999999999 n'existe pas"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "410": {
+                        "description": "Compte archivé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le compte CP6991885910 est archivé et n'est plus actif. Consultez /api/v1/comptes/archives pour plus de détails."
                                         }
                                     },
                                     "type": "object"

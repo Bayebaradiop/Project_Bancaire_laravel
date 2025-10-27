@@ -278,7 +278,13 @@ class CompteController extends Controller
      * @OA\Get(
      *     path="/v1/comptes/numero/{numero}",
      *     summary="Obtenir un compte par numéro",
-     *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
+     *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.
+     * 
+     * **Contrôles d'accès:**
+     * - **Admin**: Peut voir tous les comptes (actifs et archivés)
+     * - **Client**: Ne peut voir que ses propres comptes (retourne 403 Forbidden pour les comptes d'autres clients)
+     * 
+     * **Exemple de numéro de compte:** CP6617828903",
      *     operationId="getCompteByNumero",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
@@ -287,22 +293,22 @@ class CompteController extends Controller
      *         in="path",
      *         description="Numéro du compte (format: CPxxxxxxxxxx)",
      *         required=true,
-     *         @OA\Schema(type="string", example="CP3105472638")
+     *         @OA\Schema(type="string", example="CP6617828903")
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Compte récupéré avec succès",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Compte récupéré avec succès"),
+     *             @OA\Property(property="message", type="string", example="Compte actif récupéré avec succès"),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="id", type="string", example="a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"),
-     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
-     *                 @OA\Property(property="titulaire", type="string", example="Mamadou Diop"),
+     *                 @OA\Property(property="id", type="string", example="a03747b4-b6cf-4216-878f-a250ddf44a6a"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP6617828903"),
+     *                 @OA\Property(property="titulaire", type="string", example="Moussa Ndiaye Test"),
      *                 @OA\Property(property="type", type="string", example="epargne"),
-     *                 @OA\Property(property="solde", type="number", example=150000),
+     *                 @OA\Property(property="solde", type="number", example=0),
      *                 @OA\Property(property="devise", type="string", example="FCFA"),
      *                 @OA\Property(property="dateCreation", type="string", format="date-time"),
      *                 @OA\Property(property="statut", type="string", example="actif"),
@@ -311,14 +317,29 @@ class CompteController extends Controller
          )
      ),
      *     @OA\Response(
+     *         response=403,
+     *         description="Accès non autorisé - Le client tente d'accéder au compte d'un autre client",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Accès non autorisé à ce compte")
+     *         )
+     *     ),
+     *     @OA\Response(
      *         response=404, 
      *         description="Compte non trouvé",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Compte non trouvé"),
-     *             @OA\Property(property="error", type="string", example="Le compte avec le numéro CP9999999999 n'existe pas")
+     *             @OA\Property(property="message", type="string", example="Le compte avec le numéro CP9999999999 n'existe pas")
          )
-     )
+     ),
+     *     @OA\Response(
+     *         response=410,
+     *         description="Compte archivé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte CP6991885910 est archivé et n'est plus actif. Consultez /api/v1/comptes/archives pour plus de détails.")
+     *         )
+     *     )
      * )
      */
     public function showByNumero(string $numero): JsonResponse
