@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Api;
  * @OA\Info(
  *     version="1.0.0",
  *     title="API Bancaire - Documentation Complète",
- *     description="Documentation de l'API RESTful de gestion bancaire incluant l'authentification JWT avec cookies HttpOnly, la gestion des comptes (création, consultation, archivage), et la gestion des archives cloud (Neon).",
+*     description="Documentation de l'API RESTful de gestion bancaire incluant l'authentification JWT avec cookies HttpOnly. Les endpoints protégés nécessitent un client API qui gère les cookies (Postman, Insomnia, cURL). Swagger UI ne permet pas de tester les cookies HttpOnly.",
  *     @OA\Contact(
  *         email="support@banque.sn",
  *         name="Support API Bancaire"
