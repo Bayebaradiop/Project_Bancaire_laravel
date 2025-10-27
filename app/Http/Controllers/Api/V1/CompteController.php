@@ -39,11 +39,12 @@ class CompteController extends Controller
 - **Client** : Voit uniquement ses propres comptes
 
 **Pour tester en tant que Admin :**
-- Email : `admin@banque.sn`
-- Password : `password`
+- Email : `admin@banque.sn` / Password : `password`
 
 **Pour tester en tant que Client :**
-Créez d'abord un compte via POST /v1/comptes. Le client recevra ses identifiants par email et pourra alors se connecter pour voir uniquement ses comptes.",
+- Email : `client@banque.sn` / Password : `password`
+
+**📝 Instructions :** Après connexion, copiez le token et cliquez sur **Authorize** en haut à droite pour le coller dans **bearerAuth (http, Bearer)**.",
      *     operationId="getComptes",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
@@ -147,13 +148,12 @@ Créez d'abord un compte via POST /v1/comptes. Le client recevra ses identifiant
 - **Admin** : Peut récupérer n'importe quel compte
 - **Client** : Peut récupérer uniquement ses propres comptes
 
-**IDs de comptes existants dans la base Render (pour tests) :**
-- `a0358129-098e-46e8-99c7-be73a3943006`
+**Comptes du client test (`client@banque.sn`) :**
 - `a0358125-5167-4b7c-8057-786038cd1e84`
 - `a0358113-ee00-4154-884d-9a3bd5d307fc`
+- `a0358111-2230-42ff-94d4-a6db429db2c1`
 
-**Pour tester en tant que Client :**
-Créez un compte via POST /v1/comptes, connectez-vous avec les identifiants reçus par email, puis utilisez l'ID du compte créé.",
+**📝 Instructions :** Connectez-vous, copiez le token, cliquez sur **Authorize** en haut à droite et collez-le dans **bearerAuth (http, Bearer)**.",
      *     operationId="getCompteById",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},

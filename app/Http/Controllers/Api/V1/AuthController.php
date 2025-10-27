@@ -28,16 +28,23 @@ class AuthController extends Controller
 
 **Comptes de test dans la base Render :**
 
-**Admin :**
+**👤 Admin :**
 - Email : `admin@banque.sn`
 - Password : `password`
 - Accès : Tous les comptes, toutes les opérations
 
-**Client (après création via POST /v1/comptes) :**
-- Un compte client est créé automatiquement lors de la création d'un compte bancaire
-- Le client reçoit ses identifiants par email
+**👤 Client :**
+- Email : `client@banque.sn`
+- Password : `password`
 - Accès : Uniquement ses propres comptes
-- Exemple d'ID de compte existant : `a0358129-098e-46e8-99c7-be73a3943006`",
+- Ses comptes : `a0358125-5167-4b7c-8057-786038cd1e84`, `a0358113-ee00-4154-884d-9a3bd5d307fc`, etc.
+
+**📝 Instructions après connexion :**
+1. Copier le `access_token` de la réponse
+2. Cliquer sur **Authorize** (🔒 en haut à droite)
+3. Coller le token dans **bearerAuth (http, Bearer)**
+4. Cliquer sur **Authorize** puis **Close**
+5. Tester les endpoints protégés",
      *     operationId="login",
      *     tags={"Authentification"},
      *     @OA\RequestBody(
@@ -45,7 +52,7 @@ class AuthController extends Controller
          *         description="Identifiants de connexion",
      *         @OA\JsonContent(
      *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="admin@banque.sn", description="Email de l'utilisateur"),
+     *             @OA\Property(property="email", type="string", format="email", example="client@banque.sn", description="Email de l'utilisateur"),
      *             @OA\Property(property="password", type="string", format="password", example="password", description="Mot de passe de l'utilisateur")
      *         )
      *     ),

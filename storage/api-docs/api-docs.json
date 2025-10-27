@@ -30,7 +30,7 @@
                     "Authentification"
                 ],
                 "summary": "Connexion utilisateur",
-                "description": "Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.\n\n**Comptes de test dans la base Render :**\n\n**Admin :**\n- Email : `admin@banque.sn`\n- Password : `password`\n- Accès : Tous les comptes, toutes les opérations\n\n**Client (après création via POST /v1/comptes) :**\n- Un compte client est créé automatiquement lors de la création d'un compte bancaire\n- Le client reçoit ses identifiants par email\n- Accès : Uniquement ses propres comptes\n- Exemple d'ID de compte existant : `a0358129-098e-46e8-99c7-be73a3943006`",
+                "description": "Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.\n\n**Comptes de test dans la base Render :**\n\n**👤 Admin :**\n- Email : `admin@banque.sn`\n- Password : `password`\n- Accès : Tous les comptes, toutes les opérations\n\n**👤 Client :**\n- Email : `client@banque.sn`\n- Password : `password`\n- Accès : Uniquement ses propres comptes\n- Ses comptes : `a0358125-5167-4b7c-8057-786038cd1e84`, `a0358113-ee00-4154-884d-9a3bd5d307fc`, etc.\n\n**📝 Instructions après connexion :**\n1. Copier le `access_token` de la réponse\n2. Cliquer sur **Authorize** (🔒 en haut à droite)\n3. Coller le token dans **bearerAuth (http, Bearer)**\n4. Cliquer sur **Authorize** puis **Close**\n5. Tester les endpoints protégés",
                 "operationId": "login",
                 "requestBody": {
                     "description": "Identifiants de connexion",
@@ -47,7 +47,7 @@
                                         "description": "Email de l'utilisateur",
                                         "type": "string",
                                         "format": "email",
-                                        "example": "admin@banque.sn"
+                                        "example": "client@banque.sn"
                                     },
                                     "password": {
                                         "description": "Mot de passe de l'utilisateur",
@@ -321,7 +321,7 @@
                     "Comptes"
                 ],
                 "summary": "Lister les comptes",
-                "description": "Récupère la liste des comptes avec pagination et filtres optionnels.\n\n**Autorisations :**\n- **Admin** : Voit tous les comptes de tous les clients\n- **Client** : Voit uniquement ses propres comptes\n\n**Pour tester en tant que Admin :**\n- Email : `admin@banque.sn`\n- Password : `password`\n\n**Pour tester en tant que Client :**\nCréez d'abord un compte via POST /v1/comptes. Le client recevra ses identifiants par email et pourra alors se connecter pour voir uniquement ses comptes.",
+                "description": "Récupère la liste des comptes avec pagination et filtres optionnels.\n\n**Autorisations :**\n- **Admin** : Voit tous les comptes de tous les clients\n- **Client** : Voit uniquement ses propres comptes\n\n**Pour tester en tant que Admin :**\n- Email : `admin@banque.sn` / Password : `password`\n\n**Pour tester en tant que Client :**\n- Email : `client@banque.sn` / Password : `password`\n\n**📝 Instructions :** Après connexion, copiez le token et cliquez sur **Authorize** en haut à droite pour le coller dans **bearerAuth (http, Bearer)**.",
                 "operationId": "getComptes",
                 "parameters": [
                     {
@@ -810,7 +810,7 @@
                     "Comptes"
                 ],
                 "summary": "Récupérer un compte spécifique par ID (US 2.1)",
-                "description": "Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (comptes actifs), puis dans Neon (comptes archivés) si non trouvé.\n\n**Autorisations :**\n- **Admin** : Peut récupérer n'importe quel compte\n- **Client** : Peut récupérer uniquement ses propres comptes\n\n**IDs de comptes existants dans la base Render (pour tests) :**\n- `a0358129-098e-46e8-99c7-be73a3943006`\n- `a0358125-5167-4b7c-8057-786038cd1e84`\n- `a0358113-ee00-4154-884d-9a3bd5d307fc`\n\n**Pour tester en tant que Client :**\nCréez un compte via POST /v1/comptes, connectez-vous avec les identifiants reçus par email, puis utilisez l'ID du compte créé.",
+                "description": "Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (comptes actifs), puis dans Neon (comptes archivés) si non trouvé.\n\n**Autorisations :**\n- **Admin** : Peut récupérer n'importe quel compte\n- **Client** : Peut récupérer uniquement ses propres comptes\n\n**Comptes du client test (`client@banque.sn`) :**\n- `a0358125-5167-4b7c-8057-786038cd1e84`\n- `a0358113-ee00-4154-884d-9a3bd5d307fc`\n- `a0358111-2230-42ff-94d4-a6db429db2c1`\n\n**📝 Instructions :** Connectez-vous, copiez le token, cliquez sur **Authorize** en haut à droite et collez-le dans **bearerAuth (http, Bearer)**.",
                 "operationId": "getCompteById",
                 "parameters": [
                     {
