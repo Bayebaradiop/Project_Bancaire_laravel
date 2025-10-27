@@ -6,17 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CompteResource;
 use App\Http\Requests\ListCompteRequest;
 use App\Http\Requests\StoreCompteRequest;
-use App\Models\Compte;
-use App\Models\Client;
-use App\Models\User;
 use App\Services\CompteService;
 use App\Services\CompteArchiveService;
 use App\Traits\ApiResponseFormat;
 use App\Traits\Cacheable;
-use App\Exceptions\CompteNotFoundException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
 
 class CompteController extends Controller
 {
@@ -179,68 +174,19 @@ class CompteController extends Controller
     {
         try {
             $user = auth()->user();
-            
-            // 1. Chercher d'abord dans la base principale (Render) - comptes actifs uniquement
-            $compte = Compte::where('numeroCompte', $numero)
-                ->whereNull('archived_at')
-                ->where('statut', 'actif')
-                ->with(['client.user'])
-                ->first();
+            $result = $this->compteService->getCompteByNumero($numero, $user);
 
-            if ($compte) {
-                // Vérifier si le client a le droit d'accéder à ce compte
-                if ($user->role === 'client') {
-                    // Les clients ne peuvent voir que leurs propres comptes
-                    if (!$compte->client || $compte->client->user_id !== $user->id) {
-                        return $this->error('Accès non autorisé à ce compte', 403);
-                    }
-                }
-                
-                // Compte actif trouvé dans la base principale
-                return $this->success(
-                    new CompteResource($compte),
-                    'Compte actif récupéré avec succès'
-                );
+            // Gérer les erreurs
+            if (isset($result['error'])) {
+                return match($result['code']) {
+                    403 => $this->error($result['message'], 403),
+                    404 => $this->notFound($result['message']),
+                    default => $this->serverError($result['message'])
+                };
             }
 
-            // 2. Si non trouvé ou archivé, chercher dans Neon (comptes fermés/bloqués/archivés)
-            $archived = $this->archiveService->getArchivedCompte($numero);
-
-            if ($archived) {
-                // Vérifier si le client a le droit d'accéder à ce compte archivé
-                if ($user->role === 'client' && $archived->client_email !== $user->email) {
-                    return $this->error('Accès non autorisé à ce compte', 403);
-                }
-                
-                // Compte trouvé dans les archives Neon
-                return $this->success(
-                    [
-                        'id' => $archived->id,
-                        'numeroCompte' => $archived->numerocompte,
-                        'titulaire' => $archived->client_nom,
-                        'type' => $archived->type,
-                        'solde' => $archived->solde,
-                        'devise' => $archived->devise,
-                        'dateCreation' => $archived->created_at,
-                        'statut' => $archived->statut,
-                        'motifBlocage' => $archived->motifblocage,
-                        'archived' => true,
-                        'archived_at' => $archived->archived_at,
-                        'archive_reason' => $archived->archive_reason,
-                        'metadata' => [
-                            'source' => 'neon',
-                            'client_email' => $archived->client_email,
-                            'client_telephone' => $archived->client_telephone,
-                        ]
-                    ],
-                    'Compte archivé récupéré depuis Neon'
-                );
-            }
-
-            // 3. Compte introuvable dans les deux bases
-            return $this->notFound(
-                "Le compte avec le numéro {$numero} n'existe pas"
-            );
+            // Succès
+            return $this->success($result['data'], $result['message']);
 
         } catch (\Exception $e) {
             return $this->serverError(
@@ -406,81 +352,17 @@ class CompteController extends Controller
     public function store(StoreCompteRequest $request): JsonResponse
     {
         try {
-            DB::beginTransaction();
-
-            $password = null;
-            $code = null;
-
-            // 1. Vérifier l'existence du client
-            if (!empty($request->client['id'])) {
-                $client = Client::findOrFail($request->client['id']);
-            } else {
-                // 2. Créer l'utilisateur et le client s'il n'existe pas
-                $password = Client::generatePassword();
-                $code = Client::generateCode();
-
-                // Créer l'utilisateur
-                $user = User::create([
-                    'nomComplet' => $request->client['titulaire'],
-                    'nci' => $request->client['nci'],
-                    'email' => $request->client['email'],
-                    'telephone' => $request->client['telephone'],
-                    'adresse' => $request->client['adresse'],
-                    'password' => Hash::make($password),
-                    'code' => $code,
-                ]);
-
-                // Créer le client
-                $client = Client::create([
-                    'user_id' => $user->id,
-                ]);
-
-                // Stocker temporairement pour l'observer
-                session([
-                    'temp_client_password' => $password,
-                    'temp_client_code' => $code,
-                ]);
-            }
-
-            // 3. Créer le compte
-            $compte = Compte::create([
-                'numeroCompte' => Compte::generateNumeroCompte(),
-                'type' => $request->type,
-                'devise' => $request->devise,
-                'statut' => 'actif',
-                'client_id' => $client->id,
-            ]);
-
-            // Charger les relations
-            $compte->load(['client.user', 'transactions']);
+            $result = $this->compteService->createCompte($request->validated());
 
             // Invalider le cache de la liste des comptes
             $this->forgetPaginatedCache('comptes:list');
 
-            DB::commit();
-
-            // Utiliser le trait pour formater la réponse
-            return $this->created([
-                'id' => $compte->id,
-                'numeroCompte' => $compte->numeroCompte,
-                'titulaire' => $compte->client->user->nomComplet ?? 'N/A',
-                'type' => $compte->type,
-                'solde' => $compte->solde,
-                'devise' => $compte->devise,
-                'dateCreation' => $compte->dateCreation->toIso8601String(),
-                'statut' => $compte->statut,
-                'metadata' => [
-                    'derniereModification' => $compte->derniereModification->toIso8601String(),
-                    'version' => 1,
-                ],
-            ], 'Compte créé avec succès');
+            return $this->created($result['data'], $result['message']);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
             return $this->validationError($e->errors(), 'Les données fournies sont invalides');
 
         } catch (\Exception $e) {
-            DB::rollBack();
             return $this->serverError(
                 config('app.debug') 
                     ? 'Une erreur est survenue : ' . $e->getMessage() 
@@ -606,27 +488,21 @@ class CompteController extends Controller
      *     )
      * )
      */
-    public function archive(string $numeroCompte): JsonResponse
+    public function archive(string $numeroCompte, Request $request): JsonResponse
     {
         try {
-            $compte = Compte::where('numeroCompte', $numeroCompte)->first();
+            $reason = $request->input('reason');
+            $result = $this->compteService->archiveCompte($numeroCompte, $reason);
 
-            if (!$compte) {
-                throw new CompteNotFoundException("Le compte {$numeroCompte} n'existe pas");
+            // Gérer les erreurs
+            if (isset($result['error'])) {
+                return match($result['code']) {
+                    404 => $this->notFound($result['message']),
+                    default => $this->serverError($result['message'])
+                };
             }
 
-            // Archiver vers Neon (sans vérification de rôle)
-            $reason = request()->input('reason');
-            $archive = $this->archiveService->archiveCompte($compte, null, $reason);
-
-            return $this->success([
-                'numeroCompte' => $compte->numeroCompte,
-                'archived_at' => $archive->archived_at,
-                'archive_reason' => $archive->archive_reason,
-            ], 'Compte archivé avec succès dans le cloud');
-
-        } catch (CompteNotFoundException $e) {
-            return $this->notFound($e->getMessage());
+            return $this->success($result['data'], $result['message']);
 
         } catch (\Exception $e) {
             return $this->serverError(
