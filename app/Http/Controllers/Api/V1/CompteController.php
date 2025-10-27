@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CompteResource;
 use App\Http\Requests\ListCompteRequest;
 use App\Http\Requests\StoreCompteRequest;
+use App\Http\Requests\UpdateCompteRequest;
 use App\Http\Requests\BloquerCompteRequest;
 use App\Http\Requests\DebloquerCompteRequest;
 use App\Services\CompteService;
@@ -496,6 +497,156 @@ class CompteController extends Controller
                 config('app.debug') 
                     ? 'Une erreur est survenue : ' . $e->getMessage() 
                     : 'Une erreur est survenue lors de la création du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/v1/comptes/{compteId}",
+     *     summary="Mettre à jour les informations d'un compte (US 2.3)",
+     *     description="Permet de modifier les informations d'un compte bancaire et de son titulaire. Tous les champs sont optionnels mais au moins un doit être fourni. Seuls les administrateurs peuvent effectuer cette opération.
+
+**Note pour les tests :** L'ID d'exemple `a0358129-098e-46e8-99c7-be73a3943006` existe dans la base de données Render et peut être utilisé pour vos tests.",
+     *     operationId="updateCompte",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="compteId",
+     *         in="path",
+     *         description="ID UUID du compte à mettre à jour. Exemple: a0358129-098e-46e8-99c7-be73a3943006 (existe dans la base Render pour les tests)",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid", example="a0358129-098e-46e8-99c7-be73a3943006")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Informations à mettre à jour (au moins un champ requis)",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="titulaire", type="string", example="Amadou Diallo Junior", description="Nom complet du titulaire du compte"),
+     *             @OA\Property(property="email", type="string", format="email", example="amadou.diallo.junior@example.com", description="Adresse email du titulaire (unique)"),
+     *             @OA\Property(property="telephone", type="string", example="771234567", description="Numéro de téléphone sénégalais (77, 78, 76, 75 ou 70 + 7 chiffres, unique)"),
+     *             @OA\Property(property="adresse", type="string", example="Dakar, Plateau", description="Adresse du titulaire"),
+     *             @OA\Property(property="type", type="string", enum={"cheque", "epargne"}, example="epargne", description="Type de compte"),
+     *             @OA\Property(property="devise", type="string", example="FCFA", description="Devise du compte")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte mis à jour avec succès",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte mis à jour avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", format="uuid", example="a0358129-098e-46e8-99c7-be73a3943006"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="C00123456"),
+     *                 @OA\Property(property="titulaire", type="string", example="Amadou Diallo Junior"),
+     *                 @OA\Property(property="type", type="string", example="epargne"),
+     *                 @OA\Property(property="solde", type="number", format="float", example=1250000),
+     *                 @OA\Property(property="devise", type="string", example="FCFA"),
+     *                 @OA\Property(property="dateCreation", type="string", format="date-time", example="2023-03-15T00:00:00Z"),
+     *                 @OA\Property(property="statut", type="string", example="actif"),
+     *                 @OA\Property(
+     *                     property="metadata",
+     *                     type="object",
+     *                     @OA\Property(property="derniereModification", type="string", format="date-time", example="2025-10-19T11:00:00Z"),
+     *                     @OA\Property(property="version", type="integer", example=2)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Requête invalide - Au moins un champ requis ou compte archivé",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Au moins un champ doit être fourni pour la modification.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Action non autorisée - Réservé aux administrateurs",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Action non autorisée")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Compte non trouvé")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Erreur de validation",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Erreur de validation"),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="telephone",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="Ce numéro de téléphone est déjà utilisé par un autre compte.")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur serveur",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Une erreur est survenue lors de la mise à jour du compte")
+     *         )
+     *     )
+     * )
+     */
+    public function update(string $compteId, UpdateCompteRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->compteService->updateCompte($compteId, $request->validated());
+
+            // Gérer les erreurs métier
+            if (!$result['success']) {
+                return response()->json($result, $result['http_code'] ?? 400);
+            }
+
+            // Invalider le cache
+            $this->forgetPaginatedCache('comptes:list');
+            $this->forgetCache("compte:{$compteId}");
+
+            return response()->json($result);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->validationError($e->errors(), 'Les données fournies sont invalides');
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors de la mise à jour du compte'
             );
         }
     }

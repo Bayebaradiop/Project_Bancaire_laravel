@@ -45,6 +45,10 @@ Route::prefix('v1')->group(function () {
 
         Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
         
+        // US 2.3 - Mettre à jour les informations d'un compte (Admin uniquement)
+        Route::patch('/{compteId}', [CompteController::class, 'update'])->name('comptes.update')
+            ->where('compteId', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+        
         // Récupérer un compte par ID (US 2.1 - Dual database: PostgreSQL -> Neon)
         Route::get('/{id}', [CompteController::class, 'show'])->name('comptes.show')
             ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
