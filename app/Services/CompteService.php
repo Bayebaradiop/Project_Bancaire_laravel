@@ -10,6 +10,7 @@ use App\Http\Resources\CompteResource;
 use App\Repositories\CompteRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use App\Events\CompteCreated;
 
 class CompteService
@@ -424,16 +425,24 @@ class CompteService
         DB::beginTransaction();
         
         try {
+            Log::info('Début création compte', ['data' => $data]);
+            
             $password = null;
             $code = null;
 
             // 1. Vérifier l'existence du client
             if (!empty($data['client']['id'])) {
                 $client = Client::findOrFail($data['client']['id']);
+                Log::info('Client existant trouvé', ['client_id' => $client->id]);
             } else {
                 // 2. Créer l'utilisateur et le client s'il n'existe pas
                 $password = Client::generatePassword();
                 $code = Client::generateCode();
+
+                Log::info('Création nouvel utilisateur', [
+                    'nomComplet' => $data['client']['titulaire'],
+                    'email' => $data['client']['email']
+                ]);
 
                 // Créer l'utilisateur
                 $user = User::create([
@@ -444,17 +453,24 @@ class CompteService
                     'adresse' => $data['client']['adresse'],
                     'password' => Hash::make($password),
                     'code' => $code,
+                    'role' => 'client', // Ajout explicite du rôle
                 ]);
+
+                Log::info('Utilisateur créé', ['user_id' => $user->id]);
 
                 // Créer le client
                 $client = Client::create([
                     'user_id' => $user->id,
                 ]);
 
+                Log::info('Client créé', ['client_id' => $client->id]);
+
                 // Note: Plus besoin de session, on dispatch l'event directement après création du compte
             }
 
             // 3. Créer le compte
+            Log::info('Création du compte bancaire');
+            
             $compte = Compte::create([
                 'numeroCompte' => Compte::generateNumeroCompte(),
                 'type' => $data['type'],
@@ -463,8 +479,11 @@ class CompteService
                 'client_id' => $client->id,
             ]);
 
+            Log::info('Compte créé', ['compte_id' => $compte->id, 'numeroCompte' => $compte->numeroCompte]);
+
             // 4. Dispatcher l'event si nouveau client créé
             if ($password && $code) {
+                Log::info('Dispatch event CompteCreated');
                 event(new CompteCreated($compte, $password, $code));
             }
 
@@ -472,6 +491,8 @@ class CompteService
             $compte->load(['client.user', 'transactions']);
 
             DB::commit();
+
+            Log::info('Création compte réussie', ['compte_id' => $compte->id]);
 
             return [
                 'success' => true,
@@ -494,6 +515,12 @@ class CompteService
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur création compte', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             throw $e;
         }
     }
