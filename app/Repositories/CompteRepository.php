@@ -121,11 +121,8 @@ class CompteRepository
                 'updated_at' => now(),
             ]);
 
-            // Soft delete dans la base principale
-            $compte->update([
-                'statut' => 'ferme',
-                'deleted_at' => now(),
-            ]);
+            // Hard delete dans la base principale (suppression complète)
+            $compte->forceDelete();
         });
 
         return true;
@@ -177,8 +174,12 @@ class CompteRepository
      */
     public function getArchived(int $perPage = 10): LengthAwarePaginator
     {
+        // Forcer la reconnexion pour éviter les problèmes de cache de plan
+        DB::connection('neon')->reconnect();
+        
         return DB::connection('neon')
             ->table('archives_comptes')
+            ->select('id', 'numeroCompte', 'client_id', 'type', 'solde', 'devise', 'statut', 'dateFermeture', 'created_at', 'updated_at')
             ->orderBy('dateFermeture', 'desc')
             ->paginate($perPage);
     }
