@@ -24,12 +24,25 @@ class AuthController extends Controller
      * @OA\Post(
      *     path="/v1/auth/login",
      *     summary="Connexion utilisateur",
-     *     description="Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.",
+     *     description="Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.
+
+**Comptes de test dans la base Render :**
+
+**Admin :**
+- Email : `admin@banque.sn`
+- Password : `password`
+- Accès : Tous les comptes, toutes les opérations
+
+**Client (après création via POST /v1/comptes) :**
+- Un compte client est créé automatiquement lors de la création d'un compte bancaire
+- Le client reçoit ses identifiants par email
+- Accès : Uniquement ses propres comptes
+- Exemple d'ID de compte existant : `a0358129-098e-46e8-99c7-be73a3943006`",
      *     operationId="login",
      *     tags={"Authentification"},
      *     @OA\RequestBody(
      *         required=true,
-     *         description="Identifiants de connexion",
+         *         description="Identifiants de connexion",
      *         @OA\JsonContent(
      *             required={"email","password"},
      *             @OA\Property(property="email", type="string", format="email", example="admin@banque.sn", description="Email de l'utilisateur"),

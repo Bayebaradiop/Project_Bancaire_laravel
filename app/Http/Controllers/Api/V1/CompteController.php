@@ -32,7 +32,18 @@ class CompteController extends Controller
      * @OA\Get(
      *     path="/v1/comptes",
      *     summary="Lister les comptes",
-     *     description="Récupère la liste des comptes avec pagination et filtres optionnels. Les administrateurs voient tous les comptes, les clients ne voient que leurs propres comptes.",
+     *     description="Récupère la liste des comptes avec pagination et filtres optionnels.
+
+**Autorisations :**
+- **Admin** : Voit tous les comptes de tous les clients
+- **Client** : Voit uniquement ses propres comptes
+
+**Pour tester en tant que Admin :**
+- Email : `admin@banque.sn`
+- Password : `password`
+
+**Pour tester en tant que Client :**
+Créez d'abord un compte via POST /v1/comptes. Le client recevra ses identifiants par email et pourra alors se connecter pour voir uniquement ses comptes.",
      *     operationId="getComptes",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
@@ -130,16 +141,28 @@ class CompteController extends Controller
      * @OA\Get(
      *     path="/v1/comptes/{id}",
      *     summary="Récupérer un compte spécifique par ID (US 2.1)",
-     *     description="Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (comptes actifs), puis dans Neon (comptes archivés) si non trouvé. Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
+     *     description="Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (comptes actifs), puis dans Neon (comptes archivés) si non trouvé.
+
+**Autorisations :**
+- **Admin** : Peut récupérer n'importe quel compte
+- **Client** : Peut récupérer uniquement ses propres comptes
+
+**IDs de comptes existants dans la base Render (pour tests) :**
+- `a0358129-098e-46e8-99c7-be73a3943006`
+- `a0358125-5167-4b7c-8057-786038cd1e84`
+- `a0358113-ee00-4154-884d-9a3bd5d307fc`
+
+**Pour tester en tant que Client :**
+Créez un compte via POST /v1/comptes, connectez-vous avec les identifiants reçus par email, puis utilisez l'ID du compte créé.",
      *     operationId="getCompteById",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="ID UUID du compte",
+     *         description="ID UUID du compte. Exemples de comptes existants : a0358129-098e-46e8-99c7-be73a3943006",
      *         required=true,
-     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *         @OA\Schema(type="string", format="uuid", example="a0358129-098e-46e8-99c7-be73a3943006")
      *     ),
      *     @OA\Response(
      *         response=200,

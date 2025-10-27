@@ -30,7 +30,7 @@
                     "Authentification"
                 ],
                 "summary": "Connexion utilisateur",
-                "description": "Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.",
+                "description": "Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.\n\n**Comptes de test dans la base Render :**\n\n**Admin :**\n- Email : `admin@banque.sn`\n- Password : `password`\n- Accès : Tous les comptes, toutes les opérations\n\n**Client (après création via POST /v1/comptes) :**\n- Un compte client est créé automatiquement lors de la création d'un compte bancaire\n- Le client reçoit ses identifiants par email\n- Accès : Uniquement ses propres comptes\n- Exemple d'ID de compte existant : `a0358129-098e-46e8-99c7-be73a3943006`",
                 "operationId": "login",
                 "requestBody": {
                     "description": "Identifiants de connexion",
@@ -321,7 +321,7 @@
                     "Comptes"
                 ],
                 "summary": "Lister les comptes",
-                "description": "Récupère la liste des comptes avec pagination et filtres optionnels. Les administrateurs voient tous les comptes, les clients ne voient que leurs propres comptes.",
+                "description": "Récupère la liste des comptes avec pagination et filtres optionnels.\n\n**Autorisations :**\n- **Admin** : Voit tous les comptes de tous les clients\n- **Client** : Voit uniquement ses propres comptes\n\n**Pour tester en tant que Admin :**\n- Email : `admin@banque.sn`\n- Password : `password`\n\n**Pour tester en tant que Client :**\nCréez d'abord un compte via POST /v1/comptes. Le client recevra ses identifiants par email et pourra alors se connecter pour voir uniquement ses comptes.",
                 "operationId": "getComptes",
                 "parameters": [
                     {
@@ -810,18 +810,18 @@
                     "Comptes"
                 ],
                 "summary": "Récupérer un compte spécifique par ID (US 2.1)",
-                "description": "Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (comptes actifs), puis dans Neon (comptes archivés) si non trouvé. Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
+                "description": "Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (comptes actifs), puis dans Neon (comptes archivés) si non trouvé.\n\n**Autorisations :**\n- **Admin** : Peut récupérer n'importe quel compte\n- **Client** : Peut récupérer uniquement ses propres comptes\n\n**IDs de comptes existants dans la base Render (pour tests) :**\n- `a0358129-098e-46e8-99c7-be73a3943006`\n- `a0358125-5167-4b7c-8057-786038cd1e84`\n- `a0358113-ee00-4154-884d-9a3bd5d307fc`\n\n**Pour tester en tant que Client :**\nCréez un compte via POST /v1/comptes, connectez-vous avec les identifiants reçus par email, puis utilisez l'ID du compte créé.",
                 "operationId": "getCompteById",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID UUID du compte",
+                        "description": "ID UUID du compte. Exemples de comptes existants : a0358129-098e-46e8-99c7-be73a3943006",
                         "required": true,
                         "schema": {
                             "type": "string",
                             "format": "uuid",
-                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                            "example": "a0358129-098e-46e8-99c7-be73a3943006"
                         }
                     }
                 ],
