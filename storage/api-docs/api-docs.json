@@ -69,7 +69,7 @@
                                 "description": "Cookie HttpOnly contenant le JWT token",
                                 "schema": {
                                     "type": "string",
-                                    "example": "token=eyJ0eXAiOiJKV1QiLCJhbGc..."
+                                    "example": "access_token=eyJ0eXAiOiJKV1QiLCJhbGc..."
                                 }
                             }
                         },
@@ -103,14 +103,23 @@
                                                             "type": "string",
                                                             "example": "admin"
                                                         },
-                                                        "nom": {
+                                                        "nomComplet": {
                                                             "type": "string",
                                                             "example": "Administrateur"
                                                         }
                                                     },
                                                     "type": "object"
                                                 },
-                                                "expiresIn": {
+                                                "token": {
+                                                    "description": "Token JWT (aussi disponible dans le cookie)",
+                                                    "type": "string",
+                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                },
+                                                "expires_in": {
                                                     "description": "Durée de validité du token en secondes",
                                                     "type": "integer",
                                                     "example": 3600
@@ -1150,8 +1159,14 @@
             "cookieAuth": {
                 "type": "apiKey",
                 "description": "Authentification JWT stockée dans un cookie HttpOnly sécurisé. Le token est automatiquement envoyé avec chaque requête.",
-                "name": "token",
+                "name": "access_token",
                 "in": "cookie"
+            },
+            "bearerAuth": {
+                "type": "http",
+                "description": "Authentification JWT via header Authorization. Utilisez le token retourné par /auth/login dans le header: Authorization Bearer {token}",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
             }
         }
     },

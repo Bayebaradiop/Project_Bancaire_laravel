@@ -51,15 +51,17 @@ class AuthController extends Controller
      *                     @OA\Property(property="id", type="string", format="uuid", example="a0344978-1234-5678-9abc-def012345678"),
      *                     @OA\Property(property="email", type="string", example="admin@banque.sn"),
      *                     @OA\Property(property="role", type="string", example="admin", description="Role: admin ou client"),
-     *                     @OA\Property(property="nom", type="string", example="Administrateur")
+     *                     @OA\Property(property="nomComplet", type="string", example="Administrateur")
      *                 ),
-     *                 @OA\Property(property="expiresIn", type="integer", example=3600, description="Durée de validité du token en secondes")
+     *                 @OA\Property(property="token", type="string", example="eyJ0eXAiOiJKV1QiLCJhbGc...", description="Token JWT (aussi disponible dans le cookie)"),
+     *                 @OA\Property(property="token_type", type="string", example="Bearer"),
+     *                 @OA\Property(property="expires_in", type="integer", example=3600, description="Durée de validité du token en secondes")
      *             )
      *         ),
      *         @OA\Header(
      *             header="Set-Cookie",
      *             description="Cookie HttpOnly contenant le JWT token",
-     *             @OA\Schema(type="string", example="token=eyJ0eXAiOiJKV1QiLCJhbGc...")
+     *             @OA\Schema(type="string", example="access_token=eyJ0eXAiOiJKV1QiLCJhbGc...")
      *         )
      *     ),
      *     @OA\Response(

@@ -56,6 +56,7 @@ class AuthService
                     'email' => $user->email,
                     'role' => $user->role,
                 ],
+                'token' => $accessToken, // Ajout du token pour Swagger
                 'token_type' => 'Bearer',
                 'expires_in' => config('jwt.ttl') * 60, // TTL en secondes
             ],

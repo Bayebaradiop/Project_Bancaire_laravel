@@ -31,8 +31,16 @@ namespace App\Http\Controllers\Api;
  *     securityScheme="cookieAuth",
  *     type="apiKey",
  *     in="cookie",
- *     name="token",
+ *     name="access_token",
  *     description="Authentification JWT stockée dans un cookie HttpOnly sécurisé. Le token est automatiquement envoyé avec chaque requête."
+ * )
+ * 
+ * @OA\SecurityScheme(
+ *     securityScheme="bearerAuth",
+ *     type="http",
+ *     scheme="bearer",
+ *     bearerFormat="JWT",
+ *     description="Authentification JWT via header Authorization. Utilisez le token retourné par /auth/login dans le header: Authorization Bearer {token}"
  * )
  * 
  * @OA\Tag(
