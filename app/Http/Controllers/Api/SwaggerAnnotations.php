@@ -18,13 +18,13 @@ namespace App\Http\Controllers\Api;
  * )
  * 
  * @OA\Server(
- *     url="http://localhost:8000/api",
- *     description="Serveur de développement local"
+ *     url="https://baye-bara-diop-project-bancaire-laravel.onrender.com/api",
+ *     description="Serveur de production Render"
  * )
  * 
  * @OA\Server(
- *     url="https://baye-bara-diop-project-bancaire-laravel.onrender.com/api",
- *     description="Serveur de production Render"
+ *     url="http://localhost:8000/api",
+ *     description="Serveur de développement local"
  * )
  * 
  * @OA\SecurityScheme(

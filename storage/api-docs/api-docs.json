@@ -15,12 +15,12 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000/api",
-            "description": "Serveur de développement local"
-        },
-        {
             "url": "https://baye-bara-diop-project-bancaire-laravel.onrender.com/api",
             "description": "Serveur de production Render"
+        },
+        {
+            "url": "http://localhost:8000/api",
+            "description": "Serveur de développement local"
         }
     ],
     "paths": {
