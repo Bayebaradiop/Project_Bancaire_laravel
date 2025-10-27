@@ -7,17 +7,18 @@ use App\Models\User;
 use App\Models\Client;
 use App\Http\Requests\ListCompteRequest;
 use App\Http\Resources\CompteResource;
+use App\Repositories\CompteRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Events\CompteCreated;
 
 class CompteService
 {
-    protected $archiveService;
+    protected CompteRepository $compteRepository;
 
-    public function __construct(CompteArchiveService $archiveService)
+    public function __construct(CompteRepository $compteRepository)
     {
-        $this->archiveService = $archiveService;
+        $this->compteRepository = $compteRepository;
     }
     /**
      * Récupérer la liste des comptes avec autorisation
@@ -28,15 +29,120 @@ class CompteService
     {
         // 1. Extraire les filtres
         $filters = $this->extractFilters($request);
-        
+
         // 2. Récupérer les comptes avec autorisation
         $paginator = $this->fetchComptes($filters, $user);
-        
+
         // 3. Transformer avec Resource
         $data = CompteResource::collection($paginator->items())->resolve();
-        
+
         // 4. Formater la réponse
         return $this->formatResponse($paginator, $filters, $data);
+    }
+
+    /**
+     * Supprimer un compte (soft delete) et l'archiver dans Neon
+     */
+    public function deleteAndArchive(string $numeroCompte): array
+    {
+        DB::beginTransaction();
+
+        try {
+            // Trouver le compte
+            $compte = $this->compteRepository->findByNumero($numeroCompte);
+
+            if (!$compte) {
+                return [
+                    'success' => false,
+                    'message' => "Le compte {$numeroCompte} n'existe pas",
+                    'code' => 404
+                ];
+            }
+
+            // Vérifier si le compte est déjà supprimé
+            if ($compte->trashed()) {
+                return [
+                    'success' => false,
+                    'message' => "Le compte {$numeroCompte} est déjà supprimé",
+                    'code' => 400
+                ];
+            }
+
+            // Supprimer et archiver
+            $this->compteRepository->deleteAndArchive($compte);
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => 'Compte supprimé avec succès et archivé dans Neon',
+                'data' => [
+                    'id' => $compte->id,
+                    'numeroCompte' => $compte->numeroCompte,
+                    'statut' => 'ferme',
+                    'dateFermeture' => now()->toIso8601String(),
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Restaurer un compte supprimé
+     */
+    public function restore(string $id): array
+    {
+        DB::beginTransaction();
+
+        try {
+            $compte = $this->compteRepository->restore($id);
+
+            if (!$compte) {
+                return [
+                    'success' => false,
+                    'message' => "Le compte avec l'ID {$id} n'existe pas ou n'est pas supprimé",
+                    'code' => 404
+                ];
+            }
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => 'Compte restauré avec succès',
+                'data' => [
+                    'id' => $compte->id,
+                    'numeroCompte' => $compte->numeroCompte,
+                    'statut' => 'actif',
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Récupérer les comptes archivés depuis Neon
+     */
+    public function getArchived(int $perPage = 10): array
+    {
+        $paginator = $this->compteRepository->getArchived($perPage);
+
+        return [
+            'success' => true,
+            'data' => $paginator->items(),
+            'pagination' => [
+                'currentPage' => $paginator->currentPage(),
+                'totalPages' => $paginator->lastPage(),
+                'totalItems' => $paginator->total(),
+                'itemsPerPage' => $paginator->perPage(),
+            ]
+        ];
     }
 
     private function extractFilters(ListCompteRequest $request): array
@@ -175,42 +281,16 @@ class CompteService
             ];
         }
 
-        // 2. Si non trouvé ou archivé, chercher dans Neon (comptes fermés/bloqués/archivés)
-        $archived = $this->archiveService->getArchivedCompte($numero);
+        // 2. Si non trouvé, chercher dans les archives Neon
+        $existsInArchive = $this->compteRepository->existsInArchive($compte->id ?? '');
 
-        if ($archived) {
-            // Vérifier si le client a le droit d'accéder à ce compte archivé
-            if ($user->role === 'client' && $archived->client_email !== $user->email) {
-                return [
-                    'error' => true,
-                    'code' => 403,
-                    'message' => 'Accès non autorisé à ce compte'
-                ];
-            }
-            
-            // Compte trouvé dans les archives Neon
+        if ($existsInArchive) {
+            // Pour l'instant, on ne retourne pas les détails des comptes archivés via cette méthode
+            // Ils sont accessibles via l'endpoint dédié /archives
             return [
-                'success' => true,
-                'data' => [
-                    'id' => $archived->id,
-                    'numeroCompte' => $archived->numerocompte,
-                    'titulaire' => $archived->client_nom,
-                    'type' => $archived->type,
-                    'solde' => $archived->solde,
-                    'devise' => $archived->devise,
-                    'dateCreation' => $archived->created_at,
-                    'statut' => $archived->statut,
-                    'motifBlocage' => $archived->motifblocage,
-                    'archived' => true,
-                    'archived_at' => $archived->archived_at,
-                    'archive_reason' => $archived->archive_reason,
-                    'metadata' => [
-                        'source' => 'neon',
-                        'client_email' => $archived->client_email,
-                        'client_telephone' => $archived->client_telephone,
-                    ]
-                ],
-                'message' => 'Compte archivé récupéré depuis Neon'
+                'error' => true,
+                'code' => 404,
+                'message' => "Le compte avec le numéro {$numero} n'existe pas"
             ];
         }
 
@@ -306,31 +386,10 @@ class CompteService
     }
 
     /**
-     * Archiver un compte par son numéro
+     * Archiver un compte par son numéro (legacy method - now uses deleteAndArchive)
      */
     public function archiveCompte(string $numeroCompte, ?string $reason = null): array
     {
-        $compte = Compte::where('numeroCompte', $numeroCompte)->first();
-
-        if (!$compte) {
-            return [
-                'error' => true,
-                'code' => 404,
-                'message' => "Le compte {$numeroCompte} n'existe pas"
-            ];
-        }
-
-        // Archiver vers Neon
-        $archive = $this->archiveService->archiveCompte($compte, null, $reason);
-
-        return [
-            'success' => true,
-            'data' => [
-                'numeroCompte' => $compte->numeroCompte,
-                'archived_at' => $archive->archived_at,
-                'archive_reason' => $archive->archive_reason,
-            ],
-            'message' => 'Compte archivé avec succès dans le cloud'
-        ];
+        return $this->deleteAndArchive($numeroCompte);
     }
 }
