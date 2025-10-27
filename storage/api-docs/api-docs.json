@@ -248,6 +248,9 @@
                 "security": [
                     {
                         "cookieAuth": []
+                    },
+                    {
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -305,6 +308,9 @@
                 "security": [
                     {
                         "cookieAuth": []
+                    },
+                    {
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -1142,7 +1148,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/v1/comptes/archives": {

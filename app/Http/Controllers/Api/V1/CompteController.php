@@ -258,6 +258,7 @@ class CompteController extends Controller
      *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
      *     operationId="getCompteByNumero",
      *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="numero",
      *         in="path",

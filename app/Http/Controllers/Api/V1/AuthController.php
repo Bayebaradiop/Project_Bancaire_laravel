@@ -113,7 +113,7 @@ class AuthController extends Controller
      *     description="Génère un nouveau token d'accès en utilisant le refresh token stocké dans les cookies.",
      *     operationId="refresh",
      *     tags={"Authentification"},
-     *     security={{"cookieAuth": {}}},
+     *     security={{"cookieAuth": {}}, {"bearerAuth": {}}},
      *     @OA\Response(
      *         response=200,
      *         description="Token rafraîchi avec succès",
@@ -166,7 +166,7 @@ class AuthController extends Controller
      *     description="Déconnecte l'utilisateur authentifié et invalide le token JWT. Les cookies sont supprimés.",
      *     operationId="logout",
      *     tags={"Authentification"},
-     *     security={{"cookieAuth": {}}},
+     *     security={{"cookieAuth": {}}, {"bearerAuth": {}}},
      *     @OA\Response(
      *         response=200,
      *         description="Déconnexion réussie",
