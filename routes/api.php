@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\CompteController;
+use App\Http\Controllers\Api\V1\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -10,18 +11,14 @@ use App\Http\Controllers\Api\V1\CompteController;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
 /*
 |--------------------------------------------------------------------------
 | API V1 Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1')->middleware(['logging', 'track.requests'])->group(function () {
+Route::prefix('v1')->group(function () {
     
-    // Health check endpoint
+    // Health check endpoint (public)
     Route::get('/health', function () {
         return response()->json([
             'success' => true,
@@ -31,13 +28,33 @@ Route::prefix('v1')->middleware(['logging', 'track.requests'])->group(function (
         ]);
     });
 
-    // Routes Comptes (publiques pour l'instant)
-    Route::prefix('comptes')->group(function () {
+    /*
+    |--------------------------------------------------------------------------
+    | Routes d'Authentification (publiques)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('auth')->group(function () {
+        Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
+        Route::post('/refresh', [AuthController::class, 'refresh'])->name('auth.refresh');
+        Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('auth.logout');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Routes Comptes Protégées (auth:api)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('comptes')->middleware('auth:api')->group(function () {
+        // 1. Admin peut récupérer la liste de tous les comptes
+        // 2. Client peut récupérer la liste de ses propres comptes
         Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
+        
         Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
-        // Utilise Route Model Binding avec 'compte:numeroCompte'
-        Route::get('/numero/{compte:numeroCompte}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
+        Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
+        
+        // Routes pour les archives (cloud)
+        Route::get('/archives', [CompteController::class, 'archives'])->name('comptes.archives');
+        Route::post('/{numeroCompte}/archive', [CompteController::class, 'archive'])->name('comptes.archive');
     });
 });
-
 

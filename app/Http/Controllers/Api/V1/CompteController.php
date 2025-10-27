@@ -9,6 +9,8 @@ use App\Http\Requests\StoreCompteRequest;
 use App\Models\Compte;
 use App\Models\Client;
 use App\Models\User;
+use App\Services\CompteService;
+use App\Services\CompteArchiveService;
 use App\Traits\ApiResponseFormat;
 use App\Traits\Cacheable;
 use App\Exceptions\CompteNotFoundException;
@@ -18,15 +20,25 @@ use Illuminate\Support\Facades\Hash;
 
 class CompteController extends Controller
 {
-    use ApiResponseFormat, Cacheable;
+    use ApiResponseFormat;
+
+    protected CompteService $compteService;
+    protected CompteArchiveService $archiveService;
+
+    public function __construct(CompteService $compteService, CompteArchiveService $archiveService)
+    {
+        $this->compteService = $compteService;
+        $this->archiveService = $archiveService;
+    }
 
     /**
      * @OA\Get(
      *     path="/v1/comptes",
-     *     summary="Lister tous les comptes",
-     *     description="Récupère la liste de tous les comptes avec pagination et filtres optionnels",
+     *     summary="Lister les comptes",
+     *     description="Récupère la liste des comptes avec pagination et filtres optionnels. Les administrateurs voient tous les comptes, les clients ne voient que leurs propres comptes.",
      *     operationId="getComptes",
      *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="page",
      *         in="query",
@@ -79,6 +91,14 @@ class CompteController extends Controller
      *         )
      *     ),
      *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     ),
+     *     @OA\Response(
      *         response=422, 
      *         description="Erreur de validation - Paramètres invalides",
      *         @OA\JsonContent(
@@ -99,59 +119,21 @@ class CompteController extends Controller
      */
     public function index(ListCompteRequest $request): JsonResponse
     {
-        // Les paramètres sont déjà validés par ListCompteRequest
-        $limit = $request->getLimit();
-        $type = $request->getType();
-        $statut = $request->getStatut();
-        $search = $request->getSearch();
-        $sort = $request->getSort();
-        $order = $request->getOrder();
-        $page = $request->input('page', 1);
-
-        // Clé de cache basée sur les paramètres
-        $cacheKey = "comptes:list:{$type}:{$statut}:{$search}:{$sort}:{$order}";
-
-        // Utiliser le cache avec pagination (5 minutes)
-        $comptes = $this->rememberPaginated($cacheKey, $page, $limit, function () use ($type, $statut, $search, $sort, $order, $limit) {
-            // Construction de la requête
-            $query = Compte::with(['client.user']);
-
-            // Appliquer les filtres
-            if ($type) {
-                $query->type($type);
-            }
-
-            if ($statut) {
-                $query->statut($statut);
-            }
-
-            if ($search) {
-                $query->search($search);
-            }
-
-            // Appliquer le tri
-            $query->sortBy($sort, $order);
-
-            // Pagination
-            return $query->paginate($limit);
-        }, 300); // Cache pendant 5 minutes
-
-        // Formater la réponse
-        $data = CompteResource::collection($comptes);
-
-        return $this->paginated(
-            $data,
-            $comptes,
-            '/api/v1/comptes',
-            'Liste des comptes récupérée avec succès'
-        );
+        // Récupérer l'utilisateur authentifié
+        $user = $request->user();
+        
+        // Déléguer toute la logique au service avec autorisation
+        $response = $this->compteService->getComptesList($request, $user);
+        
+        // Retourner la réponse
+        return response()->json($response);
     }
 
     /**
      * @OA\Get(
      *     path="/v1/comptes/numero/{numero}",
      *     summary="Obtenir un compte par numéro",
-     *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte",
+     *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
      *     operationId="getCompteByNumero",
      *     tags={"Comptes"},
      *     @OA\Parameter(
@@ -177,7 +159,8 @@ class CompteController extends Controller
      *                 @OA\Property(property="solde", type="number", example=150000),
      *                 @OA\Property(property="devise", type="string", example="FCFA"),
      *                 @OA\Property(property="dateCreation", type="string", format="date-time"),
-     *                 @OA\Property(property="statut", type="string", example="actif")
+     *                 @OA\Property(property="statut", type="string", example="actif"),
+     *                 @OA\Property(property="archived", type="boolean", example=false, description="Indique si le compte est archivé dans Neon")
      *             )
      *         )
      *     ),
@@ -192,23 +175,80 @@ class CompteController extends Controller
      *     )
      * )
      */
-    public function showByNumero(Compte $compte): JsonResponse
+    public function showByNumero(string $numero): JsonResponse
     {
-        // Le compte est automatiquement chargé via Route Model Binding
-        // avec les relations (client.user, transactions) grâce à resolveRouteBinding()
-        // Si le compte n'existe pas, Laravel retourne automatiquement une 404
-        
-        // Utiliser le cache pour 10 minutes
-        $cacheKey = "compte:numero:{$compte->numeroCompte}";
-        
-        $cachedCompte = $this->remember($cacheKey, function () use ($compte) {
-            return $compte;
-        }, 600);
+        try {
+            $user = auth()->user();
+            
+            // 1. Chercher d'abord dans la base principale (Render) - comptes actifs uniquement
+            $compte = Compte::where('numeroCompte', $numero)
+                ->whereNull('archived_at')
+                ->where('statut', 'actif')
+                ->with(['client.user'])
+                ->first();
 
-        return $this->success(
-            new CompteResource($cachedCompte),
-            'Compte récupéré avec succès'
-        );
+            if ($compte) {
+                // Vérifier si le client a le droit d'accéder à ce compte
+                if ($user->role === 'client') {
+                    // Les clients ne peuvent voir que leurs propres comptes
+                    if (!$compte->client || $compte->client->user_id !== $user->id) {
+                        return $this->error('Accès non autorisé à ce compte', 403);
+                    }
+                }
+                
+                // Compte actif trouvé dans la base principale
+                return $this->success(
+                    new CompteResource($compte),
+                    'Compte actif récupéré avec succès'
+                );
+            }
+
+            // 2. Si non trouvé ou archivé, chercher dans Neon (comptes fermés/bloqués/archivés)
+            $archived = $this->archiveService->getArchivedCompte($numero);
+
+            if ($archived) {
+                // Vérifier si le client a le droit d'accéder à ce compte archivé
+                if ($user->role === 'client' && $archived->client_email !== $user->email) {
+                    return $this->error('Accès non autorisé à ce compte', 403);
+                }
+                
+                // Compte trouvé dans les archives Neon
+                return $this->success(
+                    [
+                        'id' => $archived->id,
+                        'numeroCompte' => $archived->numerocompte,
+                        'titulaire' => $archived->client_nom,
+                        'type' => $archived->type,
+                        'solde' => $archived->solde,
+                        'devise' => $archived->devise,
+                        'dateCreation' => $archived->created_at,
+                        'statut' => $archived->statut,
+                        'motifBlocage' => $archived->motifblocage,
+                        'archived' => true,
+                        'archived_at' => $archived->archived_at,
+                        'archive_reason' => $archived->archive_reason,
+                        'metadata' => [
+                            'source' => 'neon',
+                            'client_email' => $archived->client_email,
+                            'client_telephone' => $archived->client_telephone,
+                        ]
+                    ],
+                    'Compte archivé récupéré depuis Neon'
+                );
+            }
+
+            // 3. Compte introuvable dans les deux bases
+            return $this->notFound(
+                "Le compte avec le numéro {$numero} n'existe pas"
+            );
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Erreur lors de la récupération du compte : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors de la récupération du compte'
+            );
+        }
     }
 
     /**
@@ -445,6 +485,154 @@ class CompteController extends Controller
                 config('app.debug') 
                     ? 'Une erreur est survenue : ' . $e->getMessage() 
                     : 'Une erreur est survenue lors de la création du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/v1/comptes/archives",
+     *     summary="Lister les comptes archivés",
+     *     description="Récupère la liste des comptes épargne archivés depuis le cloud (Neon). Les administrateurs voient tous les comptes archivés, les clients ne voient que leurs propres comptes archivés.",
+     *     operationId="getArchivedComptes",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Liste des comptes archivés récupérée avec succès",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Comptes archivés récupérés avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="numeroCompte", type="string"),
+     *                     @OA\Property(property="type", type="string", example="epargne"),
+     *                     @OA\Property(property="solde", type="number", format="float"),
+     *                     @OA\Property(property="archived_at", type="string", format="date-time"),
+     *                     @OA\Property(property="archive_reason", type="string")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     )
+     * )
+     */
+    public function archives(): JsonResponse
+    {
+        try {
+            // Récupérer tous les comptes archivés (sans restriction)
+            $archives = $this->archiveService->getAllArchivedComptes();
+
+            return $this->success(
+                $archives,
+                'Liste de tous les comptes archivés récupérée avec succès'
+            );
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors de la récupération des comptes archivés'
+            );
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/v1/comptes/{numeroCompte}/archive",
+     *     summary="Archiver un compte épargne",
+     *     description="Archive un compte épargne vers le cloud (Neon). Seuls les administrateurs peuvent archiver des comptes.",
+     *     operationId="archiveCompte",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="numeroCompte",
+     *         in="path",
+     *         description="Numéro du compte à archiver",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="reason", type="string", example="Inactif depuis 12 mois")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte archivé avec succès",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Compte archivé avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="archived_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Non autorisé - seuls les administrateurs peuvent archiver",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Seuls les administrateurs peuvent archiver des comptes")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Compte non trouvé")
+     *         )
+     *     )
+     * )
+     */
+    public function archive(string $numeroCompte): JsonResponse
+    {
+        try {
+            $compte = Compte::where('numeroCompte', $numeroCompte)->first();
+
+            if (!$compte) {
+                throw new CompteNotFoundException("Le compte {$numeroCompte} n'existe pas");
+            }
+
+            // Archiver vers Neon (sans vérification de rôle)
+            $reason = request()->input('reason');
+            $archive = $this->archiveService->archiveCompte($compte, null, $reason);
+
+            return $this->success([
+                'numeroCompte' => $compte->numeroCompte,
+                'archived_at' => $archive->archived_at,
+                'archive_reason' => $archive->archive_reason,
+            ], 'Compte archivé avec succès dans le cloud');
+
+        } catch (CompteNotFoundException $e) {
+            return $this->notFound($e->getMessage());
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors de l\'archivage du compte'
             );
         }
     }
