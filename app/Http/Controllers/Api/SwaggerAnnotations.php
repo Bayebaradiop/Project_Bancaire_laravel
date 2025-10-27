@@ -5,34 +5,49 @@ namespace App\Http\Controllers\Api;
 /**
  * @OA\Info(
  *     version="1.0.0",
- *     title="API Banque - Documentation",
- *     description="Documentation de l'API RESTful de gestion bancaire",
+ *     title="API Bancaire - Documentation Complète",
+ *     description="Documentation de l'API RESTful de gestion bancaire incluant l'authentification JWT avec cookies HttpOnly, la gestion des comptes (création, consultation, archivage), et la gestion des archives cloud (Neon).",
  *     @OA\Contact(
  *         email="support@banque.sn",
- *         name="Support API"
+ *         name="Support API Bancaire"
+ *     ),
+ *     @OA\License(
+ *         name="MIT",
+ *         url="https://opensource.org/licenses/MIT"
  *     )
  * )
  * 
  * @OA\Server(
- *     url="http://localhost:8000",
- *     description="Serveur de développement"
+ *     url="http://localhost:8000/api",
+ *     description="Serveur de développement local"
+ * )
+ * 
+ * @OA\Server(
+ *     url="https://api.banque.example.com/api",
+ *     description="Serveur de production"
  * )
  * 
  * @OA\SecurityScheme(
- *     securityScheme="bearerAuth",
- *     type="http",
- *     scheme="bearer",
- *     bearerFormat="JWT"
+ *     securityScheme="cookieAuth",
+ *     type="apiKey",
+ *     in="cookie",
+ *     name="token",
+ *     description="Authentification JWT stockée dans un cookie HttpOnly sécurisé. Le token est automatiquement envoyé avec chaque requête."
  * )
  * 
  * @OA\Tag(
  *     name="Authentification",
- *     description="Endpoints d'authentification"
+ *     description="Endpoints pour l'authentification des utilisateurs (Admin/Client). Utilise JWT avec cookies HttpOnly pour une sécurité renforcée."
  * )
  * 
  * @OA\Tag(
  *     name="Comptes",
- *     description="Gestion des comptes bancaires"
+ *     description="Gestion complète des comptes bancaires : création de nouveaux comptes, consultation, listing avec filtres et pagination, archivage dans le cloud."
+ * )
+ * 
+ * @OA\Tag(
+ *     name="Archives",
+ *     description="Gestion des comptes archivés dans le cloud (Neon). Permet de consulter les comptes fermés ou bloqués qui ont été transférés vers le système d'archivage."
  * )
  */
 class SwaggerAnnotations

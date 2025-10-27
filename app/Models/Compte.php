@@ -78,6 +78,13 @@ class Compte extends Model
     protected $hidden = [];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['solde'];
+
+    /**
      * The model's default values for attributes.
      *
      * @var array
@@ -144,6 +151,37 @@ class Compte extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    /**
+     * Relation avec les transactions.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'compte_id');
+    }
+
+    /**
+     * Accesseur pour calculer le solde du compte.
+     * Solde = Somme des dépôts - Somme des retraits
+     *
+     * @return float
+     */
+    public function getSoldeAttribute(): float
+    {
+        $depots = $this->transactions()
+            ->where('type', 'depot')
+            ->where('statut', 'validee')
+            ->sum('montant');
+
+        $retraits = $this->transactions()
+            ->where('type', 'retrait')
+            ->where('statut', 'validee')
+            ->sum('montant');
+
+        return (float) ($depots - $retraits);
     }
 
     /**

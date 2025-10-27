@@ -1,21 +1,314 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "API Banque - Documentation",
-        "description": "Documentation de l'API RESTful de gestion bancaire",
+        "title": "API Bancaire - Documentation Complète",
+        "description": "Documentation de l'API RESTful de gestion bancaire incluant l'authentification JWT avec cookies HttpOnly, la gestion des comptes (création, consultation, archivage), et la gestion des archives cloud (Neon).",
         "contact": {
-            "name": "Support API",
+            "name": "Support API Bancaire",
             "email": "support@banque.sn"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
         },
         "version": "1.0.0"
     },
     "servers": [
         {
-            "url": "http://localhost:8000",
-            "description": "Serveur de développement"
+            "url": "http://localhost:8000/api",
+            "description": "Serveur de développement local"
+        },
+        {
+            "url": "https://api.banque.example.com/api",
+            "description": "Serveur de production"
         }
     ],
     "paths": {
+        "/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Connexion utilisateur",
+                "description": "Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.",
+                "operationId": "login",
+                "requestBody": {
+                    "description": "Identifiants de connexion",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "Email de l'utilisateur",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@banque.sn"
+                                    },
+                                    "password": {
+                                        "description": "Mot de passe de l'utilisateur",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Connexion réussie",
+                        "headers": {
+                            "Set-Cookie": {
+                                "description": "Cookie HttpOnly contenant le JWT token",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "token=eyJ0eXAiOiJKV1QiLCJhbGc..."
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Connexion réussie"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string",
+                                                            "format": "uuid",
+                                                            "example": "a0344978-1234-5678-9abc-def012345678"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "admin@banque.sn"
+                                                        },
+                                                        "role": {
+                                                            "description": "Role: admin ou client",
+                                                            "type": "string",
+                                                            "example": "admin"
+                                                        },
+                                                        "nom": {
+                                                            "type": "string",
+                                                            "example": "Administrateur"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "expiresIn": {
+                                                    "description": "Durée de validité du token en secondes",
+                                                    "type": "integer",
+                                                    "example": 3600
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Identifiants invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Email ou mot de passe incorrect"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Les données fournies sont invalides"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "L'email est requis"
+                                                    }
+                                                },
+                                                "password": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Le mot de passe est requis"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/refresh": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Rafraîchir le token JWT",
+                "description": "Génère un nouveau token d'accès en utilisant le refresh token stocké dans les cookies.",
+                "operationId": "refresh",
+                "responses": {
+                    "200": {
+                        "description": "Token rafraîchi avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Token rafraîchi avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "expiresIn": {
+                                                    "type": "integer",
+                                                    "example": 3600
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Refresh token manquant ou invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refresh token manquant"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Déconnexion utilisateur",
+                "description": "Déconnecte l'utilisateur authentifié et invalide le token JWT. Les cookies sont supprimés.",
+                "operationId": "logout",
+                "responses": {
+                    "200": {
+                        "description": "Déconnexion réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Déconnexion réussie"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Non authentifié"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/comptes": {
             "get": {
                 "tags": [
@@ -506,7 +799,7 @@
                     "Comptes"
                 ],
                 "summary": "Obtenir un compte par numéro",
-                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte",
+                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
                 "operationId": "getCompteByNumero",
                 "parameters": [
                     {
@@ -568,6 +861,11 @@
                                                 "statut": {
                                                     "type": "string",
                                                     "example": "actif"
+                                                },
+                                                "archived": {
+                                                    "description": "Indique si le compte est archivé dans Neon",
+                                                    "type": "boolean",
+                                                    "example": false
                                                 }
                                             },
                                             "type": "object"
@@ -849,17 +1147,22 @@
     },
     "components": {
         "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "bearerFormat": "JWT",
-                "scheme": "bearer"
+            "cookieAuth": {
+                "type": "apiKey",
+                "description": "Authentification JWT stockée dans un cookie HttpOnly sécurisé. Le token est automatiquement envoyé avec chaque requête.",
+                "name": "token",
+                "in": "cookie"
             }
         }
     },
     "tags": [
         {
+            "name": "Authentification",
+            "description": "Endpoints pour l'authentification des utilisateurs (Admin/Client). Utilise JWT avec cookies HttpOnly pour une sécurité renforcée."
+        },
+        {
             "name": "Comptes",
-            "description": "Gestion des comptes bancaires"
+            "description": "Gestion complète des comptes bancaires : création de nouveaux comptes, consultation, listing avec filtres et pagination, archivage dans le cloud."
         },
         {
             "name": "Health",

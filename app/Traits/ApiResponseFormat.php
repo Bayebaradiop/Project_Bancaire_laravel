@@ -27,7 +27,7 @@ trait ApiResponseFormat
             $response['data'] = $data;
         }
 
-        return response()->json($response, $statusCode);
+        return response()->json($response, $statusCode, [], JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -82,7 +82,7 @@ trait ApiResponseFormat
             'data' => $data,
             'pagination' => $this->formatPagination($paginator),
             'links' => $this->formatPaginationLinks($paginator, $baseUrl),
-        ], 200);
+        ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -109,7 +109,7 @@ trait ApiResponseFormat
             $response['data'] = $data;
         }
 
-        return response()->json($response, $statusCode);
+        return response()->json($response, $statusCode, [], JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -266,6 +266,6 @@ trait ApiResponseFormat
             'success' => $success,
             'message' => $message,
             'data' => $data,
-        ], $statusCode);
+        ], $statusCode, [], JSON_UNESCAPED_UNICODE);
     }
 }

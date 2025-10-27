@@ -39,9 +39,9 @@ class UpdateCompteRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.in' => 'Le type de compte doit être soit "cheque" soit "epargne".',
+            'type.in' => 'Le type de compte doit être soit "chèque" soit "épargne".',
             'devise.max' => 'La devise ne peut pas dépasser 10 caractères.',
-            'statut.in' => 'Le statut doit être "actif", "bloque" ou "ferme".',
+            'statut.in' => 'Le statut doit être "actif", "bloqué" ou "fermé".',
             'version.integer' => 'La version doit être un nombre entier.',
         ];
     }

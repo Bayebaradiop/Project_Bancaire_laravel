@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 
 class CompteController extends Controller
 {
-    use ApiResponseFormat;
+    use ApiResponseFormat, Cacheable;
 
     protected CompteService $compteService;
     protected CompteArchiveService $archiveService;

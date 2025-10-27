@@ -20,6 +20,72 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
+    /**
+     * @OA\Post(
+     *     path="/v1/auth/login",
+     *     summary="Connexion utilisateur",
+     *     description="Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.",
+     *     operationId="login",
+     *     tags={"Authentification"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Identifiants de connexion",
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="admin@banque.sn", description="Email de l'utilisateur"),
+     *             @OA\Property(property="password", type="string", format="password", example="password", description="Mot de passe de l'utilisateur")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Connexion réussie",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Connexion réussie"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="user",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid", example="a0344978-1234-5678-9abc-def012345678"),
+     *                     @OA\Property(property="email", type="string", example="admin@banque.sn"),
+     *                     @OA\Property(property="role", type="string", example="admin", description="Role: admin ou client"),
+     *                     @OA\Property(property="nom", type="string", example="Administrateur")
+     *                 ),
+     *                 @OA\Property(property="expiresIn", type="integer", example=3600, description="Durée de validité du token en secondes")
+     *             )
+     *         ),
+     *         @OA\Header(
+     *             header="Set-Cookie",
+     *             description="Cookie HttpOnly contenant le JWT token",
+     *             @OA\Schema(type="string", example="token=eyJ0eXAiOiJKV1QiLCJhbGc...")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Identifiants invalides",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Email ou mot de passe incorrect")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Erreur de validation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Les données fournies sont invalides"),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="email", type="array", @OA\Items(type="string", example="L'email est requis")),
+     *                 @OA\Property(property="password", type="array", @OA\Items(type="string", example="Le mot de passe est requis"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         try {
@@ -40,6 +106,37 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/v1/auth/refresh",
+     *     summary="Rafraîchir le token JWT",
+     *     description="Génère un nouveau token d'accès en utilisant le refresh token stocké dans les cookies.",
+     *     operationId="refresh",
+     *     tags={"Authentification"},
+     *     security={{"cookieAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Token rafraîchi avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Token rafraîchi avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="expiresIn", type="integer", example=3600)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Refresh token manquant ou invalide",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Refresh token manquant")
+     *         )
+     *     )
+     * )
+     */
     public function refresh(Request $request): JsonResponse
     {
         try {
@@ -62,6 +159,32 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/v1/auth/logout",
+     *     summary="Déconnexion utilisateur",
+     *     description="Déconnecte l'utilisateur authentifié et invalide le token JWT. Les cookies sont supprimés.",
+     *     operationId="logout",
+     *     tags={"Authentification"},
+     *     security={{"cookieAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Déconnexion réussie",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Déconnexion réussie")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     )
+     * )
+     */
     public function logout(Request $request): JsonResponse
     {
         try {

@@ -58,7 +58,7 @@ class StoreCompteRequest extends FormRequest
     {
         return [
             'type.required' => 'Le type de compte est requis',
-            'type.in' => 'Le type de compte doit être epargne, courant ou cheque',
+            'type.in' => 'Le type de compte doit être épargne, courant ou chèque',
             'devise.required' => 'La devise est requise',
             'devise.in' => 'La devise doit être FCFA, USD ou EUR',
             

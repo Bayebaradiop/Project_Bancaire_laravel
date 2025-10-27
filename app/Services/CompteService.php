@@ -9,6 +9,7 @@ use App\Http\Requests\ListCompteRequest;
 use App\Http\Resources\CompteResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Events\CompteCreated;
 
 class CompteService
 {
@@ -257,11 +258,7 @@ class CompteService
                     'user_id' => $user->id,
                 ]);
 
-                // Stocker temporairement pour l'observer
-                session([
-                    'temp_client_password' => $password,
-                    'temp_client_code' => $code,
-                ]);
+                // Note: Plus besoin de session, on dispatch l'event directement après création du compte
             }
 
             // 3. Créer le compte
@@ -272,6 +269,11 @@ class CompteService
                 'statut' => 'actif',
                 'client_id' => $client->id,
             ]);
+
+            // 4. Dispatcher l'event si nouveau client créé
+            if ($password && $code) {
+                event(new CompteCreated($compte, $password, $code));
+            }
 
             // Charger les relations
             $compte->load(['client.user', 'transactions']);
