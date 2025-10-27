@@ -23,8 +23,8 @@ namespace App\Http\Controllers\Api;
  * )
  * 
  * @OA\Server(
- *     url="https://api.banque.example.com/api",
- *     description="Serveur de production"
+ *     url="https://baye-bara-diop-project-bancaire-laravel.onrender.com/api",
+ *     description="Serveur de production Render"
  * )
  * 
  * @OA\SecurityScheme(
