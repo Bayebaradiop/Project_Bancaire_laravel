@@ -395,17 +395,34 @@ class CompteService
             ];
         }
 
-        // 2. Si non trouvé, chercher dans les archives Neon
-        $existsInArchive = $this->compteRepository->existsInArchive($compte->id ?? '');
+        // 2. Si non trouvé dans la base principale, chercher dans les archives Neon par numéro
+        try {
+            $archivedCompte = $this->compteRepository->getArchivedByNumero($numero);
+            
+            if ($archivedCompte) {
+                // Vérifier les droits d'accès pour les clients
+                if ($user->role === 'client') {
+                    // Les clients ne peuvent voir que leurs propres comptes
+                    if ($archivedCompte->client_id !== $user->client->id ?? null) {
+                        return [
+                            'error' => true,
+                            'code' => 403,
+                            'message' => 'Accès non autorisé à ce compte'
+                        ];
+                    }
+                }
 
-        if ($existsInArchive) {
-            // Pour l'instant, on ne retourne pas les détails des comptes archivés via cette méthode
-            // Ils sont accessibles via l'endpoint dédié /archives
-            return [
-                'error' => true,
-                'code' => 404,
-                'message' => "Le compte avec le numéro {$numero} n'existe pas"
-            ];
+                return [
+                    'error' => true,
+                    'code' => 410, // 410 Gone - Le compte existe mais est archivé
+                    'message' => "Le compte {$numero} est archivé et n'est plus actif. Consultez /api/v1/comptes/archives pour plus de détails."
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la recherche dans les archives', [
+                'numero' => $numero,
+                'error' => $e->getMessage()
+            ]);
         }
 
         // 3. Compte introuvable dans les deux bases

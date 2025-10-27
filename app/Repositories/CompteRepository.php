@@ -197,4 +197,17 @@ class CompteRepository
             ->where('id', $id)
             ->exists();
     }
+
+    /**
+     * Récupérer un compte archivé par numéro de compte
+     */
+    public function getArchivedByNumero(string $numeroCompte): ?object
+    {
+        DB::connection('neon')->reconnect();
+        
+        return DB::connection('neon')
+            ->table('archives_comptes')
+            ->where('numeroCompte', $numeroCompte)
+            ->first();
+    }
 }
