@@ -42,13 +42,17 @@ Route::prefix('v1')->group(function () {
         // 1. Admin peut récupérer la liste de tous les comptes
         // 2. Client peut récupérer la liste de ses propres comptes
         Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
-        
+
         Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
         Route::get('/numero/{numero}', [CompteController::class, 'showByNumero'])->name('comptes.show.numero');
-        
+
         // Routes pour les archives (cloud)
         Route::get('/archives', [CompteController::class, 'archives'])->name('comptes.archives');
         Route::post('/{numeroCompte}/archive', [CompteController::class, 'archive'])->name('comptes.archive');
+
+        // Routes pour la suppression et restauration (dual database)
+        Route::delete('/{numeroCompte}', [CompteController::class, 'destroy'])->name('comptes.destroy');
+        Route::post('/restore/{id}', [CompteController::class, 'restore'])->name('comptes.restore');
     });
 });
 

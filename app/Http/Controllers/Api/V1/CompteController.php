@@ -7,7 +7,7 @@ use App\Http\Resources\CompteResource;
 use App\Http\Requests\ListCompteRequest;
 use App\Http\Requests\StoreCompteRequest;
 use App\Services\CompteService;
-use App\Services\CompteArchiveService;
+use App\Repositories\CompteRepository;
 use App\Traits\ApiResponseFormat;
 use App\Traits\Cacheable;
 use Illuminate\Http\JsonResponse;
@@ -18,12 +18,12 @@ class CompteController extends Controller
     use ApiResponseFormat, Cacheable;
 
     protected CompteService $compteService;
-    protected CompteArchiveService $archiveService;
+    protected CompteRepository $compteRepository;
 
-    public function __construct(CompteService $compteService, CompteArchiveService $archiveService)
+    public function __construct(CompteService $compteService, CompteRepository $compteRepository)
     {
         $this->compteService = $compteService;
-        $this->archiveService = $archiveService;
+        $this->compteRepository = $compteRepository;
     }
 
     /**
@@ -415,18 +415,15 @@ class CompteController extends Controller
     public function archives(): JsonResponse
     {
         try {
-            // Récupérer tous les comptes archivés (sans restriction)
-            $archives = $this->archiveService->getAllArchivedComptes();
+            // Récupérer tous les comptes archivés depuis Neon
+            $result = $this->compteService->getArchived();
 
-            return $this->success(
-                $archives,
-                'Liste de tous les comptes archivés récupérée avec succès'
-            );
+            return response()->json($result);
 
         } catch (\Exception $e) {
             return $this->serverError(
-                config('app.debug') 
-                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                config('app.debug')
+                    ? 'Une erreur est survenue : ' . $e->getMessage()
                     : 'Une erreur est survenue lors de la récupération des comptes archivés'
             );
         }
@@ -491,24 +488,135 @@ class CompteController extends Controller
     public function archive(string $numeroCompte, Request $request): JsonResponse
     {
         try {
-            $reason = $request->input('reason');
-            $result = $this->compteService->archiveCompte($numeroCompte, $reason);
+            $result = $this->compteService->deleteAndArchive($numeroCompte);
 
             // Gérer les erreurs
-            if (isset($result['error'])) {
-                return match($result['code']) {
-                    404 => $this->notFound($result['message']),
-                    default => $this->serverError($result['message'])
-                };
+            if (!$result['success']) {
+                return response()->json($result, $result['code'] ?? 400);
             }
 
-            return $this->success($result['data'], $result['message']);
+            return response()->json($result);
 
         } catch (\Exception $e) {
             return $this->serverError(
-                config('app.debug') 
-                    ? 'Une erreur est survenue : ' . $e->getMessage() 
-                    : 'Une erreur est survenue lors de l\'archivage du compte'
+                config('app.debug')
+                    ? 'Une erreur est survenue : ' . $e->getMessage()
+                    : 'Une erreur est survenue lors de la suppression du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/v1/comptes/{numeroCompte}",
+     *     summary="Supprimer un compte (soft delete) et l'archiver",
+     *     description="Supprime un compte bancaire (soft delete) et l'archive automatiquement dans la base Neon. Seuls les administrateurs peuvent supprimer des comptes.",
+     *     operationId="deleteCompte",
+     *     tags={"Comptes"},
+     *     security={{"cookieAuth": {}}},
+     *     @OA\Parameter(
+     *         name="numeroCompte",
+     *         in="path",
+     *         description="Numéro du compte à supprimer",
+     *         required=true,
+     *         @OA\Schema(type="string", example="CP3105472638")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte supprimé avec succès et archivé dans Neon",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte supprimé avec succès et archivé dans Neon"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", example="550e8400-e29b-41d4-a716-446655440000"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                 @OA\Property(property="statut", type="string", example="ferme"),
+     *                 @OA\Property(property="dateFermeture", type="string", format="date-time", example="2025-10-27T11:15:00Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte CP9999999999 n'existe pas")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Compte déjà supprimé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte CP3105472638 est déjà supprimé")
+     *         )
+     *     )
+     * )
+     */
+    public function destroy(string $numeroCompte): JsonResponse
+    {
+        return $this->archive($numeroCompte, request());
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/v1/comptes/restore/{id}",
+     *     summary="Restaurer un compte supprimé",
+     *     description="Restaure un compte bancaire précédemment supprimé. Le compte redevient actif et est supprimé de l'archive Neon.",
+     *     operationId="restoreCompte",
+     *     tags={"Comptes"},
+     *     security={{"cookieAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID du compte à restaurer",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte restauré avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte restauré avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", example="550e8400-e29b-41d4-a716-446655440000"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                 @OA\Property(property="statut", type="string", example="actif")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé ou pas supprimé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte avec l'ID 550e8400-e29b-41d4-a716-446655440000 n'existe pas ou n'est pas supprimé")
+     *         )
+     *     )
+     * )
+     */
+    public function restore(string $id): JsonResponse
+    {
+        try {
+            $result = $this->compteService->restore($id);
+
+            // Gérer les erreurs
+            if (!$result['success']) {
+                return response()->json($result, $result['code'] ?? 400);
+            }
+
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug')
+                    ? 'Une erreur est survenue : ' . $e->getMessage()
+                    : 'Une erreur est survenue lors de la restauration du compte'
             );
         }
     }

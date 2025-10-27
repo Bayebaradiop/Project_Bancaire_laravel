@@ -1103,6 +1103,204 @@
                 ]
             }
         },
+        "/v1/comptes/{numeroCompte}": {
+            "delete": {
+                "tags": [
+                    "Comptes"
+                ],
+                "summary": "Supprimer un compte (soft delete) et l'archiver",
+                "description": "Supprime un compte bancaire (soft delete) et l'archive automatiquement dans la base Neon. Seuls les administrateurs peuvent supprimer des comptes.",
+                "operationId": "deleteCompte",
+                "parameters": [
+                    {
+                        "name": "numeroCompte",
+                        "in": "path",
+                        "description": "Numéro du compte à supprimer",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "CP3105472638"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Compte supprimé avec succès et archivé dans Neon",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Compte supprimé avec succès et archivé dans Neon"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                                                },
+                                                "numeroCompte": {
+                                                    "type": "string",
+                                                    "example": "CP3105472638"
+                                                },
+                                                "statut": {
+                                                    "type": "string",
+                                                    "example": "ferme"
+                                                },
+                                                "dateFermeture": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-10-27T11:15:00Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Compte non trouvé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le compte CP9999999999 n'existe pas"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Compte déjà supprimé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le compte CP3105472638 est déjà supprimé"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/comptes/restore/{id}": {
+            "post": {
+                "tags": [
+                    "Comptes"
+                ],
+                "summary": "Restaurer un compte supprimé",
+                "description": "Restaure un compte bancaire précédemment supprimé. Le compte redevient actif et est supprimé de l'archive Neon.",
+                "operationId": "restoreCompte",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du compte à restaurer",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Compte restauré avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Compte restauré avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                                                },
+                                                "numeroCompte": {
+                                                    "type": "string",
+                                                    "example": "CP3105472638"
+                                                },
+                                                "statut": {
+                                                    "type": "string",
+                                                    "example": "actif"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Compte non trouvé ou pas supprimé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le compte avec l'ID 550e8400-e29b-41d4-a716-446655440000 n'existe pas ou n'est pas supprimé"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/health": {
             "get": {
                 "tags": [
