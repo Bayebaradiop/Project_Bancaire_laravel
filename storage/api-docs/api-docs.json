@@ -793,6 +793,243 @@
                 }
             }
         },
+        "/v1/comptes/{id}": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "summary": "Récupérer un compte spécifique par ID (US 2.1)",
+                "description": "Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (comptes actifs), puis dans Neon (comptes archivés) si non trouvé. Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
+                "operationId": "getCompteById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID UUID du compte",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Compte récupéré avec succès (depuis PostgreSQL ou Neon)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                                                },
+                                                "numeroCompte": {
+                                                    "type": "string",
+                                                    "example": "C00123456"
+                                                },
+                                                "titulaire": {
+                                                    "type": "string",
+                                                    "example": "Amadou Diallo"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "epargne",
+                                                        "cheque"
+                                                    ],
+                                                    "example": "epargne"
+                                                },
+                                                "solde": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1250000
+                                                },
+                                                "devise": {
+                                                    "type": "string",
+                                                    "example": "FCFA"
+                                                },
+                                                "dateCreation": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2023-03-15T00:00:00Z"
+                                                },
+                                                "statut": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "actif",
+                                                        "bloque",
+                                                        "ferme"
+                                                    ],
+                                                    "example": "bloque"
+                                                },
+                                                "motifBlocage": {
+                                                    "type": "string",
+                                                    "example": "Inactivité de 30+ jours",
+                                                    "nullable": true
+                                                },
+                                                "metadata": {
+                                                    "properties": {
+                                                        "derniereModification": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2023-06-10T14:30:00Z"
+                                                        },
+                                                        "version": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "archived": {
+                                                            "description": "true si récupéré depuis Neon, false si depuis PostgreSQL",
+                                                            "type": "boolean",
+                                                            "example": false
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Non authentifié"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Accès non autorisé - Client tentant d'accéder à un compte qui ne lui appartient pas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string",
+                                                    "example": "ACCESS_DENIED"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Accès non autorisé à ce compte"
+                                                },
+                                                "details": {
+                                                    "properties": {
+                                                        "compteId": {
+                                                            "type": "string",
+                                                            "format": "uuid",
+                                                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Compte non trouvé dans PostgreSQL ni dans Neon",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "properties": {
+                                                "code": {
+                                                    "type": "string",
+                                                    "example": "COMPTE_NOT_FOUND"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Le compte avec l'ID spécifié n'existe pas"
+                                                },
+                                                "details": {
+                                                    "properties": {
+                                                        "compteId": {
+                                                            "type": "string",
+                                                            "format": "uuid",
+                                                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erreur serveur",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Une erreur est survenue lors de la récupération du compte"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/comptes/numero/{numero}": {
             "get": {
                 "tags": [
