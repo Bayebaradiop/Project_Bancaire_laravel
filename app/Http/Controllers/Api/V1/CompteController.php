@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CompteResource;
 use App\Http\Requests\ListCompteRequest;
 use App\Http\Requests\StoreCompteRequest;
+use App\Http\Requests\BloquerCompteRequest;
+use App\Http\Requests\DebloquerCompteRequest;
 use App\Services\CompteService;
 use App\Repositories\CompteRepository;
 use App\Traits\ApiResponseFormat;
@@ -838,6 +840,243 @@ class CompteController extends Controller
                 config('app.debug')
                     ? 'Une erreur est survenue : ' . $e->getMessage()
                     : 'Une erreur est survenue lors de la restauration du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/v1/comptes/{compteId}/bloquer",
+     *     summary="Bloquer un compte épargne (US 2.5)",
+     *     description="Bloque un compte épargne actif pour une durée déterminée. Seuls les administrateurs peuvent bloquer un compte. Le compte doit être de type épargne et avoir un statut actif. La date de déblocage prévue est calculée automatiquement.",
+     *     operationId="bloquerCompte",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="compteId",
+     *         in="path",
+     *         description="ID UUID du compte à bloquer",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Informations de blocage du compte",
+     *         @OA\JsonContent(
+     *             required={"motif", "duree", "unite"},
+     *             @OA\Property(property="motif", type="string", minLength=10, maxLength=500, example="Activité suspecte détectée", description="Motif du blocage (minimum 10 caractères)"),
+     *             @OA\Property(property="duree", type="integer", minimum=1, maximum=365, example=30, description="Durée du blocage"),
+     *             @OA\Property(property="unite", type="string", enum={"jours", "mois"}, example="mois", description="Unité de temps (jours ou mois)")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte bloqué avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte bloqué avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000"),
+     *                 @OA\Property(property="statut", type="string", example="bloque"),
+     *                 @OA\Property(property="motifBlocage", type="string", example="Activité suspecte détectée"),
+     *                 @OA\Property(property="dateBlocage", type="string", format="date-time", example="2025-10-19T11:20:00Z"),
+     *                 @OA\Property(property="dateDeblocagePrevue", type="string", format="date-time", example="2025-11-18T11:20:00Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Erreur de validation ou compte non éligible au blocage",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Seuls les comptes épargne peuvent être bloqués")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Action non autorisée - Seuls les administrateurs peuvent bloquer un compte",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Action non autorisée")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte avec l'ID 550e8400-e29b-41d4-a716-446655440000 n'existe pas")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Erreur de validation des données",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Les données fournies sont invalides"),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="motif", type="array", @OA\Items(type="string", example="Le motif de blocage est obligatoire")),
+     *                 @OA\Property(property="duree", type="array", @OA\Items(type="string", example="La durée de blocage est obligatoire"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur serveur",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Une erreur est survenue lors du blocage du compte")
+     *         )
+     *     )
+     * )
+     */
+    public function bloquer(string $compteId, BloquerCompteRequest $request): JsonResponse
+    {
+        try {
+            // Déléguer la logique au service
+            $result = $this->compteService->bloquerCompte($compteId, $request->validated());
+
+            // Gérer les erreurs
+            if (!$result['success']) {
+                return response()->json($result, $result['http_code'] ?? 400);
+            }
+
+            // Succès
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug')
+                    ? 'Une erreur est survenue : ' . $e->getMessage()
+                    : 'Une erreur est survenue lors du blocage du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/v1/comptes/{compteId}/debloquer",
+     *     summary="Débloquer un compte épargne (US 2.5)",
+     *     description="Débloque un compte épargne précédemment bloqué et le remet en statut actif. Seuls les administrateurs peuvent débloquer un compte. Le compte doit avoir un statut bloqué.",
+     *     operationId="debloquerCompte",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="compteId",
+     *         in="path",
+     *         description="ID UUID du compte à débloquer",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Motif du déblocage",
+     *         @OA\JsonContent(
+     *             required={"motif"},
+     *             @OA\Property(property="motif", type="string", minLength=10, maxLength=500, example="Vérification complétée", description="Motif du déblocage (minimum 10 caractères)")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte débloqué avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte débloqué avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000"),
+     *                 @OA\Property(property="statut", type="string", example="actif"),
+     *                 @OA\Property(property="dateDeblocage", type="string", format="date-time", example="2025-10-19T12:00:00Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Compte non éligible au déblocage",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte ne peut pas être débloqué. Statut actuel : actif")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Action non autorisée - Seuls les administrateurs peuvent débloquer un compte",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Action non autorisée")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte avec l'ID 550e8400-e29b-41d4-a716-446655440000 n'existe pas")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Erreur de validation des données",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Les données fournies sont invalides"),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="motif", type="array", @OA\Items(type="string", example="Le motif de déblocage est obligatoire"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur serveur",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Une erreur est survenue lors du déblocage du compte")
+     *         )
+     *     )
+     * )
+     */
+    public function debloquer(string $compteId, DebloquerCompteRequest $request): JsonResponse
+    {
+        try {
+            // Déléguer la logique au service
+            $result = $this->compteService->debloquerCompte($compteId, $request->validated());
+
+            // Gérer les erreurs
+            if (!$result['success']) {
+                return response()->json($result, $result['http_code'] ?? 400);
+            }
+
+            // Succès
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug')
+                    ? 'Une erreur est survenue : ' . $e->getMessage()
+                    : 'Une erreur est survenue lors du déblocage du compte'
             );
         }
     }

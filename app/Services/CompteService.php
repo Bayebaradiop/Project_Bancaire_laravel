@@ -505,4 +505,142 @@ class CompteService
     {
         return $this->deleteAndArchive($numeroCompte);
     }
+
+    /**
+     * Bloquer un compte épargne (US 2.5)
+     * - Seuls les comptes actifs peuvent être bloqués
+     * - Calcul automatique de la date de déblocage prévue
+     */
+    public function bloquerCompte(string $compteId, array $data): array
+    {
+        DB::beginTransaction();
+
+        try {
+            // 1. Récupérer le compte
+            $compte = Compte::find($compteId);
+
+            if (!$compte) {
+                return [
+                    'success' => false,
+                    'message' => "Le compte avec l'ID {$compteId} n'existe pas",
+                    'http_code' => 404
+                ];
+            }
+
+            // 2. Vérifier que le compte est de type épargne
+            if ($compte->type !== 'epargne') {
+                return [
+                    'success' => false,
+                    'message' => 'Seuls les comptes épargne peuvent être bloqués',
+                    'http_code' => 400
+                ];
+            }
+
+            // 3. Vérifier que le compte est actif
+            if ($compte->statut !== 'actif') {
+                return [
+                    'success' => false,
+                    'message' => "Le compte ne peut pas être bloqué. Statut actuel : {$compte->statut}",
+                    'http_code' => 400
+                ];
+            }
+
+            // 4. Calculer la date de déblocage prévue
+            $dateBlocage = now();
+            $duree = $data['duree'];
+            $unite = $data['unite'];
+
+            if ($unite === 'mois') {
+                $dateDeblocagePrevue = $dateBlocage->copy()->addMonths($duree);
+            } else { // jours
+                $dateDeblocagePrevue = $dateBlocage->copy()->addDays($duree);
+            }
+
+            // 5. Bloquer le compte
+            $compte->update([
+                'statut' => 'bloque',
+                'motifBlocage' => $data['motif'],
+                'dateBlocage' => $dateBlocage,
+                'dateDeblocagePrevue' => $dateDeblocagePrevue,
+                'derniereModification' => now(),
+                'version' => $compte->version + 1,
+            ]);
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => 'Compte bloqué avec succès',
+                'data' => [
+                    'id' => $compte->id,
+                    'statut' => $compte->statut,
+                    'motifBlocage' => $compte->motifBlocage,
+                    'dateBlocage' => $compte->dateBlocage?->toIso8601String(),
+                    'dateDeblocagePrevue' => $compte->dateDeblocagePrevue?->toIso8601String(),
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Débloquer un compte épargne (US 2.5)
+     * - Seuls les comptes bloqués peuvent être débloqués
+     */
+    public function debloquerCompte(string $compteId, array $data): array
+    {
+        DB::beginTransaction();
+
+        try {
+            // 1. Récupérer le compte
+            $compte = Compte::find($compteId);
+
+            if (!$compte) {
+                return [
+                    'success' => false,
+                    'message' => "Le compte avec l'ID {$compteId} n'existe pas",
+                    'http_code' => 404
+                ];
+            }
+
+            // 2. Vérifier que le compte est bloqué
+            if ($compte->statut !== 'bloque') {
+                return [
+                    'success' => false,
+                    'message' => "Le compte ne peut pas être débloqué. Statut actuel : {$compte->statut}",
+                    'http_code' => 400
+                ];
+            }
+
+            // 3. Débloquer le compte
+            $compte->update([
+                'statut' => 'actif',
+                'motifBlocage' => null,
+                'dateDeblocage' => now(),
+                'dateBlocage' => null,
+                'dateDeblocagePrevue' => null,
+                'derniereModification' => now(),
+                'version' => $compte->version + 1,
+            ]);
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => 'Compte débloqué avec succès',
+                'data' => [
+                    'id' => $compte->id,
+                    'statut' => $compte->statut,
+                    'dateDeblocage' => $compte->dateDeblocage?->toIso8601String(),
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
 }

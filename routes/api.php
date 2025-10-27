@@ -55,6 +55,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/archives', [CompteController::class, 'archives'])->name('comptes.archives');
         Route::post('/{numeroCompte}/archive', [CompteController::class, 'archive'])->name('comptes.archive');
 
+        // Routes pour le blocage/déblocage (US 2.5)
+        Route::post('/{compteId}/bloquer', [CompteController::class, 'bloquer'])->name('comptes.bloquer');
+        Route::post('/{compteId}/debloquer', [CompteController::class, 'debloquer'])->name('comptes.debloquer');
+
         // Routes pour la suppression et restauration (dual database)
         Route::delete('/{numeroCompte}', [CompteController::class, 'destroy'])->name('comptes.destroy');
         Route::post('/restore/{id}', [CompteController::class, 'restore'])->name('comptes.restore');
