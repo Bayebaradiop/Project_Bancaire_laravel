@@ -850,16 +850,18 @@ class CompteController extends Controller
      * @OA\Post(
      *     path="/v1/comptes/{compteId}/bloquer",
      *     summary="Bloquer un compte épargne (US 2.5)",
-     *     description="Bloque un compte épargne actif pour une durée déterminée. Seuls les administrateurs peuvent bloquer un compte. Le compte doit être de type épargne et avoir un statut actif. La date de déblocage prévue est calculée automatiquement.",
+     *     description="Bloque un compte épargne actif pour une durée déterminée. Seuls les administrateurs peuvent bloquer un compte. Le compte doit être de type épargne et avoir un statut actif. La date de déblocage prévue est calculée automatiquement.
+
+**Note pour les tests :** L'ID d'exemple `a0358129-098e-46e8-99c7-be73a3943006` existe dans la base de données Render et peut être utilisé pour vos tests. Vous pouvez aussi récupérer d'autres IDs via GET /v1/comptes.",
      *     operationId="bloquerCompte",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="compteId",
      *         in="path",
-     *         description="ID UUID du compte à bloquer",
+     *         description="ID UUID du compte à bloquer. Exemple: a0358129-098e-46e8-99c7-be73a3943006 (existe dans la base Render pour les tests)",
      *         required=true,
-     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *         @OA\Schema(type="string", format="uuid", example="a0358129-098e-46e8-99c7-be73a3943006")
      *     ),
      *     @OA\RequestBody(
      *         required=true,
@@ -971,16 +973,18 @@ class CompteController extends Controller
      * @OA\Post(
      *     path="/v1/comptes/{compteId}/debloquer",
      *     summary="Débloquer un compte épargne (US 2.5)",
-     *     description="Débloque un compte épargne précédemment bloqué et le remet en statut actif. Seuls les administrateurs peuvent débloquer un compte. Le compte doit avoir un statut bloqué.",
+     *     description="Débloque un compte épargne précédemment bloqué et le remet en statut actif. Seuls les administrateurs peuvent débloquer un compte. Le compte doit avoir un statut bloqué.
+
+**Note pour les tests :** L'ID d'exemple `a0358129-098e-46e8-99c7-be73a3943006` existe dans la base de données Render et peut être utilisé pour vos tests. Vous pouvez aussi récupérer d'autres IDs via GET /v1/comptes.",
      *     operationId="debloquerCompte",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="compteId",
      *         in="path",
-     *         description="ID UUID du compte à débloquer",
+     *         description="ID UUID du compte à débloquer. Exemple: a0358129-098e-46e8-99c7-be73a3943006 (existe dans la base Render pour les tests)",
      *         required=true,
-     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *         @OA\Schema(type="string", format="uuid", example="a0358129-098e-46e8-99c7-be73a3943006")
      *     ),
      *     @OA\RequestBody(
      *         required=true,
