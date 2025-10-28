@@ -121,8 +121,11 @@ class CompteRepository
                 'updated_at' => now(),
             ]);
 
-            // Hard delete dans la base principale (suppression complète)
-            $compte->forceDelete();
+            // Mettre le statut à 'ferme' avant le soft delete
+            $compte->update(['statut' => 'ferme']);
+            
+            // Soft delete dans la base principale (utilise SoftDeletes)
+            $compte->delete();
         });
 
         return true;
