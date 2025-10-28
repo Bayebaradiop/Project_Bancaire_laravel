@@ -25,8 +25,15 @@ class ClientFactory extends Factory
      */
     public function definition(): array
     {
+        $user = User::factory()->create();
+        
         return [
-            'user_id' => User::factory(),
+            'user_id' => $user->id,
+            'titulaire' => $user->nomComplet,
+            'nci' => $user->nci,
+            'email' => $user->email,
+            'telephone' => $user->telephone,
+            'adresse' => $user->adresse,
         ];
     }
 }
