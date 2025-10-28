@@ -65,21 +65,16 @@ class AuthController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(
-     *                     property="user",
-     *                     type="object",
-     *                     @OA\Property(property="id", type="string", format="uuid", example="a0344978-1234-5678-9abc-def012345678"),
-     *                     @OA\Property(property="email", type="string", example="admin@banque.sn"),
-     *                     @OA\Property(property="role", type="string", example="admin", description="Role: admin ou client"),
-     *                     @OA\Property(property="nom", type="string", example="Administrateur")
-     *                 ),
-     *                 @OA\Property(property="expiresIn", type="integer", example=3600, description="Durée de validité du token en secondes")
+     *                 @OA\Property(property="access_token", type="string", example="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."),
+     *                 @OA\Property(property="refresh_token", type="string", example="a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"),
+     *                 @OA\Property(property="token_type", type="string", example="Bearer"),
+     *                 @OA\Property(property="expires_in", type="integer", example=3600, description="Durée de validité du token en secondes")
      *             )
      *         ),
      *         @OA\Header(
      *             header="Set-Cookie",
-     *             description="Cookie HttpOnly contenant le JWT token",
-     *             @OA\Schema(type="string", example="token=eyJ0eXAiOiJKV1QiLCJhbGc...")
+     *             description="Cookies HttpOnly contenant access_token et refresh_token",
+     *             @OA\Schema(type="string", example="access_token=eyJ0eXAiOiJKV1QiLCJhbGc...; refresh_token=a1b2c3d4...")
      *         )
      *     ),
      *     @OA\Response(

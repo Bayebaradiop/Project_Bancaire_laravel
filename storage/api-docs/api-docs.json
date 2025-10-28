@@ -66,10 +66,10 @@
                         "description": "Connexion réussie",
                         "headers": {
                             "Set-Cookie": {
-                                "description": "Cookie HttpOnly contenant le JWT token",
+                                "description": "Cookies HttpOnly contenant access_token et refresh_token",
                                 "schema": {
                                     "type": "string",
-                                    "example": "token=eyJ0eXAiOiJKV1QiLCJhbGc..."
+                                    "example": "access_token=eyJ0eXAiOiJKV1QiLCJhbGc...; refresh_token=a1b2c3d4..."
                                 }
                             }
                         },
@@ -87,30 +87,19 @@
                                         },
                                         "data": {
                                             "properties": {
-                                                "user": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string",
-                                                            "format": "uuid",
-                                                            "example": "a0344978-1234-5678-9abc-def012345678"
-                                                        },
-                                                        "email": {
-                                                            "type": "string",
-                                                            "example": "admin@banque.sn"
-                                                        },
-                                                        "role": {
-                                                            "description": "Role: admin ou client",
-                                                            "type": "string",
-                                                            "example": "admin"
-                                                        },
-                                                        "nom": {
-                                                            "type": "string",
-                                                            "example": "Administrateur"
-                                                        }
-                                                    },
-                                                    "type": "object"
+                                                "access_token": {
+                                                    "type": "string",
+                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
                                                 },
-                                                "expiresIn": {
+                                                "refresh_token": {
+                                                    "type": "string",
+                                                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                },
+                                                "expires_in": {
                                                     "description": "Durée de validité du token en secondes",
                                                     "type": "integer",
                                                     "example": 3600
@@ -211,7 +200,15 @@
                                         },
                                         "data": {
                                             "properties": {
-                                                "expiresIn": {
+                                                "access_token": {
+                                                    "type": "string",
+                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                },
+                                                "expires_in": {
                                                     "type": "integer",
                                                     "example": 3600
                                                 }

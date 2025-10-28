@@ -50,14 +50,9 @@ class AuthService
             'success' => true,
             'message' => 'Connexion réussie',
             'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'nomComplet' => $user->nomComplet,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                ],
-                'token_type' => 'Bearer',
                 'access_token' => $accessToken,
+                'refresh_token' => $refreshToken,
+                'token_type' => 'Bearer',
                 'expires_in' => config('jwt.ttl') * 60, // TTL en secondes
             ],
             'access_cookie' => $accessCookie,
