@@ -57,7 +57,6 @@ Route::prefix('v1')->group(function () {
 
         // Routes pour les archives (cloud)
         Route::get('/archives', [CompteController::class, 'archives'])->name('comptes.archives');
-        Route::post('/{numeroCompte}/archive', [CompteController::class, 'archive'])->name('comptes.archive');
 
         // Routes pour le blocage/déblocage (US 2.5)
         Route::post('/{compteId}/bloquer', [CompteController::class, 'bloquer'])->name('comptes.bloquer');

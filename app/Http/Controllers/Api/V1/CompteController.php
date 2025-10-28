@@ -693,60 +693,8 @@ class CompteController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/v1/comptes/{numeroCompte}/archive",
-     *     summary="Archiver un compte épargne",
-     *     description="Archive un compte épargne vers le cloud (Neon). Seuls les administrateurs peuvent archiver des comptes.",
-     *     operationId="archiveCompte",
-     *     tags={"Comptes"},
-     *     security={{"bearerAuth": {}}},
-     *     @OA\Parameter(
-     *         name="numeroCompte",
-     *         in="path",
-     *         description="Numéro du compte à archiver",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=false,
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="reason", type="string", example="Inactif depuis 12 mois")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Compte archivé avec succès",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Compte archivé avec succès"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="object",
-     *                 @OA\Property(property="archived_at", type="string", format="date-time")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=403,
-     *         description="Non autorisé - seuls les administrateurs peuvent archiver",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="status", type="string", example="error"),
-     *             @OA\Property(property="message", type="string", example="Seuls les administrateurs peuvent archiver des comptes")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Compte non trouvé",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="status", type="string", example="error"),
-     *             @OA\Property(property="message", type="string", example="Compte non trouvé")
-     *         )
-     *     )
-     * )
+     * Méthode archive() - Utilisée uniquement en interne par les Jobs automatiques
+     * Pas d'endpoint public exposé dans les routes
      */
     public function archive(string $numeroCompte): JsonResponse
     {
