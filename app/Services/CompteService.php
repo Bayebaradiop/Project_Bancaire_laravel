@@ -687,4 +687,113 @@ class CompteService
             throw $e;
         }
     }
+
+    /**
+     * Mettre à jour les informations d'un compte (US 2.3)
+     * 
+     * @param string $compteId ID du compte à mettre à jour
+     * @param array $data Données à mettre à jour
+     * @return array
+     */
+    public function updateCompte(string $compteId, array $data): array
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Récupérer le compte avec ses relations
+            $compte = Compte::with(['client.user'])->find($compteId);
+
+            if (!$compte) {
+                return [
+                    'success' => false,
+                    'message' => 'Compte non trouvé',
+                    'http_code' => 404
+                ];
+            }
+
+            // Vérifier que le compte n'est pas archivé
+            if ($compte->archived_at) {
+                return [
+                    'success' => false,
+                    'message' => 'Impossible de modifier un compte archivé',
+                    'http_code' => 400
+                ];
+            }
+
+            // Mettre à jour les informations du titulaire (User) si fournies
+            $user = $compte->client->user;
+            $userUpdated = false;
+            
+            if (isset($data['titulaire'])) {
+                $user->nomComplet = $data['titulaire'];
+                $userUpdated = true;
+            }
+            
+            if (isset($data['email'])) {
+                $user->email = $data['email'];
+                $userUpdated = true;
+            }
+            
+            if (isset($data['telephone'])) {
+                $user->telephone = $data['telephone'];
+                $userUpdated = true;
+            }
+            
+            if (isset($data['adresse'])) {
+                $user->adresse = $data['adresse'];
+                $userUpdated = true;
+            }
+
+            if ($userUpdated) {
+                $user->save();
+            }
+
+            // Mettre à jour les informations du compte si fournies
+            $compteUpdated = false;
+            
+            if (isset($data['type'])) {
+                $compte->type = $data['type'];
+                $compteUpdated = true;
+            }
+            
+            if (isset($data['devise'])) {
+                $compte->devise = $data['devise'];
+                $compteUpdated = true;
+            }
+
+            if ($compteUpdated) {
+                $compte->version = $compte->version + 1;
+                $compte->save();
+            }
+
+            DB::commit();
+
+            // Recharger le compte avec toutes les relations
+            $compte->refresh();
+            $compte->load(['client.user', 'transactions']);
+
+            return [
+                'success' => true,
+                'message' => 'Compte mis à jour avec succès',
+                'data' => [
+                    'id' => $compte->id,
+                    'numeroCompte' => $compte->numeroCompte,
+                    'titulaire' => $compte->client->user->nomComplet,
+                    'type' => $compte->type,
+                    'solde' => $compte->solde,
+                    'devise' => $compte->devise,
+                    'dateCreation' => $compte->dateCreation?->toIso8601String(),
+                    'statut' => $compte->statut,
+                    'metadata' => [
+                        'derniereModification' => now()->toIso8601String(),
+                        'version' => $compte->version,
+                    ]
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
 }
