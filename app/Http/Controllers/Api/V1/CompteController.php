@@ -575,6 +575,11 @@ class CompteController extends Controller
                 // Créer le client
                 $client = Client::create([
                     'user_id' => $user->id,
+                    'titulaire' => $request->client['titulaire'],
+                    'nci' => $request->client['nci'],
+                    'email' => $request->client['email'],
+                    'telephone' => $request->client['telephone'],
+                    'adresse' => $request->client['adresse'],
                 ]);
 
                 // Stocker temporairement pour l'observer
