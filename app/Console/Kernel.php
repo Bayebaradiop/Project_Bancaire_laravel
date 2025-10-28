@@ -2,6 +2,8 @@
 
 namespace App\Console;
 
+use App\Jobs\ArchiveComptesBloquesJob;
+use App\Jobs\DearchiveComptesBloquesJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -12,7 +14,17 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Vérifier et archiver les comptes dont le blocage est arrivé (toutes les 5 minutes)
+        $schedule->job(new ArchiveComptesBloquesJob())
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Vérifier et débloquer automatiquement les comptes (toutes les 5 minutes)
+        $schedule->job(new DearchiveComptesBloquesJob())
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**
