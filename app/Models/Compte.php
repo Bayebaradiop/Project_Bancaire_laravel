@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Scopes\ActiveCompteScope;
 
 class Compte extends Model
 {
@@ -119,6 +120,16 @@ class Compte extends Model
         static::updating(function ($compte) {
             $compte->version++;
         });
+    }
+
+    /**
+     * Booted method pour enregistrer les Global Scopes.
+     */
+    protected static function booted(): void
+    {
+        // Appliquer le Global Scope pour filtrer automatiquement
+        // les comptes actifs non archivés sur TOUTES les requêtes
+        static::addGlobalScope(new ActiveCompteScope());
     }
 
     /**

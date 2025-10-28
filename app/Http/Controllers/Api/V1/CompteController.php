@@ -34,8 +34,8 @@ class CompteController extends Controller
     /**
      * @OA\Get(
      *     path="/v1/comptes",
-     *     summary="Lister les comptes",
-     *     description="Récupère la liste des comptes avec pagination et filtres optionnels. Les administrateurs voient tous les comptes, les clients ne voient que leurs propres comptes.",
+     *     summary="Lister les comptes actifs",
+     *     description="Récupère la liste des comptes ACTIFS non archivés avec pagination et filtres optionnels. Les administrateurs voient tous les comptes actifs, les clients ne voient que leurs propres comptes actifs. NOTE: Seuls les comptes avec statut 'actif' sont retournés - les comptes bloqués et fermés sont exclus.",
      *     operationId="getComptes",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
@@ -59,6 +59,27 @@ class CompteController extends Controller
      *         description="Filtrer par type de compte",
      *         required=false,
      *         @OA\Schema(type="string", enum={"epargne", "cheque"}, example="epargne")
+     *     ),
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Rechercher par nom du titulaire ou numéro de compte",
+     *         required=false,
+     *         @OA\Schema(type="string", example="Diop")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Champ de tri",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"dateCreation", "derniereModification", "numeroCompte"}, default="dateCreation", example="dateCreation")
+     *     ),
+     *     @OA\Parameter(
+     *         name="order",
+     *         in="query",
+     *         description="Ordre de tri",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"asc", "desc"}, default="desc", example="desc")
      *     ),
      *     @OA\Response(
      *         response=200,

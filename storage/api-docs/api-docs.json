@@ -21,8 +21,8 @@
                 "tags": [
                     "Comptes"
                 ],
-                "summary": "Lister les comptes",
-                "description": "Récupère la liste des comptes avec pagination et filtres optionnels. Les administrateurs voient tous les comptes, les clients ne voient que leurs propres comptes.",
+                "summary": "Lister les comptes actifs",
+                "description": "Récupère la liste des comptes ACTIFS non archivés avec pagination et filtres optionnels. Les administrateurs voient tous les comptes actifs, les clients ne voient que leurs propres comptes actifs. NOTE: Seuls les comptes avec statut 'actif' sont retournés - les comptes bloqués et fermés sont exclus.",
                 "operationId": "getComptes",
                 "parameters": [
                     {
@@ -60,6 +60,47 @@
                                 "cheque"
                             ],
                             "example": "epargne"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Rechercher par nom du titulaire ou numéro de compte",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Diop"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Champ de tri",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "dateCreation",
+                            "enum": [
+                                "dateCreation",
+                                "derniereModification",
+                                "numeroCompte"
+                            ],
+                            "example": "dateCreation"
+                        }
+                    },
+                    {
+                        "name": "order",
+                        "in": "query",
+                        "description": "Ordre de tri",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
                         }
                     }
                 ],
@@ -506,7 +547,7 @@
                     "Comptes"
                 ],
                 "summary": "Obtenir un compte par numéro",
-                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte",
+                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
                 "operationId": "getCompteByNumero",
                 "parameters": [
                     {
@@ -568,6 +609,11 @@
                                                 "statut": {
                                                     "type": "string",
                                                     "example": "actif"
+                                                },
+                                                "archived": {
+                                                    "description": "Indique si le compte est archivé dans Neon",
+                                                    "type": "boolean",
+                                                    "example": false
                                                 }
                                             },
                                             "type": "object"

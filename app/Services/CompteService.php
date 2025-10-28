@@ -30,7 +30,6 @@ class CompteService
     {
         return [
             'type' => $request->getType(),
-            'statut' => $request->getStatut(),
             'devise' => $request->getDevise(),
             'search' => $request->getSearch(),
             'sort' => $request->getSort(),
@@ -41,9 +40,10 @@ class CompteService
 
     private function fetchComptes(array $filters)
     {
-        $query = Compte::with(['client.user'])
-            ->whereNull('archived_at')
-            ->where('statut', 'actif');
+        // Le Global Scope ActiveCompteScope filtre automatiquement :
+        // - whereNull('archived_at')
+        // - where('statut', 'actif')
+        $query = Compte::with(['client.user']);
 
         $query = $this->applyFilters($query, $filters);
 
@@ -52,12 +52,9 @@ class CompteService
 
     private function applyFilters($query, array $filters)
     {
+        // Utiliser les scopes du Model au lieu de where() manuel
         if (!empty($filters['type'])) {
             $query->type($filters['type']);
-        }
-
-        if (!empty($filters['statut'])) {
-            $query->statut($filters['statut']);
         }
 
         if (!empty($filters['devise'])) {
@@ -82,7 +79,6 @@ class CompteService
             'page' => null,
             'limit' => $filters['limit'] ?? 10,
             'type' => $filters['type'] ?? null,
-            'statut' => $filters['statut'] ?? null,
             'devise' => $filters['devise'] ?? null,
             'search' => $filters['search'] ?? null,
             'sort' => $filters['sort'] ?? null,
