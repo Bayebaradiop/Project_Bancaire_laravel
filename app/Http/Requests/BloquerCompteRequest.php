@@ -24,6 +24,7 @@ class BloquerCompteRequest extends FormRequest
     {
         return [
             'motif' => 'required|string|min:10|max:500',
+            'date_debut_blocage' => 'required|date|after_or_equal:today',
             'duree' => 'required|integer|min:1|max:365',
             'unite' => 'required|string|in:jours,mois',
         ];
@@ -38,6 +39,9 @@ class BloquerCompteRequest extends FormRequest
             'motif.required' => 'Le motif de blocage est obligatoire',
             'motif.min' => 'Le motif doit contenir au moins 10 caractères',
             'motif.max' => 'Le motif ne peut pas dépasser 500 caractères',
+            'date_debut_blocage.required' => 'La date de début de blocage est obligatoire',
+            'date_debut_blocage.date' => 'La date de début de blocage doit être une date valide',
+            'date_debut_blocage.after_or_equal' => 'La date de début de blocage ne peut pas être dans le passé',
             'duree.required' => 'La durée de blocage est obligatoire',
             'duree.integer' => 'La durée doit être un nombre entier',
             'duree.min' => 'La durée minimale est de 1',
