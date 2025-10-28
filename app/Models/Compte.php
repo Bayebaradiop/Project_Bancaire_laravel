@@ -126,13 +126,8 @@ class Compte extends Model
     {
         parent::boot();
 
-        // Générer automatiquement le numéro de compte lors de la création
-        static::creating(function ($compte) {
-            if (empty($compte->numeroCompte)) {
-                $compte->numeroCompte = self::generateNumeroCompte();
-            }
-        });
-
+        // La génération du numéro de compte est maintenant gérée par CompteObserver::creating()
+        
         // Incrémenter la version lors de la mise à jour (optimistic locking)
         static::updating(function ($compte) {
             $compte->version++;
@@ -147,21 +142,6 @@ class Compte extends Model
         // Appliquer le Global Scope pour filtrer automatiquement
         // les comptes actifs non archivés sur TOUTES les requêtes
         static::addGlobalScope(new ActiveCompteScope());
-    }
-
-    /**
-     * Générer un numéro de compte unique.
-     *
-     * @return string
-     */
-    protected static function generateNumeroCompte(): string
-    {
-        do {
-            // Format: CPXXXXXXXXXX (CP + 10 chiffres aléatoires)
-            $numero = 'CP' . str_pad(mt_rand(0, 9999999999), 10, '0', STR_PAD_LEFT);
-        } while (self::where('numeroCompte', $numero)->exists());
-
-        return $numero;
     }
 
     /**

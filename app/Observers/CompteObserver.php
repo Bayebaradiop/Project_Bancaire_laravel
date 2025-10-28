@@ -4,15 +4,35 @@ namespace App\Observers;
 
 use App\Models\Compte;
 use App\Services\CompteArchiveService;
+use App\Services\CompteNumeroService;
 use Illuminate\Support\Facades\Log;
 
 class CompteObserver
 {
     protected CompteArchiveService $archiveService;
+    protected CompteNumeroService $numeroService;
 
-    public function __construct(CompteArchiveService $archiveService)
-    {
+    public function __construct(
+        CompteArchiveService $archiveService,
+        CompteNumeroService $numeroService
+    ) {
         $this->archiveService = $archiveService;
+        $this->numeroService = $numeroService;
+    }
+
+    /**
+     * Événement AVANT la création d'un compte
+     * Générer le numéro de compte si absent
+     */
+    public function creating(Compte $compte)
+    {
+        if (empty($compte->numeroCompte)) {
+            $compte->numeroCompte = $this->numeroService->genererNumero();
+            
+            Log::info('Numéro de compte généré', [
+                'numeroCompte' => $compte->numeroCompte,
+            ]);
+        }
     }
 
     /**

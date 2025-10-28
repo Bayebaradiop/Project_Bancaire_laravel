@@ -584,9 +584,8 @@ class CompteController extends Controller
                 ]);
             }
 
-            // 3. Créer le compte
+            // 3. Créer le compte (le numéro sera généré automatiquement par CompteObserver)
             $compte = Compte::create([
-                'numeroCompte' => Compte::generateNumeroCompte(),
                 'type' => $request->type,
                 'devise' => $request->devise,
                 'statut' => 'actif',
@@ -723,6 +722,323 @@ class CompteController extends Controller
                 config('app.debug') 
                     ? 'Une erreur est survenue : ' . $e->getMessage() 
                     : 'Une erreur est survenue lors de l\'archivage du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/v1/comptes/{compteId}",
+     *     summary="Mettre à jour un compte (US 2.3)",
+     *     description="Permet à un administrateur de mettre à jour les informations d'un compte bancaire. Seuls les administrateurs peuvent utiliser cet endpoint.",
+     *     operationId="updateCompte",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="compteId",
+     *         in="path",
+     *         description="UUID du compte à mettre à jour",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid", example="a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Données à mettre à jour (au moins un champ requis)",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="type", type="string", enum={"epargne", "cheque"}, example="cheque"),
+     *             @OA\Property(property="solde", type="number", format="float", example=50000),
+     *             @OA\Property(property="statut", type="string", enum={"actif", "bloque", "ferme"}, example="actif"),
+     *             @OA\Property(property="devise", type="string", enum={"FCFA", "USD", "EUR"}, example="FCFA")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte mis à jour avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte mis à jour avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", format="uuid"),
+     *                 @OA\Property(property="numeroCompte", type="string"),
+     *                 @OA\Property(property="type", type="string"),
+     *                 @OA\Property(property="solde", type="number"),
+     *                 @OA\Property(property="statut", type="string"),
+     *                 @OA\Property(property="devise", type="string")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=403, description="Accès refusé - Admin uniquement"),
+     *     @OA\Response(response=404, description="Compte non trouvé"),
+     *     @OA\Response(response=422, description="Données invalides")
+     * )
+     */
+    public function update(string $compteId): JsonResponse
+    {
+        try {
+            $data = request()->validate([
+                'type' => 'sometimes|in:epargne,cheque',
+                'solde' => 'sometimes|numeric|min:0',
+                'statut' => 'sometimes|in:actif,bloque,ferme',
+                'devise' => 'sometimes|in:FCFA,USD,EUR',
+            ]);
+
+            $result = $this->compteService->updateCompte($compteId, $data);
+
+            return $this->success($result, 'Compte mis à jour avec succès');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->validationError($e->errors());
+
+        } catch (CompteNotFoundException $e) {
+            return $this->notFound($e->getMessage());
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors de la mise à jour du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/v1/comptes/{compteId}/bloquer",
+     *     summary="Bloquer un compte (US 2.5)",
+     *     description="Bloque un compte bancaire immédiatement ou de manière programmée. L'archivage automatique se fait via ArchiveComptesBloquesJob lorsque dateDebutBlocage arrive.",
+     *     operationId="bloquerCompte",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="compteId",
+     *         in="path",
+     *         description="UUID du compte à bloquer",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="dateDebutBlocage", type="string", format="date", example="2025-11-01", description="Date de début du blocage (optionnel, immédiat si absent)"),
+     *             @OA\Property(property="raison", type="string", example="Blocage administratif")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte bloqué avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte bloqué avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string"),
+     *                 @OA\Property(property="statut", type="string", example="bloque"),
+     *                 @OA\Property(property="dateDebutBlocage", type="string", nullable=true),
+     *                 @OA\Property(property="blocage_programme", type="boolean", example=false)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Compte non trouvé"),
+     *     @OA\Response(response=422, description="Données invalides")
+     * )
+     */
+    public function bloquer(string $compteId): JsonResponse
+    {
+        try {
+            $data = request()->validate([
+                'dateDebutBlocage' => 'nullable|date|after_or_equal:today',
+                'raison' => 'nullable|string|max:500',
+            ]);
+
+            $result = $this->compteService->bloquerCompte($compteId, $data);
+
+            return $this->success($result, 'Compte bloqué avec succès');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->validationError($e->errors());
+
+        } catch (CompteNotFoundException $e) {
+            return $this->notFound($e->getMessage());
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors du blocage du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/v1/comptes/{compteId}/debloquer",
+     *     summary="Débloquer un compte (US 2.5)",
+     *     description="Débloque un compte bancaire immédiatement ou de manière programmée. Le désarchivage automatique se fait via DearchiveComptesBloquesJob lorsque dateDeblocagePrevue arrive.",
+     *     operationId="debloquerCompte",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="compteId",
+     *         in="path",
+     *         description="UUID du compte à débloquer",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="dateDeblocagePrevue", type="string", format="date", example="2025-12-01", description="Date de déblocage programmé (optionnel, immédiat si absent)")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte débloqué avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte débloqué avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string"),
+     *                 @OA\Property(property="statut", type="string", example="actif"),
+     *                 @OA\Property(property="dateDeblocagePrevue", type="string", nullable=true)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Compte non trouvé"),
+     *     @OA\Response(response=422, description="Données invalides")
+     * )
+     */
+    public function debloquer(string $compteId): JsonResponse
+    {
+        try {
+            $data = request()->validate([
+                'dateDeblocagePrevue' => 'nullable|date|after_or_equal:today',
+            ]);
+
+            $result = $this->compteService->debloquerCompte($compteId, $data);
+
+            return $this->success($result, 'Compte débloqué avec succès');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->validationError($e->errors());
+
+        } catch (CompteNotFoundException $e) {
+            return $this->notFound($e->getMessage());
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors du déblocage du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/v1/comptes/{numeroCompte}",
+     *     summary="Supprimer un compte (US 2.4)",
+     *     description="Supprime (soft delete) un compte épargne et l'archive automatiquement dans Neon. Seuls les comptes épargne peuvent être supprimés.",
+     *     operationId="deleteCompte",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="numeroCompte",
+     *         in="path",
+     *         description="Numéro du compte à supprimer",
+     *         required=true,
+     *         @OA\Schema(type="string", example="CP3105472638")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte supprimé et archivé avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte supprimé et archivé avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="numeroCompte", type="string"),
+     *                 @OA\Property(property="deleted_at", type="string", format="date-time"),
+     *                 @OA\Property(property="archived_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=400, description="Seuls les comptes épargne peuvent être supprimés"),
+     *     @OA\Response(response=404, description="Compte non trouvé")
+     * )
+     */
+    public function destroy(string $numeroCompte): JsonResponse
+    {
+        try {
+            $result = $this->compteService->deleteAndArchive($numeroCompte);
+
+            return $this->success($result, 'Compte supprimé et archivé avec succès');
+
+        } catch (CompteNotFoundException $e) {
+            return $this->notFound($e->getMessage());
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors de la suppression du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/v1/comptes/restore/{id}",
+     *     summary="Restaurer un compte supprimé",
+     *     description="Restaure un compte précédemment supprimé depuis les archives Neon vers la base principale.",
+     *     operationId="restoreCompte",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="UUID du compte à restaurer",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte restauré avec succès",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Compte restauré avec succès"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string"),
+     *                 @OA\Property(property="numeroCompte", type="string"),
+     *                 @OA\Property(property="restored_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Compte non trouvé dans les archives")
+     * )
+     */
+    public function restore(string $id): JsonResponse
+    {
+        try {
+            $result = $this->compteService->restore($id);
+
+            return $this->success($result, 'Compte restauré avec succès');
+
+        } catch (CompteNotFoundException $e) {
+            return $this->notFound($e->getMessage());
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Une erreur est survenue : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors de la restauration du compte'
             );
         }
     }
