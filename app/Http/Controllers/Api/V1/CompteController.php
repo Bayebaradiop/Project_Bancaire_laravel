@@ -61,6 +61,20 @@ class CompteController extends Controller
      *         @OA\Schema(type="string", enum={"epargne", "cheque"}, example="epargne")
      *     ),
      *     @OA\Parameter(
+     *         name="devise",
+     *         in="query",
+     *         description="Filtrer par devise",
+     *         required=false,
+     *         @OA\Schema(type="string", example="FCFA")
+     *     ),
+     *     @OA\Parameter(
+     *         name="numeroCompte",
+     *         in="query",
+     *         description="Filtrer par numéro de compte exact (format: CPxxxxxxxxxx)",
+     *         required=false,
+     *         @OA\Schema(type="string", pattern="^CP\d{10}$", example="CP3385015606")
+     *     ),
+     *     @OA\Parameter(
      *         name="search",
      *         in="query",
      *         description="Rechercher par nom du titulaire ou numéro de compte",

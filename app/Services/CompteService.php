@@ -31,6 +31,7 @@ class CompteService
         return [
             'type' => $request->getType(),
             'devise' => $request->getDevise(),
+            'numeroCompte' => $request->getNumeroCompte(),
             'search' => $request->getSearch(),
             'sort' => $request->getSort(),
             'order' => $request->getOrder(),
@@ -61,6 +62,10 @@ class CompteService
             $query->devise($filters['devise']);
         }
 
+        if (!empty($filters['numeroCompte'])) {
+            $query->numero($filters['numeroCompte']);
+        }
+
         if (!empty($filters['search'])) {
             $query->search($filters['search']);
         }
@@ -80,6 +85,7 @@ class CompteService
             'limit' => $filters['limit'] ?? 10,
             'type' => $filters['type'] ?? null,
             'devise' => $filters['devise'] ?? null,
+            'numeroCompte' => $filters['numeroCompte'] ?? null,
             'search' => $filters['search'] ?? null,
             'sort' => $filters['sort'] ?? null,
             'order' => $filters['order'] ?? null,

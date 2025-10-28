@@ -16,6 +16,7 @@ class ListCompteRequest extends PaginationRequest
         return array_merge(parent::rules(), [
             'type' => ['sometimes', 'string', Rule::in(['epargne', 'cheque'])],
             'devise' => ['sometimes', 'string', 'max:10'],
+            'numeroCompte' => ['sometimes', 'string', 'regex:/^CP\d{10}$/'],
             'search' => ['sometimes', 'string', 'max:255'],
         ]);
     }
@@ -30,6 +31,7 @@ class ListCompteRequest extends PaginationRequest
         return array_merge(parent::messages(), [
             'type.in' => 'Le type doit être "epargne" ou "cheque".',
             'devise.max' => 'La devise ne peut pas dépasser 10 caractères.',
+            'numeroCompte.regex' => 'Le numéro de compte doit être au format CPxxxxxxxxxx (CP suivi de 10 chiffres).',
             'search.max' => 'La recherche ne peut pas dépasser 255 caractères.',
         ]);
     }
@@ -52,6 +54,16 @@ class ListCompteRequest extends PaginationRequest
     public function getDevise(): ?string
     {
         return $this->input('devise');
+    }
+
+    /**
+     * Get the numeroCompte filter.
+     *
+     * @return string|null
+     */
+    public function getNumeroCompte(): ?string
+    {
+        return $this->input('numeroCompte');
     }
 
     /**
