@@ -123,7 +123,9 @@ class AuthController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="expiresIn", type="integer", example=3600)
+     *                 @OA\Property(property="access_token", type="string", example="eyJ0eXAiOiJKV1QiLCJhbGc..."),
+     *                 @OA\Property(property="token_type", type="string", example="Bearer"),
+     *                 @OA\Property(property="expires_in", type="integer", example=3600)
      *             )
      *         )
      *     ),
@@ -152,7 +154,8 @@ class AuthController extends Controller
                 'success' => $result['success'],
                 'message' => $result['message'],
                 'data' => $result['data'],
-            ])->withCookie($result['cookies']['access_token']);
+            ])->withCookie($result['cookies']['access_token'])
+              ->withCookie($result['cookies']['refresh_token']);
 
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), $e->getCode() ?: 500);

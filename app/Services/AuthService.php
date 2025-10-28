@@ -75,8 +75,33 @@ class AuthService
      */
     public function refresh(string $refreshToken): array
     {
-        // À implémenter selon la logique de refresh JWT de votre projet
-        throw new \Exception('Non implémenté', 501);
+        try {
+            // Rafraîchir le token JWT
+            $newToken = JWTAuth::refresh();
+            
+            // Créer un nouveau cookie d'accès
+            $accessCookie = $this->cookieManager->createAccessTokenCookie($newToken);
+            
+            // Générer un nouveau refresh token
+            $newRefreshToken = Str::uuid()->toString();
+            $refreshCookie = $this->cookieManager->createRefreshTokenCookie($newRefreshToken);
+            
+            return [
+                'success' => true,
+                'message' => 'Token rafraîchi avec succès',
+                'data' => [
+                    'access_token' => $newToken,
+                    'token_type' => 'Bearer',
+                    'expires_in' => config('jwt.ttl') * 60,
+                ],
+                'cookies' => [
+                    'access_token' => $accessCookie,
+                    'refresh_token' => $refreshCookie,
+                ],
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Impossible de rafraîchir le token: ' . $e->getMessage(), 401);
+        }
     }
 
     /**
