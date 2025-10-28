@@ -563,7 +563,7 @@ class CompteService
     /**
      * Bloquer un compte épargne (US 2.5)
      * - Seuls les comptes actifs peuvent être bloqués
-     * - Calcul automatique de la date de déblocage prévue
+     * - Blocage immédiat avec motif
      */
     public function bloquerCompte(string $compteId, array $data): array
     {
@@ -599,55 +599,34 @@ class CompteService
                 ];
             }
 
-            // 4. Parser la date de début de blocage
-            $dateDebutBlocage = \Carbon\Carbon::parse($data['date_debut_blocage']);
-            $duree = $data['duree'];
-            $unite = $data['unite'];
+            // 4. Extraire les paramètres (avec valeurs par défaut)
+            $dateDebutBlocage = isset($data['dateDebutBlocage'])
+                ? \Carbon\Carbon::parse($data['dateDebutBlocage'])
+                : now();
+            $motifBlocage = $data['raison'] ?? 'Blocage administratif';
 
-            // 5. Calculer la date de fin de blocage
-            if ($unite === 'mois') {
-                $dateDeblocagePrevue = $dateDebutBlocage->copy()->addMonths($duree);
-            } else { // jours
-                $dateDeblocagePrevue = $dateDebutBlocage->copy()->addDays($duree);
-            }
-
-            // 6. Programmer le blocage
+            // 5. Bloquer immédiatement le compte
             $compte->update([
-                'motifBlocage' => $data['motif'],
+                'statut' => 'bloque',
+                'motifBlocage' => $motifBlocage,
                 'dateDebutBlocage' => $dateDebutBlocage,
-                'dateDeblocagePrevue' => $dateDeblocagePrevue,
-                'blocage_programme' => true,
+                'dateBlocage' => now(),
+                'blocage_programme' => false,
                 'derniereModification' => now(),
                 'version' => $compte->version + 1,
             ]);
-
-            // 7. Le statut ne change PAS immédiatement si la date est future
-            // Le Job BloquageScheduleJob s'en chargera quand la date arrivera
-            $message = $dateDebutBlocage->isFuture() 
-                ? "Blocage programmé avec succès. Le compte sera bloqué le {$dateDebutBlocage->format('d/m/Y H:i')}"
-                : "Compte bloqué avec succès";
-
-            // Si la date est maintenant ou passée, bloquer immédiatement
-            if (!$dateDebutBlocage->isFuture()) {
-                $compte->update([
-                    'statut' => 'bloque',
-                    'dateBlocage' => now(),
-                    'blocage_programme' => false,
-                ]);
-            }
 
             DB::commit();
 
             return [
                 'success' => true,
-                'message' => $message,
+                'message' => 'Compte bloqué avec succès',
                 'data' => [
                     'id' => $compte->id,
                     'statut' => $compte->statut,
                     'motifBlocage' => $compte->motifBlocage,
                     'dateDebutBlocage' => $compte->dateDebutBlocage?->toIso8601String(),
                     'dateBlocage' => $compte->dateBlocage?->toIso8601String(),
-                    'dateDeblocagePrevue' => $compte->dateDeblocagePrevue?->toIso8601String(),
                     'blocage_programme' => $compte->blocage_programme,
                 ]
             ];
