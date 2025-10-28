@@ -263,9 +263,8 @@ class CompteService
      */
     public function getCompteById(string $id, User $user): array
     {
-        // 1. Chercher d'abord dans la base principale (PostgreSQL) - comptes actifs
+        // 1. Chercher d'abord dans la base principale (PostgreSQL) - tous les comptes (actifs, bloqués, fermés)
         $compte = Compte::where('id', $id)
-            ->where('statut', 'actif')
             ->with(['client.user'])
             ->first();
 
@@ -288,11 +287,11 @@ class CompteService
                 }
             }
             
-            // Compte actif trouvé dans PostgreSQL
+            // Compte trouvé dans PostgreSQL (actif, bloqué ou fermé)
             return [
                 'success' => true,
                 'data' => new CompteResource($compte),
-                'message' => 'Compte récupéré avec succès depuis la base principale'
+                'message' => 'Compte récupéré avec succès'
             ];
         }
 

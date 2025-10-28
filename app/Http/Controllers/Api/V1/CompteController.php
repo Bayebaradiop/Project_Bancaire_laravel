@@ -128,7 +128,7 @@ class CompteController extends Controller
      * @OA\Get(
      *     path="/v1/comptes/{id}",
      *     summary="Récupérer un compte spécifique par ID (US 2.1)",
-     *     description="Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (comptes actifs), puis dans Neon (comptes archivés) si non trouvé. Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
+     *     description="Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (tous les comptes : actifs, bloqués, fermés), puis dans Neon (comptes archivés) si non trouvé. Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
      *     operationId="getCompteById",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
