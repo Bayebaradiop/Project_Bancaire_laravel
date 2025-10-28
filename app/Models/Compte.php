@@ -54,6 +54,11 @@ class Compte extends Model
         'devise',
         'statut',
         'motifBlocage',
+        'dateDebutBlocage',
+        'dateBlocage',
+        'dateDeblocagePrevue',
+        'dateDeblocage',
+        'blocage_programme',
         'version',
         'archived_at',
         'cloud_storage_path',
@@ -67,7 +72,12 @@ class Compte extends Model
     protected $casts = [
         'dateCreation' => 'datetime',
         'derniereModification' => 'datetime',
+        'dateDebutBlocage' => 'datetime',
+        'dateBlocage' => 'datetime',
+        'dateDeblocagePrevue' => 'datetime',
+        'dateDeblocage' => 'datetime',
         'archived_at' => 'datetime',
+        'blocage_programme' => 'boolean',
         'version' => 'integer',
     ];
 

@@ -590,38 +590,56 @@ class CompteService
                 ];
             }
 
-            // 4. Calculer la date de déblocage prévue
-            $dateBlocage = now();
+            // 4. Parser la date de début de blocage
+            $dateDebutBlocage = \Carbon\Carbon::parse($data['date_debut_blocage']);
             $duree = $data['duree'];
             $unite = $data['unite'];
 
+            // 5. Calculer la date de fin de blocage
             if ($unite === 'mois') {
-                $dateDeblocagePrevue = $dateBlocage->copy()->addMonths($duree);
+                $dateDeblocagePrevue = $dateDebutBlocage->copy()->addMonths($duree);
             } else { // jours
-                $dateDeblocagePrevue = $dateBlocage->copy()->addDays($duree);
+                $dateDeblocagePrevue = $dateDebutBlocage->copy()->addDays($duree);
             }
 
-            // 5. Bloquer le compte
+            // 6. Programmer le blocage
             $compte->update([
-                'statut' => 'bloque',
                 'motifBlocage' => $data['motif'],
-                'dateBlocage' => $dateBlocage,
+                'dateDebutBlocage' => $dateDebutBlocage,
                 'dateDeblocagePrevue' => $dateDeblocagePrevue,
+                'blocage_programme' => true,
                 'derniereModification' => now(),
                 'version' => $compte->version + 1,
             ]);
+
+            // 7. Le statut ne change PAS immédiatement si la date est future
+            // Le Job BloquageScheduleJob s'en chargera quand la date arrivera
+            $message = $dateDebutBlocage->isFuture() 
+                ? "Blocage programmé avec succès. Le compte sera bloqué le {$dateDebutBlocage->format('d/m/Y H:i')}"
+                : "Compte bloqué avec succès";
+
+            // Si la date est maintenant ou passée, bloquer immédiatement
+            if (!$dateDebutBlocage->isFuture()) {
+                $compte->update([
+                    'statut' => 'bloque',
+                    'dateBlocage' => now(),
+                    'blocage_programme' => false,
+                ]);
+            }
 
             DB::commit();
 
             return [
                 'success' => true,
-                'message' => 'Compte bloqué avec succès',
+                'message' => $message,
                 'data' => [
                     'id' => $compte->id,
                     'statut' => $compte->statut,
                     'motifBlocage' => $compte->motifBlocage,
+                    'dateDebutBlocage' => $compte->dateDebutBlocage?->toIso8601String(),
                     'dateBlocage' => $compte->dateBlocage?->toIso8601String(),
                     'dateDeblocagePrevue' => $compte->dateDeblocagePrevue?->toIso8601String(),
+                    'blocage_programme' => $compte->blocage_programme,
                 ]
             ];
 
@@ -633,7 +651,7 @@ class CompteService
 
     /**
      * Débloquer un compte épargne (US 2.5)
-     * - Seuls les comptes bloqués peuvent être débloqués
+     * - Seuls les comptes bloqués ou avec un blocage programmé peuvent être débloqués
      */
     public function debloquerCompte(string $compteId, array $data): array
     {
@@ -651,8 +669,8 @@ class CompteService
                 ];
             }
 
-            // 2. Vérifier que le compte est bloqué
-            if ($compte->statut !== 'bloque') {
+            // 2. Vérifier que le compte est bloqué ou a un blocage programmé
+            if ($compte->statut !== 'bloque' && !$compte->blocage_programme) {
                 return [
                     'success' => false,
                     'message' => "Le compte ne peut pas être débloqué. Statut actuel : {$compte->statut}",
@@ -660,13 +678,15 @@ class CompteService
                 ];
             }
 
-            // 3. Débloquer le compte
+            // 3. Débloquer le compte (annuler le blocage ou le blocage programmé)
             $compte->update([
                 'statut' => 'actif',
                 'motifBlocage' => null,
+                'dateDebutBlocage' => null,
                 'dateDeblocage' => now(),
                 'dateBlocage' => null,
                 'dateDeblocagePrevue' => null,
+                'blocage_programme' => false,
                 'derniereModification' => now(),
                 'version' => $compte->version + 1,
             ]);
