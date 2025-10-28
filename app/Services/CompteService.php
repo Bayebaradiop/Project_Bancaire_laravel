@@ -150,8 +150,8 @@ class CompteService
     {
         return [
             'type' => $request->getType(),
-            'statut' => $request->getStatut(),
             'devise' => $request->getDevise(),
+            'numeroCompte' => $request->getNumeroCompte(),
             'search' => $request->getSearch(),
             'sort' => $request->getSort(),
             'order' => $request->getOrder(),
@@ -161,9 +161,10 @@ class CompteService
 
     private function fetchComptes(array $filters, ?User $user = null)
     {
-        $query = Compte::with(['client.user'])
-            ->whereNull('archived_at')
-            ->where('statut', 'actif');
+        // Le Global Scope ActiveCompteScope filtre automatiquement :
+        // - whereNull('archived_at')
+        // - where('statut', 'actif')
+        $query = Compte::with(['client.user']);
 
         // Autorisation : Client voit uniquement ses comptes
         if ($user && $user->role === 'client') {
@@ -185,16 +186,17 @@ class CompteService
 
     private function applyFilters($query, array $filters)
     {
+        // Utiliser les scopes du Model au lieu de where() manuel
         if (!empty($filters['type'])) {
             $query->type($filters['type']);
         }
 
-        if (!empty($filters['statut'])) {
-            $query->statut($filters['statut']);
-        }
-
         if (!empty($filters['devise'])) {
             $query->devise($filters['devise']);
+        }
+
+        if (!empty($filters['numeroCompte'])) {
+            $query->numero($filters['numeroCompte']);
         }
 
         if (!empty($filters['search'])) {
@@ -215,8 +217,8 @@ class CompteService
             'page' => null,
             'limit' => $filters['limit'] ?? 10,
             'type' => $filters['type'] ?? null,
-            'statut' => $filters['statut'] ?? null,
             'devise' => $filters['devise'] ?? null,
+            'numeroCompte' => $filters['numeroCompte'] ?? null,
             'search' => $filters['search'] ?? null,
             'sort' => $filters['sort'] ?? null,
             'order' => $filters['order'] ?? null,

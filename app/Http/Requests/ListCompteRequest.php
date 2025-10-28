@@ -15,8 +15,8 @@ class ListCompteRequest extends PaginationRequest
     {
         return array_merge(parent::rules(), [
             'type' => ['sometimes', 'string', Rule::in(['epargne', 'cheque'])],
-            'statut' => ['sometimes', 'string', Rule::in(['actif', 'bloque', 'ferme'])],
             'devise' => ['sometimes', 'string', 'max:10'],
+            'numeroCompte' => ['sometimes', 'string', 'regex:/^CP\d{10}$/'],
             'search' => ['sometimes', 'string', 'max:255'],
         ]);
     }
@@ -30,8 +30,8 @@ class ListCompteRequest extends PaginationRequest
     {
         return array_merge(parent::messages(), [
             'type.in' => 'Le type doit être "epargne" ou "cheque".',
-            'statut.in' => 'Le statut doit être "actif", "bloque" ou "ferme".',
             'devise.max' => 'La devise ne peut pas dépasser 10 caractères.',
+            'numeroCompte.regex' => 'Le numéro de compte doit être au format CPxxxxxxxxxx (CP suivi de 10 chiffres).',
             'search.max' => 'La recherche ne peut pas dépasser 255 caractères.',
         ]);
     }
@@ -47,16 +47,6 @@ class ListCompteRequest extends PaginationRequest
     }
 
     /**
-     * Get the statut filter.
-     *
-     * @return string|null
-     */
-    public function getStatut(): ?string
-    {
-        return $this->input('statut');
-    }
-
-    /**
      * Get the devise filter.
      *
      * @return string|null
@@ -64,6 +54,16 @@ class ListCompteRequest extends PaginationRequest
     public function getDevise(): ?string
     {
         return $this->input('devise');
+    }
+
+    /**
+     * Get the numeroCompte filter.
+     *
+     * @return string|null
+     */
+    public function getNumeroCompte(): ?string
+    {
+        return $this->input('numeroCompte');
     }
 
     /**

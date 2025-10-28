@@ -317,8 +317,8 @@
                 "tags": [
                     "Comptes"
                 ],
-                "summary": "Lister les comptes",
-                "description": "Récupère la liste des comptes avec pagination et filtres optionnels.\n\n**Autorisations :**\n- **Admin** : Voit tous les comptes de tous les clients\n- **Client** : Voit uniquement ses propres comptes\n\n**Pour tester en tant que Admin :**\n- Email : `admin@banque.sn` / Password : `password`\n\n**Pour tester en tant que Client :**\n- Email : `client@banque.sn` / Password : `password`\n\n**📝 Instructions :** Après connexion, copiez le token et cliquez sur **Authorize** en haut à droite pour le coller dans **bearerAuth (http, Bearer)**.",
+                "summary": "Lister les comptes actifs",
+                "description": "Récupère la liste des comptes ACTIFS non archivés avec pagination et filtres optionnels. Les administrateurs voient tous les comptes actifs, les clients ne voient que leurs propres comptes actifs. NOTE: Seuls les comptes avec statut 'actif' sont retournés - les comptes bloqués et fermés sont exclus.",
                 "operationId": "getComptes",
                 "parameters": [
                     {
@@ -356,6 +356,68 @@
                                 "cheque"
                             ],
                             "example": "epargne"
+                        }
+                    },
+                    {
+                        "name": "devise",
+                        "in": "query",
+                        "description": "Filtrer par devise",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "FCFA"
+                        }
+                    },
+                    {
+                        "name": "numeroCompte",
+                        "in": "query",
+                        "description": "Filtrer par numéro de compte exact (format: CPxxxxxxxxxx)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^CP\\d{10}$",
+                            "example": "CP3385015606"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Rechercher par nom du titulaire ou numéro de compte",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Diop"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Champ de tri",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "dateCreation",
+                            "enum": [
+                                "dateCreation",
+                                "derniereModification",
+                                "numeroCompte"
+                            ],
+                            "example": "dateCreation"
+                        }
+                    },
+                    {
+                        "name": "order",
+                        "in": "query",
+                        "description": "Ordre de tri",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
                         }
                     }
                 ],
@@ -793,249 +855,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/comptes/{id}": {
-            "get": {
-                "tags": [
-                    "Comptes"
-                ],
-                "summary": "Récupérer un compte spécifique par ID (US 2.1)",
-                "description": "Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (comptes actifs), puis dans Neon (comptes archivés) si non trouvé.\n\n**Autorisations :**\n- **Admin** : Peut récupérer n'importe quel compte\n- **Client** : Peut récupérer uniquement ses propres comptes\n\n**Comptes du client test (`client@banque.sn`) :**\n- `a0358125-5167-4b7c-8057-786038cd1e84`\n- `a0358113-ee00-4154-884d-9a3bd5d307fc`\n- `a0358111-2230-42ff-94d4-a6db429db2c1`\n\n**📝 Instructions :** Connectez-vous, copiez le token, cliquez sur **Authorize** en haut à droite et collez-le dans **bearerAuth (http, Bearer)**.",
-                "operationId": "getCompteById",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID UUID du compte. Exemples de comptes existants : a0358129-098e-46e8-99c7-be73a3943006",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "example": "a0358129-098e-46e8-99c7-be73a3943006"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Compte récupéré avec succès (depuis PostgreSQL ou Neon)",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "string",
-                                                    "format": "uuid",
-                                                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                                                },
-                                                "numeroCompte": {
-                                                    "type": "string",
-                                                    "example": "C00123456"
-                                                },
-                                                "titulaire": {
-                                                    "type": "string",
-                                                    "example": "Amadou Diallo"
-                                                },
-                                                "type": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "epargne",
-                                                        "cheque"
-                                                    ],
-                                                    "example": "epargne"
-                                                },
-                                                "solde": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 1250000
-                                                },
-                                                "devise": {
-                                                    "type": "string",
-                                                    "example": "FCFA"
-                                                },
-                                                "dateCreation": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2023-03-15T00:00:00Z"
-                                                },
-                                                "statut": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "actif",
-                                                        "bloque",
-                                                        "ferme"
-                                                    ],
-                                                    "example": "bloque"
-                                                },
-                                                "motifBlocage": {
-                                                    "type": "string",
-                                                    "example": "Inactivité de 30+ jours",
-                                                    "nullable": true
-                                                },
-                                                "metadata": {
-                                                    "properties": {
-                                                        "derniereModification": {
-                                                            "type": "string",
-                                                            "format": "date-time",
-                                                            "example": "2023-06-10T14:30:00Z"
-                                                        },
-                                                        "version": {
-                                                            "type": "integer",
-                                                            "example": 1
-                                                        },
-                                                        "archived": {
-                                                            "description": "true si récupéré depuis Neon, false si depuis PostgreSQL",
-                                                            "type": "boolean",
-                                                            "example": false
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Non authentifié"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Accès non autorisé - Client tentant d'accéder à un compte qui ne lui appartient pas",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "error": {
-                                            "properties": {
-                                                "code": {
-                                                    "type": "string",
-                                                    "example": "ACCESS_DENIED"
-                                                },
-                                                "message": {
-                                                    "type": "string",
-                                                    "example": "Accès non autorisé à ce compte"
-                                                },
-                                                "details": {
-                                                    "properties": {
-                                                        "compteId": {
-                                                            "type": "string",
-                                                            "format": "uuid",
-                                                            "example": "550e8400-e29b-41d4-a716-446655440000"
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Compte non trouvé dans PostgreSQL ni dans Neon",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "error": {
-                                            "properties": {
-                                                "code": {
-                                                    "type": "string",
-                                                    "example": "COMPTE_NOT_FOUND"
-                                                },
-                                                "message": {
-                                                    "type": "string",
-                                                    "example": "Le compte avec l'ID spécifié n'existe pas"
-                                                },
-                                                "details": {
-                                                    "properties": {
-                                                        "compteId": {
-                                                            "type": "string",
-                                                            "format": "uuid",
-                                                            "example": "550e8400-e29b-41d4-a716-446655440000"
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Erreur serveur",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Une erreur est survenue lors de la récupération du compte"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/v1/comptes/numero/{numero}": {
@@ -1044,7 +864,7 @@
                     "Comptes"
                 ],
                 "summary": "Obtenir un compte par numéro",
-                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.\n     * \n     * **Contrôles d'accès:**\n     * - **Admin**: Peut voir tous les comptes (actifs et archivés)\n     * - **Client**: Ne peut voir que ses propres comptes (retourne 403 Forbidden pour les comptes d'autres clients)\n     * \n     * **Exemple de numéro de compte:** CP6617828903",
+                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
                 "operationId": "getCompteByNumero",
                 "parameters": [
                     {
@@ -1054,7 +874,7 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "example": "CP6617828903"
+                            "example": "CP3105472638"
                         }
                     }
                 ],
@@ -1071,21 +891,21 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Compte actif récupéré avec succès"
+                                            "example": "Compte récupéré avec succès"
                                         },
                                         "data": {
                                             "properties": {
                                                 "id": {
                                                     "type": "string",
-                                                    "example": "a03747b4-b6cf-4216-878f-a250ddf44a6a"
+                                                    "example": "a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"
                                                 },
                                                 "numeroCompte": {
                                                     "type": "string",
-                                                    "example": "CP6617828903"
+                                                    "example": "CP3105472638"
                                                 },
                                                 "titulaire": {
                                                     "type": "string",
-                                                    "example": "Moussa Ndiaye Test"
+                                                    "example": "Mamadou Diop"
                                                 },
                                                 "type": {
                                                     "type": "string",
@@ -1093,7 +913,7 @@
                                                 },
                                                 "solde": {
                                                     "type": "number",
-                                                    "example": 0
+                                                    "example": 150000
                                                 },
                                                 "devise": {
                                                     "type": "string",
@@ -1121,278 +941,6 @@
                             }
                         }
                     },
-                    "403": {
-                        "description": "Accès non autorisé - Le client tente d'accéder au compte d'un autre client",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Accès non autorisé à ce compte"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Compte non trouvé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte avec le numéro CP9999999999 n'existe pas"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "410": {
-                        "description": "Compte archivé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte CP6991885910 est archivé et n'est plus actif. Consultez /api/v1/comptes/archives pour plus de détails."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/comptes/{compteId}": {
-            "patch": {
-                "tags": [
-                    "Comptes"
-                ],
-                "summary": "Mettre à jour les informations d'un compte (US 2.3)",
-                "description": "Permet de modifier les informations d'un compte bancaire et de son titulaire. Tous les champs sont optionnels mais au moins un doit être fourni. Seuls les administrateurs peuvent effectuer cette opération.\n\n**Note pour les tests :** L'ID d'exemple `a0358129-098e-46e8-99c7-be73a3943006` existe dans la base de données Render et peut être utilisé pour vos tests.",
-                "operationId": "updateCompte",
-                "parameters": [
-                    {
-                        "name": "compteId",
-                        "in": "path",
-                        "description": "ID UUID du compte à mettre à jour. Exemple: a0358129-098e-46e8-99c7-be73a3943006 (existe dans la base Render pour les tests)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "example": "a0358129-098e-46e8-99c7-be73a3943006"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "Informations à mettre à jour (au moins un champ requis)",
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "titulaire": {
-                                        "description": "Nom complet du titulaire du compte",
-                                        "type": "string",
-                                        "example": "Amadou Diallo Junior"
-                                    },
-                                    "email": {
-                                        "description": "Adresse email du titulaire (unique)",
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "amadou.diallo.junior@example.com"
-                                    },
-                                    "telephone": {
-                                        "description": "Numéro de téléphone sénégalais (77, 78, 76, 75 ou 70 + 7 chiffres, unique)",
-                                        "type": "string",
-                                        "example": "771234567"
-                                    },
-                                    "adresse": {
-                                        "description": "Adresse du titulaire",
-                                        "type": "string",
-                                        "example": "Dakar, Plateau"
-                                    },
-                                    "type": {
-                                        "description": "Type de compte",
-                                        "type": "string",
-                                        "enum": [
-                                            "cheque",
-                                            "epargne"
-                                        ],
-                                        "example": "epargne"
-                                    },
-                                    "devise": {
-                                        "description": "Devise du compte",
-                                        "type": "string",
-                                        "example": "FCFA"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Compte mis à jour avec succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Compte mis à jour avec succès"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "string",
-                                                    "format": "uuid",
-                                                    "example": "a0358129-098e-46e8-99c7-be73a3943006"
-                                                },
-                                                "numeroCompte": {
-                                                    "type": "string",
-                                                    "example": "C00123456"
-                                                },
-                                                "titulaire": {
-                                                    "type": "string",
-                                                    "example": "Amadou Diallo Junior"
-                                                },
-                                                "type": {
-                                                    "type": "string",
-                                                    "example": "epargne"
-                                                },
-                                                "solde": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 1250000
-                                                },
-                                                "devise": {
-                                                    "type": "string",
-                                                    "example": "FCFA"
-                                                },
-                                                "dateCreation": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2023-03-15T00:00:00Z"
-                                                },
-                                                "statut": {
-                                                    "type": "string",
-                                                    "example": "actif"
-                                                },
-                                                "metadata": {
-                                                    "properties": {
-                                                        "derniereModification": {
-                                                            "type": "string",
-                                                            "format": "date-time",
-                                                            "example": "2025-10-19T11:00:00Z"
-                                                        },
-                                                        "version": {
-                                                            "type": "integer",
-                                                            "example": 2
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Requête invalide - Au moins un champ requis ou compte archivé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Au moins un champ doit être fourni pour la modification."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Non authentifié"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Action non autorisée - Réservé aux administrateurs",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Action non autorisée"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Compte non trouvé",
                         "content": {
@@ -1406,58 +954,10 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Compte non trouvé"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Erreur de validation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
                                         },
-                                        "message": {
+                                        "error": {
                                             "type": "string",
-                                            "example": "Erreur de validation"
-                                        },
-                                        "errors": {
-                                            "properties": {
-                                                "telephone": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "Ce numéro de téléphone est déjà utilisé par un autre compte."
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Erreur serveur",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Une erreur est survenue lors de la mise à jour du compte"
+                                            "example": "Le compte avec le numéro CP9999999999 n'existe pas"
                                         }
                                     },
                                     "type": "object"
@@ -1465,12 +965,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/v1/comptes/archives": {
@@ -1478,43 +973,23 @@
                 "tags": [
                     "Comptes"
                 ],
-                "summary": "Lister les comptes archivés dans Neon",
-                "description": "Récupère la liste complète des comptes archivés depuis la base de données Neon. Affiche tous les types de comptes (épargne, chèque, etc.) qui ont été supprimés et archivés. Les comptes sont triés par date de fermeture (du plus récent au plus ancien). Seuls les administrateurs peuvent accéder aux archives.",
+                "summary": "Lister les comptes archivés",
+                "description": "Récupère la liste des comptes épargne archivés depuis le cloud (Neon). Les administrateurs voient tous les comptes archivés, les clients ne voient que leurs propres comptes archivés.",
                 "operationId": "getArchivedComptes",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Numéro de page pour la pagination",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 1,
-                            "example": 1
-                        }
-                    },
-                    {
-                        "name": "limit",
-                        "in": "query",
-                        "description": "Nombre d'éléments par page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 10,
-                            "example": 10
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "Liste des comptes archivés récupérée avec succès depuis Neon",
+                        "description": "Liste des comptes archivés récupérée avec succès",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Comptes archivés récupérés avec succès"
                                         },
                                         "data": {
                                             "type": "array",
@@ -1522,73 +997,29 @@
                                                 "properties": {
                                                     "id": {
                                                         "type": "string",
-                                                        "format": "uuid",
-                                                        "example": "a035d839-2e9e-4aed-886e-2398a1ffd2f0"
+                                                        "format": "uuid"
                                                     },
                                                     "numeroCompte": {
-                                                        "type": "string",
-                                                        "example": "CP3162783468"
-                                                    },
-                                                    "client_id": {
-                                                        "type": "string",
-                                                        "format": "uuid",
-                                                        "example": "a035d836-d64e-439e-b997-16dffd01552b"
+                                                        "type": "string"
                                                     },
                                                     "type": {
                                                         "type": "string",
                                                         "example": "epargne"
                                                     },
                                                     "solde": {
-                                                        "type": "string",
-                                                        "example": "0.00"
+                                                        "type": "number",
+                                                        "format": "float"
                                                     },
-                                                    "devise": {
+                                                    "archived_at": {
                                                         "type": "string",
-                                                        "example": "FCFA"
+                                                        "format": "date-time"
                                                     },
-                                                    "statut": {
-                                                        "type": "string",
-                                                        "example": "ferme"
-                                                    },
-                                                    "dateFermeture": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "example": "2025-10-27 09:15:18"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "example": "2025-10-27 09:15:18"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "example": "2025-10-27 09:15:18"
+                                                    "archive_reason": {
+                                                        "type": "string"
                                                     }
                                                 },
                                                 "type": "object"
                                             }
-                                        },
-                                        "pagination": {
-                                            "properties": {
-                                                "currentPage": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "totalPages": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "totalItems": {
-                                                    "type": "integer",
-                                                    "example": 3
-                                                },
-                                                "itemsPerPage": {
-                                                    "type": "integer",
-                                                    "example": 10
-                                                }
-                                            },
-                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -1602,53 +1033,13 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
                                         },
                                         "message": {
                                             "type": "string",
                                             "example": "Non authentifié"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Action non autorisée - Seuls les administrateurs peuvent consulter les archives",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Action non autorisée"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Erreur serveur",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Une erreur est survenue lors de la récupération des archives"
                                         }
                                     },
                                     "type": "object"
@@ -1762,828 +1153,6 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Compte non trouvé"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/comptes/{numeroCompte}": {
-            "delete": {
-                "tags": [
-                    "Comptes"
-                ],
-                "summary": "Supprimer un compte et l'archiver dans Neon",
-                "description": "Supprime définitivement un compte bancaire de la base principale (PostgreSQL) et l'archive automatiquement dans la base Neon. Cette opération est irréversible depuis PostgreSQL mais le compte peut être restauré depuis l'archive Neon. Seuls les administrateurs peuvent supprimer des comptes.",
-                "operationId": "deleteCompte",
-                "parameters": [
-                    {
-                        "name": "numeroCompte",
-                        "in": "path",
-                        "description": "Numéro du compte à supprimer",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "example": "CP3105472638"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Compte supprimé avec succès et archivé dans Neon",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Compte supprimé avec succès et archivé dans Neon"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "string",
-                                                    "format": "uuid",
-                                                    "example": "a035d140-7bf1-45cd-b5dd-5401faeda695"
-                                                },
-                                                "numeroCompte": {
-                                                    "type": "string",
-                                                    "example": "CP5091523552"
-                                                },
-                                                "statut": {
-                                                    "type": "string",
-                                                    "example": "ferme"
-                                                },
-                                                "dateFermeture": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-10-27T09:21:58+00:00"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Non authentifié"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Action non autorisée - Seuls les administrateurs peuvent supprimer des comptes",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Action non autorisée"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Compte non trouvé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte CP9999999999 n'existe pas"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Compte déjà supprimé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte CP3105472638 est déjà supprimé"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Erreur serveur",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Une erreur est survenue lors de la suppression du compte"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/comptes/restore/{id}": {
-            "post": {
-                "tags": [
-                    "Comptes"
-                ],
-                "summary": "Restaurer un compte archivé depuis Neon",
-                "description": "Restaure un compte bancaire précédemment supprimé et archivé dans Neon. Le compte est recréé dans PostgreSQL avec le statut 'actif' et supprimé de l'archive Neon. Seuls les administrateurs peuvent restaurer des comptes.",
-                "operationId": "restoreCompte",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID UUID du compte archivé à restaurer",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "example": "a035d140-7bf1-45cd-b5dd-5401faeda695"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Compte restauré avec succès depuis l'archive Neon",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Compte restauré avec succès"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "string",
-                                                    "format": "uuid",
-                                                    "example": "a0367188-21dd-4f37-9d55-c5cf90850058"
-                                                },
-                                                "numeroCompte": {
-                                                    "type": "string",
-                                                    "example": "CP5091523552"
-                                                },
-                                                "statut": {
-                                                    "type": "string",
-                                                    "example": "actif"
-                                                },
-                                                "type": {
-                                                    "type": "string",
-                                                    "example": "cheque"
-                                                },
-                                                "titulaire": {
-                                                    "type": "string",
-                                                    "example": "Baye Bara Diop"
-                                                },
-                                                "solde": {
-                                                    "type": "number",
-                                                    "example": 0
-                                                },
-                                                "devise": {
-                                                    "type": "string",
-                                                    "example": "FCFA"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Non authentifié"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Action non autorisée - Seuls les administrateurs peuvent restaurer des comptes",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Action non autorisée"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Compte non trouvé dans les archives",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte avec l'ID a035d140-7bf1-45cd-b5dd-5401faeda695 n'existe pas dans les archives"
-                                        },
-                                        "code": {
-                                            "type": "integer",
-                                            "example": 404
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Erreur serveur",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Une erreur est survenue lors de la restauration du compte"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/comptes/{compteId}/bloquer": {
-            "post": {
-                "tags": [
-                    "Comptes"
-                ],
-                "summary": "Bloquer un compte épargne (US 2.5)",
-                "description": "Bloque un compte épargne actif pour une durée déterminée. Seuls les administrateurs peuvent bloquer un compte. Le compte doit être de type épargne et avoir un statut actif. La date de déblocage prévue est calculée automatiquement.\n\n**Note pour les tests :** L'ID d'exemple `a0358129-098e-46e8-99c7-be73a3943006` existe dans la base de données Render et peut être utilisé pour vos tests. Vous pouvez aussi récupérer d'autres IDs via GET /v1/comptes.",
-                "operationId": "bloquerCompte",
-                "parameters": [
-                    {
-                        "name": "compteId",
-                        "in": "path",
-                        "description": "ID UUID du compte à bloquer. Exemple: a0358129-098e-46e8-99c7-be73a3943006 (existe dans la base Render pour les tests)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "example": "a0358129-098e-46e8-99c7-be73a3943006"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "Informations de blocage du compte",
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "motif",
-                                    "duree",
-                                    "unite"
-                                ],
-                                "properties": {
-                                    "motif": {
-                                        "description": "Motif du blocage (minimum 10 caractères)",
-                                        "type": "string",
-                                        "maxLength": 500,
-                                        "minLength": 10,
-                                        "example": "Activité suspecte détectée"
-                                    },
-                                    "duree": {
-                                        "description": "Durée du blocage",
-                                        "type": "integer",
-                                        "maximum": 365,
-                                        "minimum": 1,
-                                        "example": 30
-                                    },
-                                    "unite": {
-                                        "description": "Unité de temps (jours ou mois)",
-                                        "type": "string",
-                                        "enum": [
-                                            "jours",
-                                            "mois"
-                                        ],
-                                        "example": "mois"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Compte bloqué avec succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Compte bloqué avec succès"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "string",
-                                                    "format": "uuid",
-                                                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                                                },
-                                                "statut": {
-                                                    "type": "string",
-                                                    "example": "bloque"
-                                                },
-                                                "motifBlocage": {
-                                                    "type": "string",
-                                                    "example": "Activité suspecte détectée"
-                                                },
-                                                "dateBlocage": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-10-19T11:20:00Z"
-                                                },
-                                                "dateDeblocagePrevue": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-11-18T11:20:00Z"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Erreur de validation ou compte non éligible au blocage",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Seuls les comptes épargne peuvent être bloqués"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Non authentifié"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Action non autorisée - Seuls les administrateurs peuvent bloquer un compte",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Action non autorisée"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Compte non trouvé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte avec l'ID 550e8400-e29b-41d4-a716-446655440000 n'existe pas"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Erreur de validation des données",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Les données fournies sont invalides"
-                                        },
-                                        "errors": {
-                                            "properties": {
-                                                "motif": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "Le motif de blocage est obligatoire"
-                                                    }
-                                                },
-                                                "duree": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "La durée de blocage est obligatoire"
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Erreur serveur",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Une erreur est survenue lors du blocage du compte"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/v1/comptes/{compteId}/debloquer": {
-            "post": {
-                "tags": [
-                    "Comptes"
-                ],
-                "summary": "Débloquer un compte épargne (US 2.5)",
-                "description": "Débloque un compte épargne précédemment bloqué et le remet en statut actif. Seuls les administrateurs peuvent débloquer un compte. Le compte doit avoir un statut bloqué.\n\n**Note pour les tests :** L'ID d'exemple `a0358129-098e-46e8-99c7-be73a3943006` existe dans la base de données Render et peut être utilisé pour vos tests. Vous pouvez aussi récupérer d'autres IDs via GET /v1/comptes.",
-                "operationId": "debloquerCompte",
-                "parameters": [
-                    {
-                        "name": "compteId",
-                        "in": "path",
-                        "description": "ID UUID du compte à débloquer. Exemple: a0358129-098e-46e8-99c7-be73a3943006 (existe dans la base Render pour les tests)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "example": "a0358129-098e-46e8-99c7-be73a3943006"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "Motif du déblocage",
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "motif"
-                                ],
-                                "properties": {
-                                    "motif": {
-                                        "description": "Motif du déblocage (minimum 10 caractères)",
-                                        "type": "string",
-                                        "maxLength": 500,
-                                        "minLength": 10,
-                                        "example": "Vérification complétée"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Compte débloqué avec succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Compte débloqué avec succès"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "string",
-                                                    "format": "uuid",
-                                                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                                                },
-                                                "statut": {
-                                                    "type": "string",
-                                                    "example": "actif"
-                                                },
-                                                "dateDeblocage": {
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-10-19T12:00:00Z"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Compte non éligible au déblocage",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte ne peut pas être débloqué. Statut actuel : actif"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Non authentifié"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Action non autorisée - Seuls les administrateurs peuvent débloquer un compte",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Action non autorisée"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Compte non trouvé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte avec l'ID 550e8400-e29b-41d4-a716-446655440000 n'existe pas"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Erreur de validation des données",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Les données fournies sont invalides"
-                                        },
-                                        "errors": {
-                                            "properties": {
-                                                "motif": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "Le motif de déblocage est obligatoire"
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Erreur serveur",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Une erreur est survenue lors du déblocage du compte"
                                         }
                                     },
                                     "type": "object"
