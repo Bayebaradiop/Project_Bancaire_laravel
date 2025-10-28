@@ -121,11 +121,11 @@ class CompteRepository
                 'updated_at' => now(),
             ]);
 
-            // Soft delete dans la base principale
-            $compte->update([
-                'statut' => 'ferme',
-                'deleted_at' => now(),
-            ]);
+            // Mettre le statut à 'ferme' avant le soft delete
+            $compte->update(['statut' => 'ferme']);
+            
+            // Soft delete dans la base principale (utilise SoftDeletes)
+            $compte->delete();
         });
 
         return true;

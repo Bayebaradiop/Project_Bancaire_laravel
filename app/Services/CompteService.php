@@ -68,6 +68,15 @@ class CompteService
                 ];
             }
 
+            // Vérifier que le compte n'est pas de type chèque
+            if ($compte->type === 'cheque') {
+                return [
+                    'success' => false,
+                    'message' => 'Les comptes chèque ne peuvent pas être supprimés',
+                    'code' => 400
+                ];
+            }
+
             // Supprimer et archiver
             $this->compteRepository->deleteAndArchive($compte);
 
