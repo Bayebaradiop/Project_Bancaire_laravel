@@ -163,6 +163,131 @@ class CompteController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/v1/comptes/{id}",
+     *     summary="Récupérer un compte spécifique par ID (US 2.1)",
+     *     description="Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (tous les comptes : actifs, bloqués, fermés), puis dans Neon (comptes archivés) si non trouvé. Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
+     *     operationId="getCompteById",
+     *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID UUID du compte",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Compte récupéré avec succès (depuis PostgreSQL ou Neon)",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="C00123456"),
+     *                 @OA\Property(property="titulaire", type="string", example="Amadou Diallo"),
+     *                 @OA\Property(property="type", type="string", enum={"epargne", "cheque"}, example="epargne"),
+     *                 @OA\Property(property="solde", type="number", format="float", example=1250000),
+     *                 @OA\Property(property="devise", type="string", example="FCFA"),
+     *                 @OA\Property(property="dateCreation", type="string", format="date-time", example="2023-03-15T00:00:00Z"),
+     *                 @OA\Property(property="statut", type="string", enum={"actif", "bloque", "ferme"}, example="bloque"),
+     *                 @OA\Property(property="motifBlocage", type="string", nullable=true, example="Inactivité de 30+ jours"),
+     *                 @OA\Property(
+     *                     property="metadata",
+     *                     type="object",
+     *                     @OA\Property(property="derniereModification", type="string", format="date-time", example="2023-06-10T14:30:00Z"),
+     *                     @OA\Property(property="version", type="integer", example=1),
+     *                     @OA\Property(property="archived", type="boolean", example=false, description="true si récupéré depuis Neon, false si depuis PostgreSQL")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Accès non autorisé - Client tentant d'accéder à un compte qui ne lui appartient pas",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="error",
+     *                 type="object",
+     *                 @OA\Property(property="code", type="string", example="ACCESS_DENIED"),
+     *                 @OA\Property(property="message", type="string", example="Accès non autorisé à ce compte"),
+     *                 @OA\Property(
+     *                     property="details",
+     *                     type="object",
+     *                     @OA\Property(property="compteId", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé dans PostgreSQL ni dans Neon",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="error",
+     *                 type="object",
+     *                 @OA\Property(property="code", type="string", example="COMPTE_NOT_FOUND"),
+     *                 @OA\Property(property="message", type="string", example="Le compte avec l'ID spécifié n'existe pas"),
+     *                 @OA\Property(
+     *                     property="details",
+     *                     type="object",
+     *                     @OA\Property(property="compteId", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erreur serveur",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Une erreur est survenue lors de la récupération du compte")
+     *         )
+     *     )
+     * )
+     */
+    public function show(string $id): JsonResponse
+    {
+        try {
+            // Récupérer l'utilisateur authentifié
+            $user = auth()->user();
+            
+            // Déléguer la logique au service
+            $result = $this->compteService->getCompteById($id, $user);
+
+            // Gérer les erreurs
+            if (!$result['success']) {
+                return response()->json($result, $result['http_code'] ?? 500);
+            }
+
+            // Succès - retourner les données
+            return response()->json([
+                'success' => true,
+                'data' => $result['data']
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->serverError(
+                config('app.debug') 
+                    ? 'Erreur lors de la récupération du compte : ' . $e->getMessage() 
+                    : 'Une erreur est survenue lors de la récupération du compte'
+            );
+        }
+    }
+
+    /**
+     * @OA\Get(
      *     path="/v1/comptes/numero/{numero}",
      *     summary="Obtenir un compte par numéro",
      *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
