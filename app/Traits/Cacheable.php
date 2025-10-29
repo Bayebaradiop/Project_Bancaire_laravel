@@ -117,22 +117,31 @@ trait Cacheable
         $pattern = $this->getCachePrefix() . '*';
         
         try {
-            // Utiliser Redis directement pour supprimer par pattern
-            $redis = Redis::connection();
-            $keys = $redis->keys($pattern);
-            
-            if (!empty($keys)) {
-                foreach ($keys as $key) {
-                    // Enlever le préfixe Redis automatique si présent
-                    $cleanKey = str_replace(config('database.redis.options.prefix'), '', $key);
-                    Cache::forget($cleanKey);
+            // Si Redis est disponible, utiliser la méthode optimisée
+            if (config('cache.default') === 'redis' && class_exists('Redis')) {
+                $redis = Redis::connection();
+                $keys = $redis->keys($pattern);
+                
+                if (!empty($keys)) {
+                    foreach ($keys as $key) {
+                        // Enlever le préfixe Redis automatique si présent
+                        $cleanKey = str_replace(config('database.redis.options.prefix'), '', $key);
+                        Cache::forget($cleanKey);
+                    }
                 }
+                
+                return true;
+            } else {
+                // Fallback : utiliser Cache::flush()
+                return Cache::flush();
             }
-            
-            return true;
         } catch (\Exception $e) {
             // Si Redis n'est pas disponible, utiliser Cache::flush()
-            return Cache::flush();
+            try {
+                return Cache::flush();
+            } catch (\Exception $flushException) {
+                return false;
+            }
         }
     }
 
@@ -164,18 +173,30 @@ trait Cacheable
         $pattern = $this->getCachePrefix() . $key . ':page:*';
         
         try {
-            $redis = Redis::connection();
-            $keys = $redis->keys($pattern);
-            
-            if (!empty($keys)) {
-                foreach ($keys as $cacheKey) {
-                    $cleanKey = str_replace(config('database.redis.options.prefix'), '', $cacheKey);
-                    Cache::forget($cleanKey);
+            // Si Redis est disponible, utiliser la méthode optimisée
+            if (config('cache.default') === 'redis' && class_exists('Redis')) {
+                $redis = Redis::connection();
+                $keys = $redis->keys($pattern);
+                
+                if (!empty($keys)) {
+                    foreach ($keys as $cacheKey) {
+                        $cleanKey = str_replace(config('database.redis.options.prefix'), '', $cacheKey);
+                        Cache::forget($cleanKey);
+                    }
                 }
+            } else {
+                // Fallback : vider simplement le cache complet (non optimal mais fonctionne)
+                Cache::flush();
             }
             
             return true;
         } catch (\Exception $e) {
+            // En cas d'erreur, essayer de flush le cache
+            try {
+                Cache::flush();
+            } catch (\Exception $flushException) {
+                // Ignorer silencieusement
+            }
             return false;
         }
     }
