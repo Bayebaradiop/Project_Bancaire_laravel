@@ -58,8 +58,6 @@ php artisan storage:link || true
 
 echo "Application ready!"
 
-# Démarrer PHP-FPM en arrière-plan
-php-fpm -D
-
-# Démarrer Nginx en premier plan (Render attend sur port 10000)
-exec nginx -g 'daemon off;'
+# Démarrer Supervisor qui va gérer PHP-FPM, Nginx ET le queue worker
+echo "Starting Supervisor (PHP-FPM + Nginx + Queue Worker)..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
