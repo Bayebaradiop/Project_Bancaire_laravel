@@ -21,30 +21,24 @@ class SendClientNotification
         $password = $event->password;
         $code = $event->code;
 
-        // TODO: Envoi de l'email avec le mot de passe (NON BLOQUANT)
-        // Temporairement désactivé pour tests
-        /*
+        // Envoi de l'email avec le mot de passe (NON BLOQUANT)
         if ($password) {
-            $this->envoyerEmail($client, $compte, $password);
+            $this->envoyerEmail($client, $compte, $password, $code);
         }
-        */
 
-        // TODO: Envoi du SMS avec le code (NON BLOQUANT)
-        // Temporairement désactivé pour tests
-        /*
+        // Envoi du SMS avec le code (NON BLOQUANT)
         if ($code) {
             $this->envoyerSMS($client, $code);
         }
-        */
 
-        Log::info("Notifications désactivées pour le compte #{$compte->numeroCompte} (mode test)");
+        Log::info("Notifications envoyées pour le compte #{$compte->numeroCompte}");
     }
 
     /**
      * Envoi de l'email avec le mot de passe
      * Si l'envoi échoue, on log l'erreur mais on ne bloque pas
      */
-    private function envoyerEmail($client, $compte, $password): void
+    private function envoyerEmail($client, $compte, $password, $code = null): void
     {
         try {
             $email = $client->user->email ?? null;
@@ -64,8 +58,8 @@ class SendClientNotification
                 return;
             }
 
-            // Tentative d'envoi réel
-            // TODO: Implémenter Mail::to($email)->send(new CompteCreatedMail($compte, $password));
+            // Envoi réel de l'email
+            Mail::to($email)->send(new \App\Mail\CompteCreatedMail($compte, $password, $code));
             
             Log::info("Email envoyé avec succès", [
                 'destinataire' => $email,

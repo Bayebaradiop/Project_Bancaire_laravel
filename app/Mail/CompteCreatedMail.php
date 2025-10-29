@@ -16,14 +16,16 @@ class CompteCreatedMail extends Mailable
 
     public $compte;
     public $password;
+    public $code;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Compte $compte, string $password)
+    public function __construct(Compte $compte, string $password, ?string $code = null)
     {
         $this->compte = $compte;
         $this->password = $password;
+        $this->code = $code;
     }
 
     /**

@@ -743,10 +743,10 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
     /**
      * @OA\Get(
      *     path="/v1/comptes/archives",
-     *     summary="Lister les comptes archivés depuis Neon",
+     *     summary="Lister les comptes archivés dans Neon",
      *     description="Récupère les comptes archivés stockés dans Neon (base serverless). Admin voit tous les comptes, Client voit uniquement les siens. Authentification requise via Bearer token.",
      *     operationId="getArchivedComptes",
-     *     tags={"Comptes - Archives"},
+     *     tags={"Archivage Neon"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Response(
      *         response=200,
@@ -1104,97 +1104,8 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
     }
 
     /**
-     * @OA\Post(
-     *     path="/v1/comptes/{compteId}/debloquer",
-     *     summary="Débloquer un compte épargne",
-     *     description="Débloque un compte épargne (restauration depuis Neon vers PostgreSQL) ou annule un blocage programmé. Authentification requise.",
-     *     operationId="debloquerCompte",
-     *     tags={"Comptes - Blocage/Déblocage"},
-     *     security={{"bearerAuth": {}}},
-     *     @OA\Parameter(
-     *         name="compteId",
-     *         in="path",
-     *         description="UUID du compte épargne à débloquer",
-     *         required=true,
-     *         @OA\Schema(
-     *             type="string", 
-     *             format="uuid",
-     *             example="a03902aa-a03a-4213-b865-0a05f77dee48"
-     *         )
-     *     ),
-     *     @OA\RequestBody(
-     *         required=false,
-     *         description="Paramètres du déblocage (optionnel)",
-     *         @OA\JsonContent(
-     *             @OA\Property(
-     *                 property="motif", 
-     *                 type="string", 
-     *                 example="Vérification complétée",
-     *                 description="📝 Motif du déblocage (optionnel, max 500 caractères)"
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Compte débloqué avec succès",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="message", 
-     *                 type="string", 
-     *                 example="Compte débloqué avec succès"
-     *             ),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="object",
-     *                 description="Détails du compte après déblocage",
-     *                 @OA\Property(property="id", type="string", format="uuid", example="a03902aa-a03a-4213-b865-0a05f77dee48"),
-     *                 @OA\Property(property="numeroCompte", type="string", example="CP4287048035"),
-     *                 @OA\Property(
-     *                     property="statut", 
-     *                     type="string", 
-     *                     example="actif",
-     *                     description="Toujours 'actif' après déblocage"
-     *                 ),
-     *                 @OA\Property(property="dateDeblocage", type="string", format="date-time", example="2025-10-28T18:30:00+00:00", description="Date effective du déblocage"),
-     *                 @OA\Property(
-     *                     property="location", 
-     *                     type="string", 
-     *                     example="PostgreSQL",
-     *                     description="Toujours 'PostgreSQL' après déblocage"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="restored_from_neon", 
-     *                     type="boolean", 
-     *                     example=true,
-     *                     description="true si restauré depuis Neon, false si annulation blocage programmé"
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Erreur de validation métier",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(
-     *                 property="message", 
-     *                 type="string", 
-     *                 example="Le compte ne peut pas être débloqué. Statut actuel : actif"
-     *             ),
-     *             @OA\Property(property="http_code", type="integer", example=400)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Compte non trouvé",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Le compte avec l'ID spécifié n'existe pas"),
-     *             @OA\Property(property="http_code", type="integer", example=404)
-     *         )
-     *     )
-     * )
+     * Débloquer un compte épargne (non documenté dans Swagger)
+     * Restaure depuis Neon vers PostgreSQL ou annule un blocage programmé
      */
     public function debloquer(string $compteId): JsonResponse
     {
@@ -1246,7 +1157,7 @@ Restauration possible via POST /v1/comptes/restore/{id}
 
 Authentification requise (admin uniquement).",
      *     operationId="deleteCompte",
-     *     tags={"Comptes - Archives"},
+     *     tags={"Archivage Neon"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="numeroCompte",
@@ -1376,10 +1287,10 @@ Authentification requise (admin uniquement).",
     /**
      * @OA\Post(
      *     path="/v1/comptes/restore/{id}",
-     *     summary="Restaurer un compte depuis les archives",
+     *     summary="Restaurer un compte depuis Neon",
      *     description="Restaure un compte supprimé en le récupérant depuis Neon vers PostgreSQL. Le compte devient actif et utilisable. Admin uniquement. Authentification requise.",
      *     operationId="restoreCompte",
-     *     tags={"Comptes - Archives"},
+     *     tags={"Archivage Neon"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="id",
