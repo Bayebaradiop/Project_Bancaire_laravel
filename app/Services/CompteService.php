@@ -275,22 +275,22 @@ class CompteService
             'sort' => $filters['sort'] ?? null,
             'order' => $filters['order'] ?? null,
         ], fn($value) => $value !== null);
-        
+
         $buildUrl = function($page) use ($queryParams) {
             $params = array_merge($queryParams, ['page' => $page]);
             return '/api/v1/comptes?' . http_build_query($params);
         };
-        
+
         return [
             'success' => true,
+            'message' => 'Comptes récupérés avec succès',
             'data' => $data,
             'pagination' => [
-                'currentPage' => $paginator->currentPage(),
-                'totalPages' => $paginator->lastPage(),
-                'totalItems' => $paginator->total(),
-                'itemsPerPage' => $paginator->perPage(),
-                'hasNext' => $paginator->hasMorePages(),
-                'hasPrevious' => $paginator->currentPage() > 1,
+                'total' => $paginator->total(),
+                'count' => $paginator->count(),
+                'per_page' => $paginator->perPage(),
+                'current_page' => $paginator->currentPage(),
+                'total_pages' => $paginator->lastPage(),
             ],
             'links' => [
                 'self' => $buildUrl($paginator->currentPage()),
