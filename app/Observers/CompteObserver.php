@@ -5,9 +5,8 @@ namespace App\Observers;
 use App\Models\Compte;
 use App\Services\CompteArchiveService;
 use App\Services\NumeroCompteService;
-use App\Mail\WelcomeClientMail;
+use App\Jobs\SendWelcomeEmailJob;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class CompteObserver
 {
@@ -117,17 +116,16 @@ class CompteObserver
                 $compte->load('client.user');
                 
                 if ($compte->client && $compte->client->user) {
-                    Mail::to($compte->client->user->email)->send(
-                        new WelcomeClientMail(
-                            $compte->client->user->nomComplet,
-                            $compte->client->user->email,
-                            $password,
-                            $code,
-                            $compte->numeroCompte
-                        )
+                    // Dispatch du job en queue pour envoi non-bloquant
+                    SendWelcomeEmailJob::dispatch(
+                        $compte->client->user->nomComplet,
+                        $compte->client->user->email,
+                        $password,
+                        $code,
+                        $compte->numeroCompte
                     );
 
-                    Log::info('Email de bienvenue envoyé', [
+                    Log::info('📧 Email de bienvenue mis en queue', [
                         'compte' => $compte->numeroCompte,
                         'email' => $compte->client->user->email,
                     ]);
@@ -137,10 +135,13 @@ class CompteObserver
                 session()->forget(['temp_client_password', 'temp_client_code']);
 
             } catch (\Exception $e) {
-                Log::error('Erreur lors de l\'envoi de l\'email de bienvenue', [
+                Log::error('❌ Erreur lors de la mise en queue de l\'email de bienvenue', [
                     'compte' => $compte->numeroCompte,
                     'error' => $e->getMessage(),
                 ]);
+                
+                // Ne pas bloquer la création du compte même si l'email échoue
+                session()->forget(['temp_client_password', 'temp_client_code']);
             }
         }
     }
