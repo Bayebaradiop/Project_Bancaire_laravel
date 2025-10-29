@@ -58,6 +58,9 @@ php artisan storage:link || true
 
 echo "Application ready!"
 
+# Créer le répertoire de logs pour supervisor
+mkdir -p /var/log/supervisor
+
 # Démarrer Supervisor qui va gérer PHP-FPM, Nginx ET le queue worker
 echo "Starting Supervisor (PHP-FPM + Nginx + Queue Worker)..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
