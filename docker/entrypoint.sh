@@ -33,11 +33,13 @@ if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
     done
 fi
 
-# Générer la clé d'application si nécessaire
+# APP_KEY doit être définie dans les variables d'environnement Render
+# Ne pas générer de clé ici car il n'y a pas de fichier .env
 if [ -z "$APP_KEY" ]; then
-    echo "Generating application key..."
-    php artisan key:generate --force
+    echo "WARNING: APP_KEY is not set! Please set it in Render environment variables."
+    exit 1
 fi
+echo "APP_KEY is configured ✓"
 
 # Exécuter les migrations (non bloquant si échec)
 echo "Running migrations..."
