@@ -93,6 +93,7 @@ return [
             'options' => [
                 \PDO::ATTR_TIMEOUT => 120, // Timeout de 120 secondes pour cold start
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_EMULATE_PREPARES => true, // Éviter le cache de plan PostgreSQL
             ],
         ],
 

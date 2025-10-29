@@ -24,7 +24,7 @@ class CompteArchive extends Model
     /**
      * Le nom de la table
      */
-    protected $table = 'comptes_archives';
+    protected $table = 'archives_comptes';
 
     /**
      * Les attributs qui peuvent être assignés en masse

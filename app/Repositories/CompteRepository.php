@@ -108,7 +108,7 @@ class CompteRepository
             $solde = $compte->solde;
 
             // Archiver dans Neon avec toutes les informations nécessaires
-            DB::connection('neon')->table('comptes_archives')->insert([
+            DB::connection('neon')->table('archives_comptes')->insert([
                 'id' => $compte->id,
                 'numerocompte' => $compte->numeroCompte,
                 'client_id' => $compte->client_id,
@@ -142,7 +142,7 @@ class CompteRepository
     {
         // Récupérer le compte depuis l'archive Neon
         $archivedCompte = DB::connection('neon')
-            ->table('comptes_archives')
+            ->table('archives_comptes')
             ->where('id', $id)
             ->first();
 
@@ -162,7 +162,7 @@ class CompteRepository
             ]);
 
             // Supprimer de l'archive Neon
-            DB::connection('neon')->table('comptes_archives')
+            DB::connection('neon')->table('archives_comptes')
                 ->where('id', $archivedCompte->id)
                 ->delete();
 

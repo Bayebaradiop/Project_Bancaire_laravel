@@ -55,7 +55,7 @@ class CompteService
         try {
             // Vérifier si le compte est déjà archivé dans Neon
             $archivedCompte = DB::connection('neon')
-                ->table('comptes_archives')
+                ->table('archives_comptes')
                 ->where('numerocompte', $numeroCompte)
                 ->first();
 
@@ -622,7 +622,7 @@ class CompteService
                 // Vérifier si le compte est déjà dans Neon (archivé/bloqué)
                 try {
                     $compteArchive = DB::connection('neon')
-                        ->table('comptes_archives')
+                        ->table('archives_comptes')
                         ->where('id', $compteId)
                         ->first();
                     

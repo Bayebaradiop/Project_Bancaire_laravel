@@ -12,6 +12,7 @@ class SendClientNotification
     /**
      * Handle the event.
      * Les envois SMS et Email sont non-bloquants : si ils échouent, la création continue
+     * TEMPORAIREMENT DÉSACTIVÉ pour tests de déploiement
      */
     public function handle(CompteCreated $event)
     {
@@ -20,17 +21,23 @@ class SendClientNotification
         $password = $event->password;
         $code = $event->code;
 
-        // Envoi de l'email avec le mot de passe (NON BLOQUANT)
+        // TODO: Envoi de l'email avec le mot de passe (NON BLOQUANT)
+        // Temporairement désactivé pour tests
+        /*
         if ($password) {
             $this->envoyerEmail($client, $compte, $password);
         }
+        */
 
-        // Envoi du SMS avec le code (NON BLOQUANT)
+        // TODO: Envoi du SMS avec le code (NON BLOQUANT)
+        // Temporairement désactivé pour tests
+        /*
         if ($code) {
             $this->envoyerSMS($client, $code);
         }
+        */
 
-        Log::info("Notifications traitées pour le compte #{$compte->numeroCompte}");
+        Log::info("Notifications désactivées pour le compte #{$compte->numeroCompte} (mode test)");
     }
 
     /**
