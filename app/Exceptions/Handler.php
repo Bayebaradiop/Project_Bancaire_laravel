@@ -12,6 +12,7 @@ use App\Exceptions\RateLimitExceededException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Auth\AuthenticationException;
 
 class Handler extends ExceptionHandler
 {
@@ -84,6 +85,13 @@ class Handler extends ExceptionHandler
         $this->renderable(function (NotFoundHttpException $e, $request) {
             if ($request->expectsJson()) {
                 return $this->error('Route non trouvée', 404);
+            }
+        });
+
+        // Gérer les erreurs d'authentification (évite Route [login] not defined)
+        $this->renderable(function (AuthenticationException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return $this->error('Non authentifié. Token JWT requis.', 401);
             }
         });
     }
