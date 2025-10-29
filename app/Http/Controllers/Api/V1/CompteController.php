@@ -211,7 +211,7 @@ Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement
      *         in="path",
      *         description="ID UUID du compte",
      *         required=true,
-     *         @OA\Schema(type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000")
+     *         @OA\Schema(type="string", format="uuid", example="a038f679-7eac-46cc-b036-7ca130facf09")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -221,7 +221,7 @@ Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="id", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000"),
+     *                 @OA\Property(property="id", type="string", format="uuid", example="a038f679-7eac-46cc-b036-7ca130facf09"),
      *                 @OA\Property(property="numeroCompte", type="string", example="C00123456"),
      *                 @OA\Property(property="titulaire", type="string", example="Amadou Diallo"),
      *                 @OA\Property(property="type", type="string", enum={"epargne", "cheque"}, example="epargne"),
@@ -352,7 +352,7 @@ Cherche automatiquement dans la base principale (PostgreSQL) et dans les archive
      *         in="path",
      *         description="Numéro du compte (format: CPxxxxxxxxxx)",
      *         required=true,
-     *         @OA\Schema(type="string", example="CP3105472638")
+     *         @OA\Schema(type="string", example="CP5342804805")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -364,7 +364,7 @@ Cherche automatiquement dans la base principale (PostgreSQL) et dans les archive
      *                 property="data",
      *                 type="object",
      *                 @OA\Property(property="id", type="string", example="a032f0ea-25e7-4b17-a7c4-e0a1aa6aa289"),
-     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP5342804805"),
      *                 @OA\Property(property="titulaire", type="string", example="Mamadou Diop"),
      *                 @OA\Property(property="type", type="string", example="epargne"),
      *                 @OA\Property(property="solde", type="number", example=150000),

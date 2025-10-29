@@ -921,7 +921,7 @@
                         "schema": {
                             "type": "string",
                             "format": "uuid",
-                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                            "example": "a038f679-7eac-46cc-b036-7ca130facf09"
                         }
                     }
                 ],
@@ -941,7 +941,7 @@
                                                 "id": {
                                                     "type": "string",
                                                     "format": "uuid",
-                                                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                                                    "example": "a038f679-7eac-46cc-b036-7ca130facf09"
                                                 },
                                                 "numeroCompte": {
                                                     "type": "string",
@@ -1190,7 +1190,7 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "example": "CP3105472638"
+                            "example": "CP5342804805"
                         }
                     }
                 ],
@@ -1217,7 +1217,7 @@
                                                 },
                                                 "numeroCompte": {
                                                     "type": "string",
-                                                    "example": "CP3105472638"
+                                                    "example": "CP5342804805"
                                                 },
                                                 "titulaire": {
                                                     "type": "string",

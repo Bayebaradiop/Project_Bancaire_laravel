@@ -183,8 +183,8 @@ class CompteRepository
         
         return DB::connection('neon')
             ->table('archives_comptes')
-            ->select('id', 'numeroCompte', 'client_id', 'type', 'solde', 'devise', 'statut', 'dateFermeture', 'created_at', 'updated_at')
-            ->orderBy('dateFermeture', 'desc')
+            ->select('id', 'numerocompte', 'client_id', 'type', 'solde', 'devise', 'statut', 'archived_at', 'created_at', 'updated_at')
+            ->orderBy('archived_at', 'desc')
             ->paginate($perPage);
     }
 
@@ -211,7 +211,7 @@ class CompteRepository
         
         return DB::connection('neon')
             ->table('archives_comptes')
-            ->where('numeroCompte', $numeroCompte)
+            ->where('numerocompte', $numeroCompte)
             ->first();
     }
 }
