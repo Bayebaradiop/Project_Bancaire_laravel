@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# ⚠️ TEMPLATE DE TEST - NE PAS COMMITER LES CREDENTIALS RÉELS
+# Copier ce fichier vers test_local.sh (ignoré par git) et remplacer les variables
+
+# Configuration
+BASE_URL="${API_URL:-http://localhost:8000}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@banque.sn}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-VOTRE_PASSWORD_ICI}"
+CLIENT_EMAIL="${CLIENT_EMAIL:-client@banque.sn}"
+CLIENT_PASSWORD="${CLIENT_PASSWORD:-VOTRE_PASSWORD_ICI}"
+
+echo "🧪 Tests API Banking"
+echo "===================="
+
+# 1. Test Login Admin
+echo -e "\n📝 Test: Login Admin"
+ADMIN_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}")
+
+ADMIN_TOKEN=$(echo $ADMIN_RESPONSE | jq -r '.data.access_token // empty')
+
+if [ -n "$ADMIN_TOKEN" ]; then
+  echo "✅ Login admin réussi"
+else
+  echo "❌ Login admin échoué"
+  echo "Response: $ADMIN_RESPONSE"
+  exit 1
+fi
+
+# 2. Test Création Compte
+echo -e "\n📝 Test: Création compte avec auto-création client"
+CREATE_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/v1/comptes" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -d '{
+    "type": "epargne",
+    "solde": 50000,
+    "client": {
+      "nomComplet": "Test Client",
+      "email": "test@example.com",
+      "telephone": "+221770000000",
+      "adresse": "Dakar"
+    }
+  }')
+
+echo "$CREATE_RESPONSE" | jq '.'
+
+echo -e "\n✅ Tests terminés"
+echo "⚠️  Rappel: Ne jamais commiter ce fichier avec de vraies credentials"
