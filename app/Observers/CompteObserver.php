@@ -107,9 +107,7 @@ class CompteObserver
             }
         }
 
-        // TODO: Envoyer l'email de bienvenue si un nouveau client a été créé
-        // Temporairement désactivé pour tests de déploiement
-        /*
+        // Envoyer l'email de bienvenue si un nouveau client a été créé
         $password = session('temp_client_password');
         $code = session('temp_client_code');
 
@@ -146,9 +144,5 @@ class CompteObserver
                 session()->forget(['temp_client_password', 'temp_client_code']);
             }
         }
-        */
-        
-        // Nettoyer la session même si l'email est désactivé
-        session()->forget(['temp_client_password', 'temp_client_code']);
     }
 }
