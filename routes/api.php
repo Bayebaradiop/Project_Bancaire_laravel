@@ -43,6 +43,7 @@ Route::prefix('v1')->group(function () {
         // 2. Client peut récupérer la liste de ses propres comptes
         Route::get('/', [CompteController::class, 'index'])->name('comptes.index');
 
+        // Création de compte - Admin uniquement
         Route::post('/', [CompteController::class, 'store'])->name('comptes.store');
         
         // US 2.3 - Mettre à jour les informations d'un compte (Admin uniquement)
