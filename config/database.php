@@ -90,6 +90,10 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => 'require',
+            'options' => [
+                \PDO::ATTR_TIMEOUT => 120, // Timeout de 120 secondes pour cold start
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            ],
         ],
 
         'sqlsrv' => [

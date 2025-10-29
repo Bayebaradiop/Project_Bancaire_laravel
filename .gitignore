@@ -17,3 +17,9 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Fichiers de test avec credentials
+test_*.sh
+cookies*.txt
+*_test.sh
+

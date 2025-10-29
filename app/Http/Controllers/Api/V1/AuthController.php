@@ -26,22 +26,21 @@ class AuthController extends Controller
      *     summary="Connexion utilisateur",
      *     description="Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.
 
-**Comptes de test dans la base Render :**
+**Comptes de test (créés par le seeder) :**
 
-**👤 Admin :**
+**Admin :**
 - Email : `admin@banque.sn`
-- Password : `password`
+- Password : `Admin@2025`
 - Accès : Tous les comptes, toutes les opérations
 
-**👤 Client :**
+**Client :**
 - Email : `client@banque.sn`
-- Password : `password`
+- Password : `Client@2025`
 - Accès : Uniquement ses propres comptes
-- Ses comptes : `a0358125-5167-4b7c-8057-786038cd1e84`, `a0358113-ee00-4154-884d-9a3bd5d307fc`, etc.
 
-**📝 Instructions après connexion :**
+**Instructions après connexion :**
 1. Copier le `access_token` de la réponse
-2. Cliquer sur **Authorize** (🔒 en haut à droite)
+2. Cliquer sur **Authorize** en haut à droite
 3. Coller le token dans **bearerAuth (http, Bearer)**
 4. Cliquer sur **Authorize** puis **Close**
 5. Tester les endpoints protégés",
@@ -53,7 +52,7 @@ class AuthController extends Controller
      *         @OA\JsonContent(
      *             required={"email","password"},
      *             @OA\Property(property="email", type="string", format="email", example="admin@banque.sn", description="Email de l'utilisateur"),
-     *             @OA\Property(property="password", type="string", format="password", example="password", description="Mot de passe de l'utilisateur")
+     *             @OA\Property(property="password", type="string", format="password", example="Admin@2025", description="Mot de passe de l'utilisateur")
      *         )
      *     ),
      *     @OA\Response(

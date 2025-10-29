@@ -7,15 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
 /**
- * Global Scope pour filtrer automatiquement les comptes actifs non archivés.
+ * Global Scope pour filtrer les comptes selon les règles métier US 2.0.
  * 
- * Ce scope s'applique automatiquement à toutes les requêtes sur le model Compte
- * pour s'assurer qu'on ne récupère QUE les comptes :
- * - Non archivés (archived_at IS NULL)
- * - Avec statut 'actif'
- * - Non supprimés (soft delete automatique via SoftDeletes trait)
+ * Règles de filtrage automatique :
+ * - Comptes CHÈQUE : tous (actif, bloqué, fermé) NON archivés
+ * - Comptes ÉPARGNE : ACTIFS uniquement NON archivés
+ * - Tous : Non supprimés (soft delete via SoftDeletes trait)
  * 
- * Pour désactiver ce scope sur une requête spécifique, utiliser :
+ * Ce scope garantit que l'endpoint GET /api/v1/comptes retourne :
+ * "Liste compte non supprimés type cheque ou compte Epargne Actif"
+ * 
+ * Pour désactiver ce scope sur une requête spécifique :
  * Compte::withoutGlobalScope(ActiveCompteScope::class)->get()
  */
 class ActiveCompteScope implements Scope
@@ -29,7 +31,16 @@ class ActiveCompteScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
+        // Filtrer les comptes non archivés
         $builder->whereNull('archived_at')
-                ->where('statut', 'actif');
+            ->where(function ($query) {
+                // Comptes CHÈQUE : tous les statuts (actif, bloqué, fermé)
+                $query->where('type', 'cheque')
+                    // OU Comptes ÉPARGNE : ACTIFS uniquement
+                    ->orWhere(function ($q) {
+                        $q->where('type', 'epargne')
+                          ->where('statut', 'actif');
+                    });
+            });
     }
 }

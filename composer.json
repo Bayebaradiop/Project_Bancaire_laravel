@@ -12,7 +12,8 @@
         "laravel/passport": "^12.4",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
-        "php-open-source-saver/jwt-auth": "^2.8"
+        "php-open-source-saver/jwt-auth": "^2.8",
+        "sendgrid/sendgrid": "^8.1"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.16",

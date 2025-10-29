@@ -12,13 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::connection('neon')->create('archives_comptes', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->uuid('id');
             $table->string('numeroCompte');
             $table->enum('type', ['epargne', 'courant']);
             $table->decimal('solde', 15, 2);
             $table->enum('statut', ['ferme']);
             $table->timestamp('dateFermeture');
             $table->timestamps();
+            
+            // Définir la clé primaire après la création
+            $table->primary('id');
         });
     }
 

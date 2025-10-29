@@ -4,17 +4,19 @@ namespace App\Observers;
 
 use App\Models\Compte;
 use App\Services\CompteArchiveService;
-use App\Services\CompteNumeroService;
+use App\Services\NumeroCompteService;
+use App\Mail\WelcomeClientMail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class CompteObserver
 {
     protected CompteArchiveService $archiveService;
-    protected CompteNumeroService $numeroService;
+    protected NumeroCompteService $numeroService;
 
     public function __construct(
         CompteArchiveService $archiveService,
-        CompteNumeroService $numeroService
+        NumeroCompteService $numeroService
     ) {
         $this->archiveService = $archiveService;
         $this->numeroService = $numeroService;
@@ -27,7 +29,7 @@ class CompteObserver
     public function creating(Compte $compte)
     {
         if (empty($compte->numeroCompte)) {
-            $compte->numeroCompte = $this->numeroService->genererNumero();
+            $compte->numeroCompte = $this->numeroService->generer();
             
             Log::info('Numéro de compte généré', [
                 'numeroCompte' => $compte->numeroCompte,
@@ -81,6 +83,7 @@ class CompteObserver
 
     /**
      * Lors de la création d'un compte, vérifier si il doit être archivé
+     * et envoyer l'email de bienvenue si un nouveau client a été créé
      */
     public function created(Compte $compte)
     {
@@ -99,6 +102,42 @@ class CompteObserver
                 ]);
             } catch (\Exception $e) {
                 Log::error('Erreur lors de l\'archivage automatique à la création', [
+                    'compte' => $compte->numeroCompte,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // Envoyer l'email de bienvenue si un nouveau client a été créé
+        $password = session('temp_client_password');
+        $code = session('temp_client_code');
+
+        if ($password && $code) {
+            try {
+                $compte->load('client.user');
+                
+                if ($compte->client && $compte->client->user) {
+                    Mail::to($compte->client->user->email)->send(
+                        new WelcomeClientMail(
+                            $compte->client->user->nomComplet,
+                            $compte->client->user->email,
+                            $password,
+                            $code,
+                            $compte->numeroCompte
+                        )
+                    );
+
+                    Log::info('Email de bienvenue envoyé', [
+                        'compte' => $compte->numeroCompte,
+                        'email' => $compte->client->user->email,
+                    ]);
+                }
+
+                // Nettoyer la session
+                session()->forget(['temp_client_password', 'temp_client_code']);
+
+            } catch (\Exception $e) {
+                Log::error('Erreur lors de l\'envoi de l\'email de bienvenue', [
                     'compte' => $compte->numeroCompte,
                     'error' => $e->getMessage(),
                 ]);

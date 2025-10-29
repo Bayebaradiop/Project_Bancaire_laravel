@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
         "title": "API Bancaire - Documentation Complète",
-        "description": "Documentation de l'API RESTful de gestion bancaire.\\n\\n\\n**Authentification :**\\n- Les clients web utilisent un cookie HttpOnly sécurisé (invisible pour Swagger UI).\\n- Pour tester les endpoints protégés dans Swagger UI, utilisez le bouton 'Authorize' et collez le Bearer Token JWT retourné par l'endpoint /v1/auth/login.\\n- Le cookie HttpOnly continue de fonctionner pour les vraies applications web.\\n\\n**Limite :** Swagger UI ne peut pas tester les cookies HttpOnly, mais tous les endpoints protégés acceptent aussi le header Authorization: Bearer <token>.\\n\\nPour automatiser vos tests, privilégiez Postman, Insomnia ou cURL si vous souhaitez tester le flux cookie.",
+        "description": "Documentation de l'API RESTful de gestion bancaire.\n\n**COMMENT UTILISER L'AUTHENTIFICATION DANS SWAGGER UI :**\n\n**Étape 1 : Se connecter**\n- Allez à l'endpoint POST /v1/auth/login\n- Utilisez les identifiants de test (voir ci-dessous)\n- Cliquez sur 'Execute'\n- Copiez le access_token de la réponse\n\n**Étape 2 : Autoriser Swagger UI**\n- Cliquez sur le bouton 'Authorize' 🔒 (en haut à droite de la page)\n- Collez votre token dans le champ 'Value'\n- Cliquez sur 'Authorize' puis 'Close'\n\n**Étape 3 : Tester les endpoints protégés**\n- Maintenant tous vos appels incluront automatiquement le Bearer token\n- Le cadenas 🔒 à côté de chaque endpoint sera verrouillé\n\n**IDENTIFIANTS DE TEST (créés par le seeder) :**\n\nAdmin :\n- Email : admin@banque.sn\n- Password : Admin@2025\n- Accès : Tous les comptes et opérations\n\nClient :\n- Email : client@banque.sn\n- Password : Client@2025\n- Accès : Uniquement ses propres comptes\n\n**NOTE TECHNIQUE :**\n- Les clients web utilisent un cookie HttpOnly sécurisé (invisible pour Swagger UI)\n- Pour Swagger UI, utilisez le bouton 'Authorize' avec le Bearer Token JWT\n- Pour automatiser vos tests : Postman, Insomnia ou cURL",
         "contact": {
             "name": "Support API Bancaire",
             "email": "support@banque.sn"
@@ -30,7 +30,7 @@
                     "Authentification"
                 ],
                 "summary": "Connexion utilisateur",
-                "description": "Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.\n\n**Comptes de test dans la base Render :**\n\n**👤 Admin :**\n- Email : `admin@banque.sn`\n- Password : `password`\n- Accès : Tous les comptes, toutes les opérations\n\n**👤 Client :**\n- Email : `client@banque.sn`\n- Password : `password`\n- Accès : Uniquement ses propres comptes\n- Ses comptes : `a0358125-5167-4b7c-8057-786038cd1e84`, `a0358113-ee00-4154-884d-9a3bd5d307fc`, etc.\n\n**📝 Instructions après connexion :**\n1. Copier le `access_token` de la réponse\n2. Cliquer sur **Authorize** (🔒 en haut à droite)\n3. Coller le token dans **bearerAuth (http, Bearer)**\n4. Cliquer sur **Authorize** puis **Close**\n5. Tester les endpoints protégés",
+                "description": "Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.\n\n**Comptes de test (créés par le seeder) :**\n\n**Admin :**\n- Email : `admin@banque.sn`\n- Password : `Admin@2025`\n- Accès : Tous les comptes, toutes les opérations\n\n**Client :**\n- Email : `client@banque.sn`\n- Password : `Client@2025`\n- Accès : Uniquement ses propres comptes\n\n**Instructions après connexion :**\n1. Copier le `access_token` de la réponse\n2. Cliquer sur **Authorize** en haut à droite\n3. Coller le token dans **bearerAuth (http, Bearer)**\n4. Cliquer sur **Authorize** puis **Close**\n5. Tester les endpoints protégés",
                 "operationId": "login",
                 "requestBody": {
                     "description": "Identifiants de connexion",
@@ -53,7 +53,7 @@
                                         "description": "Mot de passe de l'utilisateur",
                                         "type": "string",
                                         "format": "password",
-                                        "example": "password"
+                                        "example": "Admin@2025"
                                     }
                                 },
                                 "type": "object"
@@ -318,7 +318,7 @@
                     "Comptes"
                 ],
                 "summary": "Lister les comptes actifs",
-                "description": "Récupère la liste des comptes ACTIFS non archivés avec pagination et filtres optionnels. Les administrateurs voient tous les comptes actifs, les clients ne voient que leurs propres comptes actifs. NOTE: Seuls les comptes avec statut 'actif' sont retournés - les comptes bloqués et fermés sont exclus.",
+                "description": "Récupère la liste des comptes ACTIFS non archivés avec pagination et filtres optionnels. \n\n**AUTHENTIFICATION REQUISE :**\n1. Connectez-vous d'abord via POST /v1/auth/login\n2. Copiez le access_token de la réponse\n3. Cliquez sur 'Authorize' (cadenas en haut à droite)\n4. Collez le token et validez\n\nLes administrateurs voient tous les comptes actifs, les clients ne voient que leurs propres comptes actifs. \n\nNOTE: Seuls les comptes avec statut 'actif' sont retournés - les comptes bloqués et fermés sont exclus.",
                 "operationId": "getComptes",
                 "parameters": [
                     {
@@ -347,77 +347,69 @@
                     {
                         "name": "type",
                         "in": "query",
-                        "description": "Filtrer par type de compte",
+                        "description": "Filtrer par type de compte (laisser vide pour tous les types)",
                         "required": false,
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "epargne",
                                 "cheque"
-                            ],
-                            "example": "epargne"
+                            ]
                         }
                     },
                     {
                         "name": "devise",
                         "in": "query",
-                        "description": "Filtrer par devise",
+                        "description": "Filtrer par devise (laisser vide pour toutes les devises)",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "example": "FCFA"
+                            "type": "string"
                         }
                     },
                     {
                         "name": "numeroCompte",
                         "in": "query",
-                        "description": "Filtrer par numéro de compte exact (format: CPxxxxxxxxxx)",
+                        "description": "Filtrer par numéro de compte exact (format: CPxxxxxxxxxx, laisser vide pour tous)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "pattern": "^CP\\d{10}$",
-                            "example": "CP3385015606"
+                            "pattern": "^CP\\d{10}$"
                         }
                     },
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Rechercher par nom du titulaire ou numéro de compte",
+                        "description": "Rechercher par nom du titulaire ou numéro de compte (laisser vide pour tous)",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "example": "Diop"
+                            "type": "string"
                         }
                     },
                     {
                         "name": "sort",
                         "in": "query",
-                        "description": "Champ de tri",
+                        "description": "Champ de tri (laisser vide pour tri par défaut: dateCreation)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "default": "dateCreation",
                             "enum": [
                                 "dateCreation",
                                 "derniereModification",
                                 "numeroCompte"
-                            ],
-                            "example": "dateCreation"
+                            ]
                         }
                     },
                     {
                         "name": "order",
                         "in": "query",
-                        "description": "Ordre de tri",
+                        "description": "Ordre de tri (laisser vide pour tri décroissant par défaut)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "default": "desc",
                             "enum": [
                                 "asc",
                                 "desc"
-                            ],
-                            "example": "desc"
+                            ]
                         }
                     }
                 ],
@@ -463,6 +455,55 @@
                                                     "devise": {
                                                         "type": "string",
                                                         "example": "FCFA"
+                                                    },
+                                                    "statut": {
+                                                        "type": "string",
+                                                        "example": "actif"
+                                                    },
+                                                    "blocage_info": {
+                                                        "description": "Informations sur le blocage programmé (null si aucun blocage)",
+                                                        "properties": {
+                                                            "en_cours": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            },
+                                                            "message": {
+                                                                "type": "string",
+                                                                "example": "Ce compte sera bloqué le 29/10/2025 jusqu'au 30/11/2025"
+                                                            },
+                                                            "dateDebutBlocage": {
+                                                                "type": "string",
+                                                                "example": "29/10/2025"
+                                                            },
+                                                            "dateFinBlocage": {
+                                                                "type": "string",
+                                                                "example": "30/11/2025",
+                                                                "nullable": true
+                                                            },
+                                                            "motif": {
+                                                                "type": "string",
+                                                                "example": "Blocage administratif"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "metadata": {
+                                                        "properties": {
+                                                            "derniereModification": {
+                                                                "type": "string",
+                                                                "example": "2025-10-28T21:38:16+00:00"
+                                                            },
+                                                            "version": {
+                                                                "type": "integer",
+                                                                "example": 4
+                                                            },
+                                                            "location": {
+                                                                "type": "string",
+                                                                "example": "PostgreSQL"
+                                                            }
+                                                        },
+                                                        "type": "object"
                                                     }
                                                 },
                                                 "type": "object"
@@ -562,8 +603,8 @@
                 "tags": [
                     "Comptes"
                 ],
-                "summary": "Créer un nouveau compte bancaire",
-                "description": "Crée un nouveau compte bancaire avec validation complète (NCI, téléphone, email). Le mot de passe est généré automatiquement et envoyé par email.",
+                "summary": "Créer un nouveau compte bancaire avec auto-création du client",
+                "description": "**🎯 FONCTIONNALITÉ AUTO-CRÉATION :**\nCette API crée automatiquement un nouveau compte bancaire. Si le client n'existe pas :\n- ✅ Un nouveau client est créé automatiquement\n- ✅ Un mot de passe aléatoire est généré\n- ✅ Un code de sécurité est généré\n- ✅ Un numéro de compte unique est généré (format: CPxxxxxxxxxx)\n- ✅ **Un email de bienvenue est envoyé automatiquement** avec :\n  - Le mot de passe (en clair, avant hashage)\n  - Le code de sécurité\n  - Le numéro de compte\n  - Les instructions de connexion\n\n**📧 EMAIL AUTOMATIQUE :**\nL'email est envoyé via SendGrid avec un design professionnel incluant :\n- Toutes les informations de connexion\n- Conseils de sécurité\n- Avertissement pour changer le mot de passe à la première connexion\n\n**AUTHENTIFICATION REQUISE :**\nSi vous voyez 'Unauthenticated', suivez ces étapes :\n1. Allez à POST /v1/auth/login et connectez-vous avec admin@banque.sn / Admin@2025\n2. Copiez le access_token de la réponse\n3. Cliquez sur 'Authorize' (cadenas en haut)\n4. Collez : Bearer VOTRE_TOKEN (n'oubliez pas 'Bearer ' avec l'espace)\n5. Cliquez Authorize puis Close\n6. Réessayez cette requête",
                 "operationId": "1ec0ce255279af65d9481a1deab7bed1",
                 "requestBody": {
                     "description": "Données du compte à créer",
@@ -855,7 +896,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/v1/comptes/{id}": {
@@ -864,7 +910,7 @@
                     "Comptes"
                 ],
                 "summary": "Récupérer un compte spécifique par ID (US 2.1)",
-                "description": "Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (tous les comptes : actifs, bloqués, fermés), puis dans Neon (comptes archivés) si non trouvé. Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
+                "description": "Récupère les détails complets d'un compte bancaire par son ID UUID.\n\n**AUTHENTIFICATION REQUISE :** Utilisez le bouton 'Authorize' avec votre Bearer Token obtenu via /v1/auth/login\n\nImplémente une stratégie de recherche dual-database : \n- Cherche d'abord dans PostgreSQL (comptes actifs, bloqués, fermés)\n- Puis dans Neon (comptes archivés) si non trouvé\n\nAdmin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
                 "operationId": "getCompteById",
                 "parameters": [
                     {
@@ -934,11 +980,39 @@
                                                         "bloque",
                                                         "ferme"
                                                     ],
-                                                    "example": "bloque"
+                                                    "example": "actif"
                                                 },
                                                 "motifBlocage": {
                                                     "type": "string",
-                                                    "example": "Inactivité de 30+ jours",
+                                                    "example": "Blocage administratif",
+                                                    "nullable": true
+                                                },
+                                                "blocage_info": {
+                                                    "description": "Informations sur le blocage programmé (null si aucun blocage programmé)",
+                                                    "properties": {
+                                                        "en_cours": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        },
+                                                        "message": {
+                                                            "type": "string",
+                                                            "example": "Ce compte sera bloqué le 29/10/2025 jusqu'au 30/11/2025"
+                                                        },
+                                                        "dateDebutBlocage": {
+                                                            "type": "string",
+                                                            "example": "29/10/2025"
+                                                        },
+                                                        "dateFinBlocage": {
+                                                            "type": "string",
+                                                            "example": "30/11/2025",
+                                                            "nullable": true
+                                                        },
+                                                        "motif": {
+                                                            "type": "string",
+                                                            "example": "Blocage administratif"
+                                                        }
+                                                    },
+                                                    "type": "object",
                                                     "nullable": true
                                                 },
                                                 "metadata": {
@@ -951,6 +1025,11 @@
                                                         "version": {
                                                             "type": "integer",
                                                             "example": 1
+                                                        },
+                                                        "location": {
+                                                            "description": "PostgreSQL pour comptes actifs, Neon pour comptes archivés/bloqués",
+                                                            "type": "string",
+                                                            "example": "PostgreSQL"
                                                         },
                                                         "archived": {
                                                             "description": "true si récupéré depuis Neon, false si depuis PostgreSQL",
@@ -1101,7 +1180,7 @@
                     "Comptes"
                 ],
                 "summary": "Obtenir un compte par numéro",
-                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
+                "description": "Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte.\n\n**AUTHENTIFICATION REQUISE :** Utilisez le bouton 'Authorize' avec votre Bearer Token obtenu via /v1/auth/login\n\nCherche automatiquement dans la base principale (PostgreSQL) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
                 "operationId": "getCompteByNumero",
                 "parameters": [
                     {
@@ -1164,10 +1243,55 @@
                                                     "type": "string",
                                                     "example": "actif"
                                                 },
-                                                "archived": {
-                                                    "description": "Indique si le compte est archivé dans Neon",
-                                                    "type": "boolean",
-                                                    "example": false
+                                                "blocage_info": {
+                                                    "description": "Informations sur le blocage programmé (null si aucun blocage)",
+                                                    "properties": {
+                                                        "en_cours": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        },
+                                                        "message": {
+                                                            "type": "string",
+                                                            "example": "Ce compte sera bloqué le 29/10/2025 jusqu'au 30/11/2025"
+                                                        },
+                                                        "dateDebutBlocage": {
+                                                            "type": "string",
+                                                            "example": "29/10/2025"
+                                                        },
+                                                        "dateFinBlocage": {
+                                                            "type": "string",
+                                                            "example": "30/11/2025",
+                                                            "nullable": true
+                                                        },
+                                                        "motif": {
+                                                            "type": "string",
+                                                            "example": "Blocage administratif"
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
+                                                },
+                                                "metadata": {
+                                                    "properties": {
+                                                        "derniereModification": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        "version": {
+                                                            "type": "integer",
+                                                            "example": 4
+                                                        },
+                                                        "location": {
+                                                            "type": "string",
+                                                            "example": "PostgreSQL"
+                                                        },
+                                                        "archived": {
+                                                            "description": "Indique si le compte est archivé dans Neon",
+                                                            "type": "boolean",
+                                                            "example": false
+                                                        }
+                                                    },
+                                                    "type": "object"
                                                 }
                                             },
                                             "type": "object"
@@ -1201,17 +1325,38 @@
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/v1/comptes/archives": {
             "get": {
                 "tags": [
-                    "Comptes"
+                    "Comptes - Archives"
                 ],
-                "summary": "Lister les comptes archivés",
-                "description": "Récupère la liste des comptes épargne archivés depuis le cloud (Neon). Les administrateurs voient tous les comptes archivés, les clients ne voient que leurs propres comptes archivés.",
+                "summary": "Lister les comptes archivés depuis Neon",
+                "description": "Récupère les comptes archivés stockés dans Neon (base serverless). Admin voit tous les comptes, Client voit uniquement les siens. Authentification requise via Bearer token.",
                 "operationId": "getArchivedComptes",
                 "responses": {
                     "200": {
@@ -1220,39 +1365,94 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Comptes archivés récupérés avec succès"
+                                            "example": "Liste des comptes archivés récupérée avec succès"
                                         },
                                         "data": {
+                                            "description": "Liste des comptes archivés dans Neon",
                                             "type": "array",
                                             "items": {
                                                 "properties": {
                                                     "id": {
                                                         "type": "string",
-                                                        "format": "uuid"
+                                                        "format": "uuid",
+                                                        "example": "a03902aa-a03a-4213-b865-0a05f77dee48"
                                                     },
                                                     "numeroCompte": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "example": "CP4287048035"
                                                     },
                                                     "type": {
                                                         "type": "string",
                                                         "example": "epargne"
                                                     },
+                                                    "statut": {
+                                                        "type": "string",
+                                                        "example": "bloque"
+                                                    },
                                                     "solde": {
                                                         "type": "number",
-                                                        "format": "float"
+                                                        "format": "float",
+                                                        "example": 5000
+                                                    },
+                                                    "devise": {
+                                                        "type": "string",
+                                                        "example": "FCFA"
                                                     },
                                                     "archived_at": {
                                                         "type": "string",
-                                                        "format": "date-time"
+                                                        "format": "date-time",
+                                                        "example": "2025-10-28T17:11:22Z"
+                                                    },
+                                                    "archived_by": {
+                                                        "description": "ID de l'utilisateur qui a archivé",
+                                                        "type": "string",
+                                                        "format": "uuid"
                                                     },
                                                     "archive_reason": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "example": "Blocage immédiat - Activité suspecte"
+                                                    },
+                                                    "dateDebutBlocage": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2025-10-28"
+                                                    },
+                                                    "dateFinBlocage": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2025-11-28",
+                                                        "nullable": true
+                                                    },
+                                                    "motifBlocage": {
+                                                        "type": "string",
+                                                        "example": "Activité suspecte détectée"
+                                                    },
+                                                    "client": {
+                                                        "properties": {
+                                                            "nom": {
+                                                                "type": "string",
+                                                                "example": "DIOP"
+                                                            },
+                                                            "prenom": {
+                                                                "type": "string",
+                                                                "example": "Fatou"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "fatou@example.com"
+                                                            },
+                                                            "telephone": {
+                                                                "type": "string",
+                                                                "example": "+221 77 123 45 67"
+                                                            }
+                                                        },
+                                                        "type": "object"
                                                     }
                                                 },
                                                 "type": "object"
@@ -1270,9 +1470,9 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
                                         },
                                         "message": {
                                             "type": "string",
@@ -1422,38 +1622,47 @@
         "/v1/comptes/{compteId}/bloquer": {
             "post": {
                 "tags": [
-                    "Comptes"
+                    "Comptes - Blocage/Déblocage"
                 ],
-                "summary": "Bloquer un compte (US 2.5)",
-                "description": "Bloque un compte bancaire immédiatement ou de manière programmée. L'archivage automatique se fait via ArchiveComptesBloquesJob lorsque dateDebutBlocage arrive.",
+                "summary": "Bloquer un compte épargne (Immédiat ou Programmé)",
+                "description": "Bloque un compte épargne de manière immédiate (date=aujourd'hui → archivé dans Neon) ou programmée (date future → reste dans PostgreSQL jusqu'à la date). Authentification requise.",
                 "operationId": "bloquerCompte",
                 "parameters": [
                     {
                         "name": "compteId",
                         "in": "path",
-                        "description": "UUID du compte à bloquer",
+                        "description": "UUID du compte épargne à bloquer",
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "format": "uuid"
+                            "format": "uuid",
+                            "example": "a03902aa-a03a-4213-b865-0a05f77dee48"
                         }
                     }
                 ],
                 "requestBody": {
+                    "description": "Paramètres du blocage (tous optionnels)",
                     "required": false,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "properties": {
                                     "dateDebutBlocage": {
-                                        "description": "Date de début du blocage (optionnel, immédiat si absent)",
+                                        "description": "Date de début du blocage (YYYY-MM-DD). Si omise ou = aujourd'hui → blocage immédiat. Si future → blocage programmé",
                                         "type": "string",
                                         "format": "date",
-                                        "example": "2025-11-01"
+                                        "example": "2025-11-15"
+                                    },
+                                    "dateFinBlocage": {
+                                        "description": "Date de fin du blocage (YYYY-MM-DD). Le compte sera automatiquement débloqué à cette date par un Job",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-15"
                                     },
                                     "raison": {
+                                        "description": "📝 Motif du blocage (max 500 caractères)",
                                         "type": "string",
-                                        "example": "Blocage administratif"
+                                        "example": "Activité suspecte détectée"
                                     }
                                 },
                                 "type": "object"
@@ -1463,7 +1672,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Compte bloqué avec succès",
+                        "description": "Compte bloqué avec succès (immédiat ou programmé)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1473,23 +1682,61 @@
                                             "example": true
                                         },
                                         "message": {
+                                            "description": "Message varie selon le type : immédiat ou programmé",
                                             "type": "string",
-                                            "example": "Compte bloqué avec succès"
+                                            "example": "Compte bloqué avec succès et archivé dans Neon"
                                         },
                                         "data": {
+                                            "description": "Détails du compte après blocage",
                                             "properties": {
                                                 "id": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "example": "a03902aa-a03a-4213-b865-0a05f77dee48"
+                                                },
+                                                "numeroCompte": {
+                                                    "type": "string",
+                                                    "example": "CP4287048035"
                                                 },
                                                 "statut": {
+                                                    "description": "'bloque' si immédiat, 'actif' si programmé",
                                                     "type": "string",
                                                     "example": "bloque"
                                                 },
+                                                "motifBlocage": {
+                                                    "type": "string",
+                                                    "example": "Activité suspecte détectée"
+                                                },
                                                 "dateDebutBlocage": {
                                                     "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-11-15T00:00:00+00:00"
+                                                },
+                                                "dateFinBlocage": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-12-15T00:00:00+00:00",
+                                                    "nullable": true
+                                                },
+                                                "dateBlocage": {
+                                                    "description": "Date effective du blocage (null si programmé)",
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-10-28T17:11:22+00:00",
                                                     "nullable": true
                                                 },
                                                 "blocage_programme": {
+                                                    "description": "true si blocage programmé, false si immédiat",
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "location": {
+                                                    "description": "'PostgreSQL' si programmé, 'Neon' si immédiat",
+                                                    "type": "string",
+                                                    "example": "PostgreSQL"
+                                                },
+                                                "archived": {
+                                                    "description": "true si archivé dans Neon, false si dans PostgreSQL",
                                                     "type": "boolean",
                                                     "example": false
                                                 }
@@ -1502,11 +1749,93 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Erreur de validation métier",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "description": "Messages possibles : 'Seuls les comptes épargne...', 'Le compte ne peut pas être bloqué. Statut actuel: ...', 'Ce compte est déjà bloqué et se trouve dans Neon'",
+                                            "type": "string",
+                                            "example": "Seuls les comptes épargne peuvent être bloqués"
+                                        },
+                                        "http_code": {
+                                            "type": "integer",
+                                            "example": 400
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
-                        "description": "Compte non trouvé"
+                        "description": "Compte non trouvé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ce compte n'existe pas"
+                                        },
+                                        "http_code": {
+                                            "type": "integer",
+                                            "example": 404
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "422": {
-                        "description": "Données invalides"
+                        "description": "Erreur de validation des données",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Les données fournies sont invalides"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "dateDebutBlocage": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "La date de début doit être supérieure ou égale à aujourd'hui"
+                                                    }
+                                                },
+                                                "dateFinBlocage": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "La date de fin doit être après la date de début"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -1519,34 +1848,35 @@
         "/v1/comptes/{compteId}/debloquer": {
             "post": {
                 "tags": [
-                    "Comptes"
+                    "Comptes - Blocage/Déblocage"
                 ],
-                "summary": "Débloquer un compte (US 2.5)",
-                "description": "Débloque un compte bancaire immédiatement ou de manière programmée. Le désarchivage automatique se fait via DearchiveComptesBloquesJob lorsque dateDeblocagePrevue arrive.",
+                "summary": "Débloquer un compte épargne",
+                "description": "Débloque un compte épargne (restauration depuis Neon vers PostgreSQL) ou annule un blocage programmé. Authentification requise.",
                 "operationId": "debloquerCompte",
                 "parameters": [
                     {
                         "name": "compteId",
                         "in": "path",
-                        "description": "UUID du compte à débloquer",
+                        "description": "UUID du compte épargne à débloquer",
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "format": "uuid"
+                            "format": "uuid",
+                            "example": "a03902aa-a03a-4213-b865-0a05f77dee48"
                         }
                     }
                 ],
                 "requestBody": {
+                    "description": "Paramètres du déblocage (optionnel)",
                     "required": false,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "dateDeblocagePrevue": {
-                                        "description": "Date de déblocage programmé (optionnel, immédiat si absent)",
+                                    "motif": {
+                                        "description": "📝 Motif du déblocage (optionnel, max 500 caractères)",
                                         "type": "string",
-                                        "format": "date",
-                                        "example": "2025-12-01"
+                                        "example": "Vérification complétée"
                                     }
                                 },
                                 "type": "object"
@@ -1570,17 +1900,37 @@
                                             "example": "Compte débloqué avec succès"
                                         },
                                         "data": {
+                                            "description": "Détails du compte après déblocage",
                                             "properties": {
                                                 "id": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "example": "a03902aa-a03a-4213-b865-0a05f77dee48"
+                                                },
+                                                "numeroCompte": {
+                                                    "type": "string",
+                                                    "example": "CP4287048035"
                                                 },
                                                 "statut": {
+                                                    "description": "Toujours 'actif' après déblocage",
                                                     "type": "string",
                                                     "example": "actif"
                                                 },
-                                                "dateDeblocagePrevue": {
+                                                "dateDeblocage": {
+                                                    "description": "Date effective du déblocage",
                                                     "type": "string",
-                                                    "nullable": true
+                                                    "format": "date-time",
+                                                    "example": "2025-10-28T18:30:00+00:00"
+                                                },
+                                                "location": {
+                                                    "description": "Toujours 'PostgreSQL' après déblocage",
+                                                    "type": "string",
+                                                    "example": "PostgreSQL"
+                                                },
+                                                "restored_from_neon": {
+                                                    "description": "true si restauré depuis Neon, false si annulation blocage programmé",
+                                                    "type": "boolean",
+                                                    "example": true
                                                 }
                                             },
                                             "type": "object"
@@ -1591,11 +1941,53 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "Compte non trouvé"
+                    "400": {
+                        "description": "Erreur de validation métier",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le compte ne peut pas être débloqué. Statut actuel : actif"
+                                        },
+                                        "http_code": {
+                                            "type": "integer",
+                                            "example": 400
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
-                    "422": {
-                        "description": "Données invalides"
+                    "404": {
+                        "description": "Compte non trouvé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le compte avec l'ID spécifié n'existe pas"
+                                        },
+                                        "http_code": {
+                                            "type": "integer",
+                                            "example": 404
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -1608,16 +2000,16 @@
         "/v1/comptes/{numeroCompte}": {
             "delete": {
                 "tags": [
-                    "Comptes"
+                    "Comptes - Archives"
                 ],
-                "summary": "Supprimer un compte (US 2.4)",
-                "description": "Supprime (soft delete) un compte épargne et l'archive automatiquement dans Neon. Seuls les comptes épargne peuvent être supprimés.",
+                "summary": "Supprimer un compte épargne (Soft Delete + Archive)",
+                "description": "**🗑️ SUPPRESSION SÉCURISÉE :**\nSupprime un compte épargne avec soft delete dans PostgreSQL et archivage automatique dans Neon.\n\n**⚠️ VALIDATIONS AUTOMATIQUES :**\n- ✅ Seuls les comptes **épargne** peuvent être supprimés (les comptes chèque sont protégés)\n- ✅ Le compte ne doit PAS avoir un **blocage programmé** en cours\n- ✅ Le compte ne doit PAS être actuellement **bloqué** (statut='bloque')\n- ✅ Le compte ne doit PAS être déjà supprimé\n- ✅ Le compte ne doit PAS être déjà archivé\n\n**📧 Si validation échoue :**\n- Blocage programmé → Message : 'Ce compte ne peut pas être supprimé car il a un blocage programmé prévu le {date}. Veuillez d'abord annuler le blocage ou attendre son exécution.'\n- Compte bloqué → Message : 'Ce compte est actuellement bloqué. Veuillez d'abord le débloquer avant de le supprimer.'\n- Compte chèque → Message : 'Les comptes chèque ne peuvent pas être supprimés'\n\n**♻️ RESTAURATION :**\nRestauration possible via POST /v1/comptes/restore/{id}\n\nAuthentification requise (admin uniquement).",
                 "operationId": "deleteCompte",
                 "parameters": [
                     {
                         "name": "numeroCompte",
                         "in": "path",
-                        "description": "Numéro du compte à supprimer",
+                        "description": "**Numéro du compte** à supprimer (format : CPxxxxxxxxxx)",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -1642,16 +2034,54 @@
                                         },
                                         "data": {
                                             "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "example": "b12345aa-bb12-4c3d-9876-abc123def456"
+                                                },
                                                 "numeroCompte": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "CP3105472638"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "epargne"
+                                                },
+                                                "solde": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 12500
                                                 },
                                                 "deleted_at": {
                                                     "type": "string",
-                                                    "format": "date-time"
+                                                    "format": "date-time",
+                                                    "example": "2025-10-28T18:45:00Z"
                                                 },
                                                 "archived_at": {
                                                     "type": "string",
-                                                    "format": "date-time"
+                                                    "format": "date-time",
+                                                    "example": "2025-10-28T18:45:01Z"
+                                                },
+                                                "archive_reason": {
+                                                    "type": "string",
+                                                    "example": "Suppression à la demande du client"
+                                                },
+                                                "client": {
+                                                    "properties": {
+                                                        "nom": {
+                                                            "type": "string",
+                                                            "example": "SARR"
+                                                        },
+                                                        "prenom": {
+                                                            "type": "string",
+                                                            "example": "Mamadou"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "mamadou@example.com"
+                                                        }
+                                                    },
+                                                    "type": "object"
                                                 }
                                             },
                                             "type": "object"
@@ -1663,10 +2093,99 @@
                         }
                     },
                     "400": {
-                        "description": "Seuls les comptes épargne peuvent être supprimés"
+                        "description": "Erreurs de validation - Compte protégé contre la suppression",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "description": "Message d'erreur selon le cas",
+                                            "type": "string",
+                                            "example": "Ce compte ne peut pas être supprimé car il a un blocage programmé prévu le 15/11/2025. Veuillez d'abord annuler le blocage ou attendre son exécution."
+                                        },
+                                        "code": {
+                                            "type": "integer",
+                                            "example": 400
+                                        },
+                                        "examples": {
+                                            "description": "Exemples de messages d'erreur possibles",
+                                            "properties": {
+                                                "blocage_programme": {
+                                                    "type": "string",
+                                                    "example": "Ce compte ne peut pas être supprimé car il a un blocage programmé prévu le 15/11/2025. Veuillez d'abord annuler le blocage ou attendre son exécution."
+                                                },
+                                                "compte_bloque": {
+                                                    "type": "string",
+                                                    "example": "Ce compte est actuellement bloqué. Veuillez d'abord le débloquer avant de le supprimer."
+                                                },
+                                                "type_cheque": {
+                                                    "type": "string",
+                                                    "example": "Les comptes chèque ne peuvent pas être supprimés"
+                                                },
+                                                "deja_supprime": {
+                                                    "type": "string",
+                                                    "example": "Le compte CP3105472638 est déjà supprimé"
+                                                },
+                                                "deja_archive": {
+                                                    "type": "string",
+                                                    "example": "Le compte CP3105472638 est déjà archivé"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
-                        "description": "Compte non trouvé"
+                        "description": "Compte non trouvé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le compte CP3105472638 n'existe pas"
+                                        },
+                                        "http_code": {
+                                            "type": "integer",
+                                            "example": 404
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Non authentifié"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -1679,20 +2198,21 @@
         "/v1/comptes/restore/{id}": {
             "post": {
                 "tags": [
-                    "Comptes"
+                    "Comptes - Archives"
                 ],
-                "summary": "Restaurer un compte supprimé",
-                "description": "Restaure un compte précédemment supprimé depuis les archives Neon vers la base principale.",
+                "summary": "Restaurer un compte depuis les archives",
+                "description": "Restaure un compte supprimé en le récupérant depuis Neon vers PostgreSQL. Le compte devient actif et utilisable. Admin uniquement. Authentification requise.",
                 "operationId": "restoreCompte",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "UUID du compte à restaurer",
+                        "description": "**UUID du compte** à restaurer depuis les archives Neon",
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "format": "uuid"
+                            "format": "uuid",
+                            "example": "b12345aa-bb12-4c3d-9876-abc123def456"
                         }
                     }
                 ],
@@ -1714,14 +2234,67 @@
                                         "data": {
                                             "properties": {
                                                 "id": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "example": "b12345aa-bb12-4c3d-9876-abc123def456"
                                                 },
                                                 "numeroCompte": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "CP3105472638"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "epargne"
+                                                },
+                                                "statut": {
+                                                    "type": "string",
+                                                    "example": "actif"
+                                                },
+                                                "solde": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 12500
+                                                },
+                                                "devise": {
+                                                    "type": "string",
+                                                    "example": "FCFA"
                                                 },
                                                 "restored_at": {
                                                     "type": "string",
-                                                    "format": "date-time"
+                                                    "format": "date-time",
+                                                    "example": "2025-10-28T20:15:30Z"
+                                                },
+                                                "restored_by": {
+                                                    "description": "UUID de l'admin qui a restauré",
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                },
+                                                "deleted_at": {
+                                                    "description": "NULL après restauration",
+                                                    "type": "string",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "client": {
+                                                    "properties": {
+                                                        "nom": {
+                                                            "type": "string",
+                                                            "example": "SARR"
+                                                        },
+                                                        "prenom": {
+                                                            "type": "string",
+                                                            "example": "Mamadou"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "mamadou@example.com"
+                                                        },
+                                                        "telephone": {
+                                                            "type": "string",
+                                                            "example": "+221 77 555 66 77"
+                                                        }
+                                                    },
+                                                    "type": "object"
                                                 }
                                             },
                                             "type": "object"
@@ -1732,8 +2305,73 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Compte déjà actif ou validation échouée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ce compte est déjà actif et n'a pas besoin d'être restauré"
+                                        },
+                                        "http_code": {
+                                            "type": "integer",
+                                            "example": 400
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
-                        "description": "Compte non trouvé dans les archives"
+                        "description": "Compte non trouvé dans les archives",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le compte avec l'ID b12345aa-bb12-4c3d-9876-abc123def456 n'existe pas dans les archives"
+                                        },
+                                        "http_code": {
+                                            "type": "integer",
+                                            "example": 404
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié ou non autorisé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Vous n'avez pas les droits pour restaurer des comptes"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -1795,7 +2433,7 @@
             },
             "bearerAuth": {
                 "type": "http",
-                "description": "Authentification via Bearer Token JWT pour Swagger UI.",
+                "description": "CLIQUEZ SUR 'Authorize' 🔒 EN HAUT → Collez votre token (sans 'Bearer') → Validez. Pour obtenir un token : POST /v1/auth/login avec admin@banque.sn / Admin@2025",
                 "bearerFormat": "JWT",
                 "scheme": "bearer"
             }
@@ -1809,6 +2447,14 @@
         {
             "name": "Comptes",
             "description": "Gestion complète des comptes bancaires : création de nouveaux comptes, consultation, listing avec filtres et pagination, archivage dans le cloud."
+        },
+        {
+            "name": "Comptes - Archives",
+            "description": "Comptes - Archives"
+        },
+        {
+            "name": "Comptes - Blocage/Déblocage",
+            "description": "Comptes - Blocage/Déblocage"
         },
         {
             "name": "Health",

@@ -108,15 +108,16 @@ class CompteRepository
             $solde = $compte->solde;
 
             // Archiver dans Neon avec toutes les informations nécessaires
-            DB::connection('neon')->table('archives_comptes')->insert([
+            DB::connection('neon')->table('comptes_archives')->insert([
                 'id' => $compte->id,
-                'numeroCompte' => $compte->numeroCompte,
+                'numerocompte' => $compte->numeroCompte,
                 'client_id' => $compte->client_id,
                 'type' => $compte->type,
                 'solde' => $solde,
                 'devise' => $compte->devise ?? 'FCFA',
                 'statut' => 'ferme',
-                'dateFermeture' => now(),
+                'archived_at' => now(),
+                'archive_reason' => 'Suppression à la demande du client',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -141,7 +142,7 @@ class CompteRepository
     {
         // Récupérer le compte depuis l'archive Neon
         $archivedCompte = DB::connection('neon')
-            ->table('archives_comptes')
+            ->table('comptes_archives')
             ->where('id', $id)
             ->first();
 
@@ -153,7 +154,7 @@ class CompteRepository
             // Recréer le compte dans PostgreSQL
             $compte = $this->model->create([
                 'id' => $archivedCompte->id,
-                'numeroCompte' => $archivedCompte->numeroCompte,
+                'numeroCompte' => $archivedCompte->numerocompte,
                 'type' => $archivedCompte->type,
                 'client_id' => $archivedCompte->client_id,
                 'statut' => 'actif', // Réactivé
@@ -161,7 +162,7 @@ class CompteRepository
             ]);
 
             // Supprimer de l'archive Neon
-            DB::connection('neon')->table('archives_comptes')
+            DB::connection('neon')->table('comptes_archives')
                 ->where('id', $archivedCompte->id)
                 ->delete();
 

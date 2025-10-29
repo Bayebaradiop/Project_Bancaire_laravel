@@ -16,10 +16,14 @@ use App\Events\CompteCreated;
 class CompteService
 {
     protected CompteRepository $compteRepository;
+    protected CompteArchiveService $compteArchiveService;
 
-    public function __construct(CompteRepository $compteRepository)
-    {
+    public function __construct(
+        CompteRepository $compteRepository,
+        CompteArchiveService $compteArchiveService
+    ) {
         $this->compteRepository = $compteRepository;
+        $this->compteArchiveService = $compteArchiveService;
     }
     /**
      * Récupérer la liste des comptes avec autorisation
@@ -49,7 +53,21 @@ class CompteService
         DB::beginTransaction();
 
         try {
-            // Trouver le compte
+            // Vérifier si le compte est déjà archivé dans Neon
+            $archivedCompte = DB::connection('neon')
+                ->table('comptes_archives')
+                ->where('numerocompte', $numeroCompte)
+                ->first();
+
+            if ($archivedCompte) {
+                return [
+                    'success' => false,
+                    'message' => "Le compte {$numeroCompte} est déjà archivé",
+                    'code' => 400
+                ];
+            }
+
+            // Trouver le compte actif
             $compte = $this->compteRepository->findByNumero($numeroCompte);
 
             if (!$compte) {
@@ -60,7 +78,7 @@ class CompteService
                 ];
             }
 
-            // Vérifier si le compte est déjà supprimé
+            // Vérifier si le compte est déjà supprimé (soft delete dans PostgreSQL)
             if ($compte->trashed()) {
                 return [
                     'success' => false,
@@ -74,6 +92,28 @@ class CompteService
                 return [
                     'success' => false,
                     'message' => 'Les comptes chèque ne peuvent pas être supprimés',
+                    'code' => 400
+                ];
+            }
+
+            // Vérifier si le compte a un blocage programmé en cours
+            if ($compte->blocage_programme) {
+                $dateBloqueProgramme = $compte->dateDebutBlocage 
+                    ? \Carbon\Carbon::parse($compte->dateDebutBlocage)->format('d/m/Y')
+                    : 'date non définie';
+                    
+                return [
+                    'success' => false,
+                    'message' => "Ce compte ne peut pas être supprimé car il a un blocage programmé prévu le {$dateBloqueProgramme}. Veuillez d'abord annuler le blocage ou attendre son exécution.",
+                    'code' => 400
+                ];
+            }
+
+            // Vérifier si le compte est bloqué (statut = 'bloque')
+            if ($compte->statut === 'bloque') {
+                return [
+                    'success' => false,
+                    'message' => "Ce compte est actuellement bloqué. Veuillez d'abord le débloquer avant de le supprimer.",
                     'code' => 400
                 ];
             }
@@ -170,9 +210,10 @@ class CompteService
 
     private function fetchComptes(array $filters, ?User $user = null)
     {
-        // Le Global Scope ActiveCompteScope filtre automatiquement :
-        // - whereNull('archived_at')
-        // - where('statut', 'actif')
+        // Le Global Scope ActiveCompteScope filtre automatiquement selon US 2.0 :
+        // - Comptes CHÈQUE : tous (actif, bloqué, fermé) NON archivés
+        // - Comptes ÉPARGNE : ACTIFS uniquement NON archivés
+        // - "Liste compte non supprimés type cheque ou compte Epargne Actif"
         $query = Compte::with(['client.user']);
 
         // Autorisation : Client voit uniquement ses comptes
@@ -195,15 +236,17 @@ class CompteService
 
     private function applyFilters($query, array $filters)
     {
-        // Utiliser les scopes du Model au lieu de where() manuel
+        // Utiliser les scopes du Model
+        // Option 1: Scopes avec préfixe "par" (nouveaux - plus explicites)
         if (!empty($filters['type'])) {
-            $query->type($filters['type']);
+            $query->parType($filters['type']);
         }
 
         if (!empty($filters['devise'])) {
-            $query->devise($filters['devise']);
+            $query->parDevise($filters['devise']);
         }
 
+        // Option 2: Scopes sans préfixe (existants - pour compatibilité)
         if (!empty($filters['numeroCompte'])) {
             $query->numero($filters['numeroCompte']);
         }
@@ -378,9 +421,8 @@ class CompteService
     public function getCompteByNumero(string $numero, User $user): ?array
     {
         // 1. Chercher d'abord dans la base principale (Render) - comptes actifs uniquement
-        $compte = Compte::where('numeroCompte', $numero)
-            ->whereNull('archived_at')
-            ->where('statut', 'actif')
+        $compte = Compte::actifs()
+            ->where('numeroCompte', $numero)
             ->with(['client.user'])
             ->first();
 
@@ -561,22 +603,43 @@ class CompteService
     }
 
     /**
-     * Bloquer un compte épargne (US 2.5)
-     * - Seuls les comptes actifs peuvent être bloqués
-     * - Blocage immédiat avec motif
+     * Bloquer un compte épargne avec archivage dans Neon
+     * 
+     * Règles :
+     * - Si date de blocage = aujourd'hui → Blocage immédiat + Archivage dans Neon
+     * - Si date de blocage future → Blocage programmé (reste actif dans PostgreSQL)
+     * - Seuls les comptes épargne peuvent être bloqués
      */
     public function bloquerCompte(string $compteId, array $data): array
     {
         DB::beginTransaction();
 
         try {
-            // 1. Récupérer le compte
-            $compte = Compte::find($compteId);
+            // 1. Chercher d'abord dans PostgreSQL
+            $compte = Compte::withoutGlobalScopes()->find($compteId);
 
             if (!$compte) {
+                // Vérifier si le compte est déjà dans Neon (archivé/bloqué)
+                try {
+                    $compteArchive = DB::connection('neon')
+                        ->table('comptes_archives')
+                        ->where('id', $compteId)
+                        ->first();
+                    
+                    if ($compteArchive) {
+                        return [
+                            'success' => false,
+                            'message' => 'Ce compte est déjà bloqué et se trouve dans la base d\'archivage (Neon)',
+                            'http_code' => 400
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    // Neon non accessible, continuer
+                }
+
                 return [
                     'success' => false,
-                    'message' => "Le compte avec l'ID {$compteId} n'existe pas",
+                    'message' => 'Ce compte n\'existe pas',
                     'http_code' => 404
                 ];
             }
@@ -585,12 +648,34 @@ class CompteService
             if ($compte->type !== 'epargne') {
                 return [
                     'success' => false,
-                    'message' => 'Seuls les comptes épargne peuvent être bloqués',
+                    'message' => 'Seuls les comptes épargne peuvent être bloqués. Les comptes chèque ne peuvent pas être bloqués.',
                     'http_code' => 400
                 ];
             }
 
-            // 3. Vérifier que le compte est actif
+            // 3. Vérifier si le compte est déjà bloqué
+            if ($compte->statut === 'bloque') {
+                return [
+                    'success' => false,
+                    'message' => 'Le compte est déjà bloqué',
+                    'http_code' => 400
+                ];
+            }
+
+            // 4. Vérifier si le compte a un blocage programmé en cours
+            if ($compte->blocage_programme) {
+                $dateBloqueProgramme = $compte->dateDebutBlocage 
+                    ? \Carbon\Carbon::parse($compte->dateDebutBlocage)->format('d/m/Y')
+                    : 'date non définie';
+                    
+                return [
+                    'success' => false,
+                    'message' => "Le compte a déjà un blocage programmé prévu le {$dateBloqueProgramme}",
+                    'http_code' => 400
+                ];
+            }
+
+            // 5. Vérifier que le compte est actif
             if ($compte->statut !== 'actif') {
                 return [
                     'success' => false,
@@ -599,40 +684,103 @@ class CompteService
                 ];
             }
 
-            // 4. Extraire les paramètres (avec valeurs par défaut)
+            // 6. Extraire les paramètres
             $dateDebutBlocage = isset($data['dateDebutBlocage'])
-                ? \Carbon\Carbon::parse($data['dateDebutBlocage'])
-                : now();
+                ? \Carbon\Carbon::parse($data['dateDebutBlocage'])->startOfDay()
+                : now()->startOfDay();
+            
+            $dateFinBlocage = isset($data['dateFinBlocage'])
+                ? \Carbon\Carbon::parse($data['dateFinBlocage'])->startOfDay()
+                : null;
+                
             $motifBlocage = $data['raison'] ?? 'Blocage administratif';
 
-            // 5. Bloquer immédiatement le compte
-            $compte->update([
-                'statut' => 'bloque',
-                'motifBlocage' => $motifBlocage,
-                'dateDebutBlocage' => $dateDebutBlocage,
-                'dateBlocage' => now(),
-                'blocage_programme' => false,
-                'derniereModification' => now(),
-                'version' => $compte->version + 1,
-            ]);
+            // 5. Vérifier si le blocage est immédiat ou programmé
+            $aujourdhui = now()->startOfDay();
+            
+            if ($dateDebutBlocage->equalTo($aujourdhui)) {
+                // BLOCAGE IMMÉDIAT → Archiver dans Neon
+                
+                // Mettre à jour le statut avant archivage
+                $compte->update([
+                    'statut' => 'bloque',
+                    'motifBlocage' => $motifBlocage,
+                    'dateDebutBlocage' => $dateDebutBlocage,
+                    'dateFinBlocage' => $dateFinBlocage,
+                    'dateBlocage' => now(),
+                    'blocage_programme' => false,
+                    'derniereModification' => now(),
+                    'version' => $compte->version + 1,
+                ]);
 
-            DB::commit();
+                // Archiver dans Neon
+                $this->compteArchiveService->archiveCompte($compte, auth()->user(), $motifBlocage);
+                
+                // Supprimer de PostgreSQL (soft delete)
+                $compte->delete();
 
-            return [
-                'success' => true,
-                'message' => 'Compte bloqué avec succès',
-                'data' => [
-                    'id' => $compte->id,
-                    'statut' => $compte->statut,
-                    'motifBlocage' => $compte->motifBlocage,
-                    'dateDebutBlocage' => $compte->dateDebutBlocage?->toIso8601String(),
-                    'dateBlocage' => $compte->dateBlocage?->toIso8601String(),
-                    'blocage_programme' => $compte->blocage_programme,
-                ]
-            ];
+                DB::commit();
+
+                return [
+                    'success' => true,
+                    'message' => 'Compte bloqué avec succès et archivé dans Neon',
+                    'data' => [
+                        'id' => $compte->id,
+                        'numeroCompte' => $compte->numeroCompte,
+                        'statut' => 'bloque',
+                        'motifBlocage' => $motifBlocage,
+                        'dateDebutBlocage' => $dateDebutBlocage->toIso8601String(),
+                        'dateFinBlocage' => $dateFinBlocage?->toIso8601String(),
+                        'dateBlocage' => now()->toIso8601String(),
+                        'archived' => true,
+                        'location' => 'Neon'
+                    ]
+                ];
+
+            } else {
+                // BLOCAGE PROGRAMMÉ → Reste dans PostgreSQL avec statut actif
+                
+                $compte->update([
+                    'statut' => 'actif', // Reste actif
+                    'motifBlocage' => $motifBlocage,
+                    'dateDebutBlocage' => $dateDebutBlocage,
+                    'dateFinBlocage' => $dateFinBlocage,
+                    'dateBlocage' => null,
+                    'blocage_programme' => true,
+                    'derniereModification' => now(),
+                    'version' => $compte->version + 1,
+                ]);
+
+                DB::commit();
+
+                return [
+                    'success' => true,
+                    'message' => "Ce compte sera bloqué le {$dateDebutBlocage->format('d/m/Y')}",
+                    'data' => [
+                        'id' => $compte->id,
+                        'numeroCompte' => $compte->numeroCompte,
+                        'statut' => 'actif',
+                        'motifBlocage' => $motifBlocage,
+                        'dateDebutBlocage' => $dateDebutBlocage->toIso8601String(),
+                        'dateFinBlocage' => $dateFinBlocage?->toIso8601String(),
+                        'blocage_programme' => true,
+                        'location' => 'PostgreSQL'
+                    ]
+                ];
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            // Gérer l'erreur de duplicate key (compte déjà dans Neon)
+            if (str_contains($e->getMessage(), 'duplicate key value violates unique constraint')) {
+                return [
+                    'success' => false,
+                    'message' => 'Ce compte est déjà archivé dans la base Neon et ne peut pas être bloqué à nouveau',
+                    'http_code' => 400
+                ];
+            }
+            
             throw $e;
         }
     }

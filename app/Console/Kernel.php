@@ -4,6 +4,8 @@ namespace App\Console;
 
 use App\Jobs\ActivateBlocageScheduleJob;
 use App\Jobs\ActivateDeblocageScheduleJob;
+use App\Jobs\BloquerComptesEpargneJob;
+use App\Jobs\DebloquerComptesJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -23,6 +25,20 @@ class Kernel extends ConsoleKernel
         // Vérifier et débloquer automatiquement les comptes toutes les 5 minutes
         $schedule->job(new ActivateDeblocageScheduleJob())
             ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Bloquer automatiquement les comptes épargne dont la date de début de blocage est arrivée
+        // et les archiver dans Neon (tous les jours à minuit)
+        $schedule->job(new BloquerComptesEpargneJob())
+            ->daily()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Débloquer automatiquement les comptes dont la date de fin de blocage est arrivée
+        // et les ramener de Neon vers PostgreSQL (tous les jours à minuit)
+        $schedule->job(new DebloquerComptesJob())
+            ->daily()
             ->withoutOverlapping()
             ->runInBackground();
     }

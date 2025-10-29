@@ -412,4 +412,140 @@ class Compte extends Model
             && is_null($this->deleted_at) 
             && $this->statut === 'actif';
     }
+
+    // ============================================
+    // SCOPES POUR LES FILTRES
+    // ============================================
+
+    /**
+     * Scope pour filtrer par type de compte
+     *
+     * @param Builder $query
+     * @param string $type
+     * @return Builder
+     */
+    public function scopeParType(Builder $query, string $type): Builder
+    {
+        return $query->where('type', $type);
+    }
+
+    /**
+     * Scope pour filtrer par statut
+     *
+     * @param Builder $query
+     * @param string $statut
+     * @return Builder
+     */
+    public function scopeParStatut(Builder $query, string $statut): Builder
+    {
+        return $query->where('statut', $statut);
+    }
+
+    /**
+     * Scope pour filtrer par devise
+     *
+     * @param Builder $query
+     * @param string $devise
+     * @return Builder
+     */
+    public function scopeParDevise(Builder $query, string $devise): Builder
+    {
+        return $query->where('devise', $devise);
+    }
+
+    /**
+     * Scope pour filtrer les comptes actifs
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeActifs(Builder $query): Builder
+    {
+        return $query->where('statut', 'actif');
+    }
+
+    /**
+     * Scope pour filtrer les comptes bloqués
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeBloques(Builder $query): Builder
+    {
+        return $query->where('statut', 'bloque');
+    }
+
+    /**
+     * Scope pour filtrer les comptes fermés
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeFermes(Builder $query): Builder
+    {
+        return $query->where('statut', 'ferme');
+    }
+
+    /**
+     * Scope pour filtrer les comptes archivés
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeArchives(Builder $query): Builder
+    {
+        return $query->whereNotNull('archived_at');
+    }
+
+    /**
+     * Scope pour filtrer les comptes non archivés
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeNonArchives(Builder $query): Builder
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    /**
+     * Scope pour filtrer par client
+     *
+     * @param Builder $query
+     * @param string $clientId
+     * @return Builder
+     */
+    public function scopeParClient(Builder $query, string $clientId): Builder
+    {
+        return $query->where('client_id', $clientId);
+    }
+
+    /**
+     * Scope pour les comptes épargne bloqués en attente de blocage automatique
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeBlocagesProgrammes(Builder $query): Builder
+    {
+        return $query->where('type', 'epargne')
+            ->where('blocage_programme', true)
+            ->whereNotNull('dateDebutBlocage')
+            ->where('dateDebutBlocage', '<=', now())
+            ->where('statut', '!=', 'bloque');
+    }
+
+    /**
+     * Scope pour les comptes à débloquer automatiquement
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeADebloquer(Builder $query): Builder
+    {
+        return $query->where('statut', 'bloque')
+            ->whereNotNull('dateDeblocagePrevue')
+            ->where('dateDeblocagePrevue', '<=', now());
+    }
 }
+

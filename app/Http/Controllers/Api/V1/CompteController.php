@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Hash;
 
 class CompteController extends Controller
 {
-    use ApiResponseFormat;
+    use ApiResponseFormat, Cacheable;
 
     protected CompteService $compteService;
     protected CompteArchiveService $archiveService;
@@ -35,7 +35,17 @@ class CompteController extends Controller
      * @OA\Get(
      *     path="/v1/comptes",
      *     summary="Lister les comptes actifs",
-     *     description="Récupère la liste des comptes ACTIFS non archivés avec pagination et filtres optionnels. Les administrateurs voient tous les comptes actifs, les clients ne voient que leurs propres comptes actifs. NOTE: Seuls les comptes avec statut 'actif' sont retournés - les comptes bloqués et fermés sont exclus.",
+     *     description="Récupère la liste des comptes ACTIFS non archivés avec pagination et filtres optionnels. 
+
+**AUTHENTIFICATION REQUISE :**
+1. Connectez-vous d'abord via POST /v1/auth/login
+2. Copiez le access_token de la réponse
+3. Cliquez sur 'Authorize' (cadenas en haut à droite)
+4. Collez le token et validez
+
+Les administrateurs voient tous les comptes actifs, les clients ne voient que leurs propres comptes actifs. 
+
+NOTE: Seuls les comptes avec statut 'actif' sont retournés - les comptes bloqués et fermés sont exclus.",
      *     operationId="getComptes",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
@@ -56,44 +66,44 @@ class CompteController extends Controller
      *     @OA\Parameter(
      *         name="type",
      *         in="query",
-     *         description="Filtrer par type de compte",
+     *         description="Filtrer par type de compte (laisser vide pour tous les types)",
      *         required=false,
-     *         @OA\Schema(type="string", enum={"epargne", "cheque"}, example="epargne")
+     *         @OA\Schema(type="string", enum={"epargne", "cheque"})
      *     ),
      *     @OA\Parameter(
      *         name="devise",
      *         in="query",
-     *         description="Filtrer par devise",
+     *         description="Filtrer par devise (laisser vide pour toutes les devises)",
      *         required=false,
-     *         @OA\Schema(type="string", example="FCFA")
+     *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="numeroCompte",
      *         in="query",
-     *         description="Filtrer par numéro de compte exact (format: CPxxxxxxxxxx)",
+     *         description="Filtrer par numéro de compte exact (format: CPxxxxxxxxxx, laisser vide pour tous)",
      *         required=false,
-     *         @OA\Schema(type="string", pattern="^CP\d{10}$", example="CP3385015606")
+     *         @OA\Schema(type="string", pattern="^CP\d{10}$")
      *     ),
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
-     *         description="Rechercher par nom du titulaire ou numéro de compte",
+     *         description="Rechercher par nom du titulaire ou numéro de compte (laisser vide pour tous)",
      *         required=false,
-     *         @OA\Schema(type="string", example="Diop")
+     *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="sort",
      *         in="query",
-     *         description="Champ de tri",
+     *         description="Champ de tri (laisser vide pour tri par défaut: dateCreation)",
      *         required=false,
-     *         @OA\Schema(type="string", enum={"dateCreation", "derniereModification", "numeroCompte"}, default="dateCreation", example="dateCreation")
+     *         @OA\Schema(type="string", enum={"dateCreation", "derniereModification", "numeroCompte"})
      *     ),
      *     @OA\Parameter(
      *         name="order",
      *         in="query",
-     *         description="Ordre de tri",
+     *         description="Ordre de tri (laisser vide pour tri décroissant par défaut)",
      *         required=false,
-     *         @OA\Schema(type="string", enum={"asc", "desc"}, default="desc", example="desc")
+     *         @OA\Schema(type="string", enum={"asc", "desc"})
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -111,7 +121,26 @@ class CompteController extends Controller
      *                     @OA\Property(property="titulaire", type="string", example="Mamadou Diop"),
      *                     @OA\Property(property="type", type="string", example="epargne"),
      *                     @OA\Property(property="solde", type="number", example=150000),
-     *                     @OA\Property(property="devise", type="string", example="FCFA")
+     *                     @OA\Property(property="devise", type="string", example="FCFA"),
+     *                     @OA\Property(property="statut", type="string", example="actif"),
+     *                     @OA\Property(
+     *                         property="blocage_info",
+     *                         type="object",
+     *                         nullable=true,
+     *                         description="Informations sur le blocage programmé (null si aucun blocage)",
+     *                         @OA\Property(property="en_cours", type="boolean", example=true),
+     *                         @OA\Property(property="message", type="string", example="Ce compte sera bloqué le 29/10/2025 jusqu'au 30/11/2025"),
+     *                         @OA\Property(property="dateDebutBlocage", type="string", example="29/10/2025"),
+     *                         @OA\Property(property="dateFinBlocage", type="string", nullable=true, example="30/11/2025"),
+     *                         @OA\Property(property="motif", type="string", example="Blocage administratif")
+     *                     ),
+     *                     @OA\Property(
+     *                         property="metadata",
+     *                         type="object",
+     *                         @OA\Property(property="derniereModification", type="string", example="2025-10-28T21:38:16+00:00"),
+     *                         @OA\Property(property="version", type="integer", example=4),
+     *                         @OA\Property(property="location", type="string", example="PostgreSQL")
+     *                     )
      *                 )
      *             ),
      *             @OA\Property(
@@ -165,7 +194,15 @@ class CompteController extends Controller
      * @OA\Get(
      *     path="/v1/comptes/{id}",
      *     summary="Récupérer un compte spécifique par ID (US 2.1)",
-     *     description="Récupère les détails complets d'un compte bancaire par son ID UUID. Implémente une stratégie de recherche dual-database : cherche d'abord dans PostgreSQL (tous les comptes : actifs, bloqués, fermés), puis dans Neon (comptes archivés) si non trouvé. Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
+     *     description="Récupère les détails complets d'un compte bancaire par son ID UUID.
+
+**AUTHENTIFICATION REQUISE :** Utilisez le bouton 'Authorize' avec votre Bearer Token obtenu via /v1/auth/login
+
+Implémente une stratégie de recherche dual-database : 
+- Cherche d'abord dans PostgreSQL (comptes actifs, bloqués, fermés)
+- Puis dans Neon (comptes archivés) si non trouvé
+
+Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement ses propres comptes.",
      *     operationId="getCompteById",
      *     tags={"Comptes"},
      *     security={{"bearerAuth": {}}},
@@ -191,13 +228,25 @@ class CompteController extends Controller
      *                 @OA\Property(property="solde", type="number", format="float", example=1250000),
      *                 @OA\Property(property="devise", type="string", example="FCFA"),
      *                 @OA\Property(property="dateCreation", type="string", format="date-time", example="2023-03-15T00:00:00Z"),
-     *                 @OA\Property(property="statut", type="string", enum={"actif", "bloque", "ferme"}, example="bloque"),
-     *                 @OA\Property(property="motifBlocage", type="string", nullable=true, example="Inactivité de 30+ jours"),
+     *                 @OA\Property(property="statut", type="string", enum={"actif", "bloque", "ferme"}, example="actif"),
+     *                 @OA\Property(property="motifBlocage", type="string", nullable=true, example="Blocage administratif"),
+     *                 @OA\Property(
+     *                     property="blocage_info",
+     *                     type="object",
+     *                     nullable=true,
+     *                     description="Informations sur le blocage programmé (null si aucun blocage programmé)",
+     *                     @OA\Property(property="en_cours", type="boolean", example=true),
+     *                     @OA\Property(property="message", type="string", example="Ce compte sera bloqué le 29/10/2025 jusqu'au 30/11/2025"),
+     *                     @OA\Property(property="dateDebutBlocage", type="string", example="29/10/2025"),
+     *                     @OA\Property(property="dateFinBlocage", type="string", nullable=true, example="30/11/2025"),
+     *                     @OA\Property(property="motif", type="string", example="Blocage administratif")
+     *                 ),
      *                 @OA\Property(
      *                     property="metadata",
      *                     type="object",
      *                     @OA\Property(property="derniereModification", type="string", format="date-time", example="2023-06-10T14:30:00Z"),
      *                     @OA\Property(property="version", type="integer", example=1),
+     *                     @OA\Property(property="location", type="string", example="PostgreSQL", description="PostgreSQL pour comptes actifs, Neon pour comptes archivés/bloqués"),
      *                     @OA\Property(property="archived", type="boolean", example=false, description="true si récupéré depuis Neon, false si depuis PostgreSQL")
      *                 )
      *             )
@@ -290,9 +339,14 @@ class CompteController extends Controller
      * @OA\Get(
      *     path="/v1/comptes/numero/{numero}",
      *     summary="Obtenir un compte par numéro",
-     *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte. Cherche automatiquement dans la base principale (Render) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
+     *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte.
+
+**AUTHENTIFICATION REQUISE :** Utilisez le bouton 'Authorize' avec votre Bearer Token obtenu via /v1/auth/login
+
+Cherche automatiquement dans la base principale (PostgreSQL) et dans les archives (Neon) si le compte est fermé, bloqué ou archivé.",
      *     operationId="getCompteByNumero",
      *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="numero",
      *         in="path",
@@ -317,7 +371,25 @@ class CompteController extends Controller
      *                 @OA\Property(property="devise", type="string", example="FCFA"),
      *                 @OA\Property(property="dateCreation", type="string", format="date-time"),
      *                 @OA\Property(property="statut", type="string", example="actif"),
-     *                 @OA\Property(property="archived", type="boolean", example=false, description="Indique si le compte est archivé dans Neon")
+     *                 @OA\Property(
+     *                     property="blocage_info",
+     *                     type="object",
+     *                     nullable=true,
+     *                     description="Informations sur le blocage programmé (null si aucun blocage)",
+     *                     @OA\Property(property="en_cours", type="boolean", example=true),
+     *                     @OA\Property(property="message", type="string", example="Ce compte sera bloqué le 29/10/2025 jusqu'au 30/11/2025"),
+     *                     @OA\Property(property="dateDebutBlocage", type="string", example="29/10/2025"),
+     *                     @OA\Property(property="dateFinBlocage", type="string", nullable=true, example="30/11/2025"),
+     *                     @OA\Property(property="motif", type="string", example="Blocage administratif")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="metadata",
+     *                     type="object",
+     *                     @OA\Property(property="derniereModification", type="string", format="date-time"),
+     *                     @OA\Property(property="version", type="integer", example=4),
+     *                     @OA\Property(property="location", type="string", example="PostgreSQL"),
+     *                     @OA\Property(property="archived", type="boolean", example=false, description="Indique si le compte est archivé dans Neon")
+     *                 )
      *             )
      *         )
      *     ),
@@ -328,6 +400,13 @@ class CompteController extends Controller
      *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Compte non trouvé"),
      *             @OA\Property(property="error", type="string", example="Le compte avec le numéro CP9999999999 n'existe pas")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
      *         )
      *     )
      * )
@@ -396,9 +475,35 @@ class CompteController extends Controller
     /**
      * @OA\Post(
      *     path="/v1/comptes",
-     *     summary="Créer un nouveau compte bancaire",
-     *     description="Crée un nouveau compte bancaire avec validation complète (NCI, téléphone, email). Le mot de passe est généré automatiquement et envoyé par email.",
+     *     summary="Créer un nouveau compte bancaire avec auto-création du client",
+     *     description="**🎯 FONCTIONNALITÉ AUTO-CRÉATION :**
+Cette API crée automatiquement un nouveau compte bancaire. Si le client n'existe pas :
+- ✅ Un nouveau client est créé automatiquement
+- ✅ Un mot de passe aléatoire est généré
+- ✅ Un code de sécurité est généré
+- ✅ Un numéro de compte unique est généré (format: CPxxxxxxxxxx)
+- ✅ **Un email de bienvenue est envoyé automatiquement** avec :
+  - Le mot de passe (en clair, avant hashage)
+  - Le code de sécurité
+  - Le numéro de compte
+  - Les instructions de connexion
+
+**📧 EMAIL AUTOMATIQUE :**
+L'email est envoyé via SendGrid avec un design professionnel incluant :
+- Toutes les informations de connexion
+- Conseils de sécurité
+- Avertissement pour changer le mot de passe à la première connexion
+
+**AUTHENTIFICATION REQUISE :**
+Si vous voyez 'Unauthenticated', suivez ces étapes :
+1. Allez à POST /v1/auth/login et connectez-vous avec admin@banque.sn / Admin@2025
+2. Copiez le access_token de la réponse
+3. Cliquez sur 'Authorize' (cadenas en haut)
+4. Collez : Bearer VOTRE_TOKEN (n'oubliez pas 'Bearer ' avec l'espace)
+5. Cliquez Authorize puis Close
+6. Réessayez cette requête",
      *     tags={"Comptes"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\RequestBody(
      *         required=true,
      *         description="Données du compte à créer",
@@ -638,29 +743,43 @@ class CompteController extends Controller
     /**
      * @OA\Get(
      *     path="/v1/comptes/archives",
-     *     summary="Lister les comptes archivés",
-     *     description="Récupère la liste des comptes épargne archivés depuis le cloud (Neon). Les administrateurs voient tous les comptes archivés, les clients ne voient que leurs propres comptes archivés.",
+     *     summary="Lister les comptes archivés depuis Neon",
+     *     description="Récupère les comptes archivés stockés dans Neon (base serverless). Admin voit tous les comptes, Client voit uniquement les siens. Authentification requise via Bearer token.",
      *     operationId="getArchivedComptes",
-     *     tags={"Comptes"},
+     *     tags={"Comptes - Archives"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Response(
      *         response=200,
      *         description="Liste des comptes archivés récupérée avec succès",
      *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Comptes archivés récupérés avec succès"),
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Liste des comptes archivés récupérée avec succès"),
      *             @OA\Property(
      *                 property="data",
      *                 type="array",
+     *                 description="Liste des comptes archivés dans Neon",
      *                 @OA\Items(
      *                     type="object",
-     *                     @OA\Property(property="id", type="string", format="uuid"),
-     *                     @OA\Property(property="numeroCompte", type="string"),
+     *                     @OA\Property(property="id", type="string", format="uuid", example="a03902aa-a03a-4213-b865-0a05f77dee48"),
+     *                     @OA\Property(property="numeroCompte", type="string", example="CP4287048035"),
      *                     @OA\Property(property="type", type="string", example="epargne"),
-     *                     @OA\Property(property="solde", type="number", format="float"),
-     *                     @OA\Property(property="archived_at", type="string", format="date-time"),
-     *                     @OA\Property(property="archive_reason", type="string")
+     *                     @OA\Property(property="statut", type="string", example="bloque"),
+     *                     @OA\Property(property="solde", type="number", format="float", example=5000.00),
+     *                     @OA\Property(property="devise", type="string", example="FCFA"),
+     *                     @OA\Property(property="archived_at", type="string", format="date-time", example="2025-10-28T17:11:22Z"),
+     *                     @OA\Property(property="archived_by", type="string", format="uuid", description="ID de l'utilisateur qui a archivé"),
+     *                     @OA\Property(property="archive_reason", type="string", example="Blocage immédiat - Activité suspecte"),
+     *                     @OA\Property(property="dateDebutBlocage", type="string", format="date", example="2025-10-28"),
+     *                     @OA\Property(property="dateFinBlocage", type="string", format="date", example="2025-11-28", nullable=true),
+     *                     @OA\Property(property="motifBlocage", type="string", example="Activité suspecte détectée"),
+     *                     @OA\Property(
+     *                         property="client",
+     *                         type="object",
+     *                         @OA\Property(property="nom", type="string", example="DIOP"),
+     *                         @OA\Property(property="prenom", type="string", example="Fatou"),
+     *                         @OA\Property(property="email", type="string", example="fatou@example.com"),
+     *                         @OA\Property(property="telephone", type="string", example="+221 77 123 45 67")
+     *                     )
      *                 )
      *             )
      *         )
@@ -669,8 +788,7 @@ class CompteController extends Controller
      *         response=401,
      *         description="Non authentifié",
      *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Non authentifié")
      *         )
      *     )
@@ -811,43 +929,141 @@ class CompteController extends Controller
     /**
      * @OA\Post(
      *     path="/v1/comptes/{compteId}/bloquer",
-     *     summary="Bloquer un compte (US 2.5)",
-     *     description="Bloque un compte bancaire immédiatement ou de manière programmée. L'archivage automatique se fait via ArchiveComptesBloquesJob lorsque dateDebutBlocage arrive.",
+     *     summary="Bloquer un compte épargne (Immédiat ou Programmé)",
+     *     description="Bloque un compte épargne de manière immédiate (date=aujourd'hui → archivé dans Neon) ou programmée (date future → reste dans PostgreSQL jusqu'à la date). Authentification requise.",
      *     operationId="bloquerCompte",
-     *     tags={"Comptes"},
+     *     tags={"Comptes - Blocage/Déblocage"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="compteId",
      *         in="path",
-     *         description="UUID du compte à bloquer",
+     *         description="UUID du compte épargne à bloquer",
      *         required=true,
-     *         @OA\Schema(type="string", format="uuid")
+     *         @OA\Schema(
+     *             type="string", 
+     *             format="uuid",
+     *             example="a03902aa-a03a-4213-b865-0a05f77dee48"
+     *         )
      *     ),
      *     @OA\RequestBody(
      *         required=false,
+     *         description="Paramètres du blocage (tous optionnels)",
      *         @OA\JsonContent(
-     *             @OA\Property(property="dateDebutBlocage", type="string", format="date", example="2025-11-01", description="Date de début du blocage (optionnel, immédiat si absent)"),
-     *             @OA\Property(property="raison", type="string", example="Blocage administratif")
+     *             @OA\Property(
+     *                 property="dateDebutBlocage", 
+     *                 type="string", 
+     *                 format="date", 
+     *                 example="2025-11-15", 
+     *                 description="Date de début du blocage (YYYY-MM-DD). Si omise ou = aujourd'hui → blocage immédiat. Si future → blocage programmé"
+     *             ),
+     *             @OA\Property(
+     *                 property="dateFinBlocage", 
+     *                 type="string", 
+     *                 format="date", 
+     *                 example="2025-12-15", 
+     *                 description="Date de fin du blocage (YYYY-MM-DD). Le compte sera automatiquement débloqué à cette date par un Job"
+     *             ),
+     *             @OA\Property(
+     *                 property="raison", 
+     *                 type="string", 
+     *                 example="Activité suspecte détectée",
+     *                 description="📝 Motif du blocage (max 500 caractères)"
+     *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Compte bloqué avec succès",
+     *         description="Compte bloqué avec succès (immédiat ou programmé)",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Compte bloqué avec succès"),
+     *             @OA\Property(
+     *                 property="message", 
+     *                 type="string", 
+     *                 example="Compte bloqué avec succès et archivé dans Neon",
+     *                 description="Message varie selon le type : immédiat ou programmé"
+     *             ),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="id", type="string"),
-     *                 @OA\Property(property="statut", type="string", example="bloque"),
-     *                 @OA\Property(property="dateDebutBlocage", type="string", nullable=true),
-     *                 @OA\Property(property="blocage_programme", type="boolean", example=false)
+     *                 description="Détails du compte après blocage",
+     *                 @OA\Property(property="id", type="string", format="uuid", example="a03902aa-a03a-4213-b865-0a05f77dee48"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP4287048035"),
+     *                 @OA\Property(
+     *                     property="statut", 
+     *                     type="string", 
+     *                     example="bloque",
+     *                     description="'bloque' si immédiat, 'actif' si programmé"
+     *                 ),
+     *                 @OA\Property(property="motifBlocage", type="string", example="Activité suspecte détectée"),
+     *                 @OA\Property(property="dateDebutBlocage", type="string", format="date-time", example="2025-11-15T00:00:00+00:00"),
+     *                 @OA\Property(property="dateFinBlocage", type="string", format="date-time", example="2025-12-15T00:00:00+00:00", nullable=true),
+     *                 @OA\Property(property="dateBlocage", type="string", format="date-time", example="2025-10-28T17:11:22+00:00", nullable=true, description="Date effective du blocage (null si programmé)"),
+     *                 @OA\Property(
+     *                     property="blocage_programme", 
+     *                     type="boolean", 
+     *                     example=true,
+     *                     description="true si blocage programmé, false si immédiat"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="location", 
+     *                     type="string", 
+     *                     example="PostgreSQL",
+     *                     description="'PostgreSQL' si programmé, 'Neon' si immédiat"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="archived", 
+     *                     type="boolean", 
+     *                     example=false,
+     *                     description="true si archivé dans Neon, false si dans PostgreSQL"
+     *                 )
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=404, description="Compte non trouvé"),
-     *     @OA\Response(response=422, description="Données invalides")
+     *     @OA\Response(
+     *         response=400,
+     *         description="Erreur de validation métier",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="message", 
+     *                 type="string", 
+     *                 example="Seuls les comptes épargne peuvent être bloqués",
+     *                 description="Messages possibles : 'Seuls les comptes épargne...', 'Le compte ne peut pas être bloqué. Statut actuel: ...', 'Ce compte est déjà bloqué et se trouve dans Neon'"
+     *             ),
+     *             @OA\Property(property="http_code", type="integer", example=400)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Ce compte n'existe pas"),
+     *             @OA\Property(property="http_code", type="integer", example=404)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Erreur de validation des données",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Les données fournies sont invalides"),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="dateDebutBlocage",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="La date de début doit être supérieure ou égale à aujourd'hui")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="dateFinBlocage",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="La date de fin doit être après la date de début")
+     *                 )
+     *             )
+     *         )
+     *     )
      * )
      */
     public function bloquer(string $compteId): JsonResponse
@@ -855,12 +1071,22 @@ class CompteController extends Controller
         try {
             $data = request()->validate([
                 'dateDebutBlocage' => 'nullable|date|after_or_equal:today',
+                'dateFinBlocage' => 'nullable|date|after:dateDebutBlocage',
                 'raison' => 'nullable|string|max:500',
             ]);
 
             $result = $this->compteService->bloquerCompte($compteId, $data);
 
-            return $this->success($result, 'Compte bloqué avec succès');
+            // Le service retourne déjà un array structuré avec success, message, data
+            if (isset($result['http_code'])) {
+                return response()->json([
+                    'success' => $result['success'],
+                    'message' => $result['message'],
+                    'data' => $result['data'] ?? null
+                ], $result['http_code']);
+            }
+
+            return response()->json($result);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->validationError($e->errors());
@@ -880,22 +1106,32 @@ class CompteController extends Controller
     /**
      * @OA\Post(
      *     path="/v1/comptes/{compteId}/debloquer",
-     *     summary="Débloquer un compte (US 2.5)",
-     *     description="Débloque un compte bancaire immédiatement ou de manière programmée. Le désarchivage automatique se fait via DearchiveComptesBloquesJob lorsque dateDeblocagePrevue arrive.",
+     *     summary="Débloquer un compte épargne",
+     *     description="Débloque un compte épargne (restauration depuis Neon vers PostgreSQL) ou annule un blocage programmé. Authentification requise.",
      *     operationId="debloquerCompte",
-     *     tags={"Comptes"},
+     *     tags={"Comptes - Blocage/Déblocage"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="compteId",
      *         in="path",
-     *         description="UUID du compte à débloquer",
+     *         description="UUID du compte épargne à débloquer",
      *         required=true,
-     *         @OA\Schema(type="string", format="uuid")
+     *         @OA\Schema(
+     *             type="string", 
+     *             format="uuid",
+     *             example="a03902aa-a03a-4213-b865-0a05f77dee48"
+     *         )
      *     ),
      *     @OA\RequestBody(
      *         required=false,
+     *         description="Paramètres du déblocage (optionnel)",
      *         @OA\JsonContent(
-     *             @OA\Property(property="dateDeblocagePrevue", type="string", format="date", example="2025-12-01", description="Date de déblocage programmé (optionnel, immédiat si absent)")
+     *             @OA\Property(
+     *                 property="motif", 
+     *                 type="string", 
+     *                 example="Vérification complétée",
+     *                 description="📝 Motif du déblocage (optionnel, max 500 caractères)"
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -903,18 +1139,61 @@ class CompteController extends Controller
      *         description="Compte débloqué avec succès",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Compte débloqué avec succès"),
+     *             @OA\Property(
+     *                 property="message", 
+     *                 type="string", 
+     *                 example="Compte débloqué avec succès"
+     *             ),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="id", type="string"),
-     *                 @OA\Property(property="statut", type="string", example="actif"),
-     *                 @OA\Property(property="dateDeblocagePrevue", type="string", nullable=true)
+     *                 description="Détails du compte après déblocage",
+     *                 @OA\Property(property="id", type="string", format="uuid", example="a03902aa-a03a-4213-b865-0a05f77dee48"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP4287048035"),
+     *                 @OA\Property(
+     *                     property="statut", 
+     *                     type="string", 
+     *                     example="actif",
+     *                     description="Toujours 'actif' après déblocage"
+     *                 ),
+     *                 @OA\Property(property="dateDeblocage", type="string", format="date-time", example="2025-10-28T18:30:00+00:00", description="Date effective du déblocage"),
+     *                 @OA\Property(
+     *                     property="location", 
+     *                     type="string", 
+     *                     example="PostgreSQL",
+     *                     description="Toujours 'PostgreSQL' après déblocage"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="restored_from_neon", 
+     *                     type="boolean", 
+     *                     example=true,
+     *                     description="true si restauré depuis Neon, false si annulation blocage programmé"
+     *                 )
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=404, description="Compte non trouvé"),
-     *     @OA\Response(response=422, description="Données invalides")
+     *     @OA\Response(
+     *         response=400,
+     *         description="Erreur de validation métier",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="message", 
+     *                 type="string", 
+     *                 example="Le compte ne peut pas être débloqué. Statut actuel : actif"
+     *             ),
+     *             @OA\Property(property="http_code", type="integer", example=400)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte avec l'ID spécifié n'existe pas"),
+     *             @OA\Property(property="http_code", type="integer", example=404)
+     *         )
+     *     )
      * )
      */
     public function debloquer(string $compteId): JsonResponse
@@ -946,15 +1225,33 @@ class CompteController extends Controller
     /**
      * @OA\Delete(
      *     path="/v1/comptes/{numeroCompte}",
-     *     summary="Supprimer un compte (US 2.4)",
-     *     description="Supprime (soft delete) un compte épargne et l'archive automatiquement dans Neon. Seuls les comptes épargne peuvent être supprimés.",
+     *     summary="Supprimer un compte épargne (Soft Delete + Archive)",
+     *     description="**🗑️ SUPPRESSION SÉCURISÉE :**
+Supprime un compte épargne avec soft delete dans PostgreSQL et archivage automatique dans Neon.
+
+**⚠️ VALIDATIONS AUTOMATIQUES :**
+- ✅ Seuls les comptes **épargne** peuvent être supprimés (les comptes chèque sont protégés)
+- ✅ Le compte ne doit PAS avoir un **blocage programmé** en cours
+- ✅ Le compte ne doit PAS être actuellement **bloqué** (statut='bloque')
+- ✅ Le compte ne doit PAS être déjà supprimé
+- ✅ Le compte ne doit PAS être déjà archivé
+
+**📧 Si validation échoue :**
+- Blocage programmé → Message : 'Ce compte ne peut pas être supprimé car il a un blocage programmé prévu le {date}. Veuillez d'abord annuler le blocage ou attendre son exécution.'
+- Compte bloqué → Message : 'Ce compte est actuellement bloqué. Veuillez d'abord le débloquer avant de le supprimer.'
+- Compte chèque → Message : 'Les comptes chèque ne peuvent pas être supprimés'
+
+**♻️ RESTAURATION :**
+Restauration possible via POST /v1/comptes/restore/{id}
+
+Authentification requise (admin uniquement).",
      *     operationId="deleteCompte",
-     *     tags={"Comptes"},
+     *     tags={"Comptes - Archives"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="numeroCompte",
      *         in="path",
-     *         description="Numéro du compte à supprimer",
+     *         description="**Numéro du compte** à supprimer (format : CPxxxxxxxxxx)",
      *         required=true,
      *         @OA\Schema(type="string", example="CP3105472638")
      *     ),
@@ -967,14 +1264,84 @@ class CompteController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="numeroCompte", type="string"),
-     *                 @OA\Property(property="deleted_at", type="string", format="date-time"),
-     *                 @OA\Property(property="archived_at", type="string", format="date-time")
+     *                 @OA\Property(property="id", type="string", format="uuid", example="b12345aa-bb12-4c3d-9876-abc123def456"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                 @OA\Property(property="type", type="string", example="epargne"),
+     *                 @OA\Property(property="solde", type="number", format="float", example=12500.00),
+     *                 @OA\Property(property="deleted_at", type="string", format="date-time", example="2025-10-28T18:45:00Z"),
+     *                 @OA\Property(property="archived_at", type="string", format="date-time", example="2025-10-28T18:45:01Z"),
+     *                 @OA\Property(property="archive_reason", type="string", example="Suppression à la demande du client"),
+     *                 @OA\Property(
+     *                     property="client",
+     *                     type="object",
+     *                     @OA\Property(property="nom", type="string", example="SARR"),
+     *                     @OA\Property(property="prenom", type="string", example="Mamadou"),
+     *                     @OA\Property(property="email", type="string", example="mamadou@example.com")
+     *                 )
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=400, description="Seuls les comptes épargne peuvent être supprimés"),
-     *     @OA\Response(response=404, description="Compte non trouvé")
+     *     @OA\Response(
+     *         response=400,
+     *         description="Erreurs de validation - Compte protégé contre la suppression",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="message", 
+     *                 type="string", 
+     *                 description="Message d'erreur selon le cas",
+     *                 example="Ce compte ne peut pas être supprimé car il a un blocage programmé prévu le 15/11/2025. Veuillez d'abord annuler le blocage ou attendre son exécution."
+     *             ),
+     *             @OA\Property(property="code", type="integer", example=400),
+     *             @OA\Property(
+     *                 property="examples",
+     *                 type="object",
+     *                 description="Exemples de messages d'erreur possibles",
+     *                 @OA\Property(
+     *                     property="blocage_programme",
+     *                     type="string",
+     *                     example="Ce compte ne peut pas être supprimé car il a un blocage programmé prévu le 15/11/2025. Veuillez d'abord annuler le blocage ou attendre son exécution."
+     *                 ),
+     *                 @OA\Property(
+     *                     property="compte_bloque",
+     *                     type="string",
+     *                     example="Ce compte est actuellement bloqué. Veuillez d'abord le débloquer avant de le supprimer."
+     *                 ),
+     *                 @OA\Property(
+     *                     property="type_cheque",
+     *                     type="string",
+     *                     example="Les comptes chèque ne peuvent pas être supprimés"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="deja_supprime",
+     *                     type="string",
+     *                     example="Le compte CP3105472638 est déjà supprimé"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="deja_archive",
+     *                     type="string",
+     *                     example="Le compte CP3105472638 est déjà archivé"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le compte CP3105472638 n'existe pas"),
+     *             @OA\Property(property="http_code", type="integer", example=404)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Non authentifié")
+     *         )
+     *     )
      * )
      */
     public function destroy(string $numeroCompte): JsonResponse
@@ -982,7 +1349,17 @@ class CompteController extends Controller
         try {
             $result = $this->compteService->deleteAndArchive($numeroCompte);
 
-            return $this->success($result, 'Compte supprimé et archivé avec succès');
+            // Vérifier si le service a retourné une erreur
+            if (isset($result['success']) && $result['success'] === false) {
+                $code = $result['code'] ?? 400;
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                    'http_code' => $code
+                ], $code);
+            }
+
+            return $this->success($result['data'], $result['message']);
 
         } catch (CompteNotFoundException $e) {
             return $this->notFound($e->getMessage());
@@ -999,17 +1376,17 @@ class CompteController extends Controller
     /**
      * @OA\Post(
      *     path="/v1/comptes/restore/{id}",
-     *     summary="Restaurer un compte supprimé",
-     *     description="Restaure un compte précédemment supprimé depuis les archives Neon vers la base principale.",
+     *     summary="Restaurer un compte depuis les archives",
+     *     description="Restaure un compte supprimé en le récupérant depuis Neon vers PostgreSQL. Le compte devient actif et utilisable. Admin uniquement. Authentification requise.",
      *     operationId="restoreCompte",
-     *     tags={"Comptes"},
+     *     tags={"Comptes - Archives"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="UUID du compte à restaurer",
+     *         description="**UUID du compte** à restaurer depuis les archives Neon",
      *         required=true,
-     *         @OA\Schema(type="string", format="uuid")
+     *         @OA\Schema(type="string", format="uuid", example="b12345aa-bb12-4c3d-9876-abc123def456")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -1020,13 +1397,60 @@ class CompteController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="id", type="string"),
-     *                 @OA\Property(property="numeroCompte", type="string"),
-     *                 @OA\Property(property="restored_at", type="string", format="date-time")
+     *                 @OA\Property(property="id", type="string", format="uuid", example="b12345aa-bb12-4c3d-9876-abc123def456"),
+     *                 @OA\Property(property="numeroCompte", type="string", example="CP3105472638"),
+     *                 @OA\Property(property="type", type="string", example="epargne"),
+     *                 @OA\Property(property="statut", type="string", example="actif"),
+     *                 @OA\Property(property="solde", type="number", format="float", example=12500.00),
+     *                 @OA\Property(property="devise", type="string", example="FCFA"),
+     *                 @OA\Property(property="restored_at", type="string", format="date-time", example="2025-10-28T20:15:30Z"),
+     *                 @OA\Property(property="restored_by", type="string", format="uuid", description="UUID de l'admin qui a restauré"),
+     *                 @OA\Property(property="deleted_at", type="string", nullable=true, example=null, description="NULL après restauration"),
+     *                 @OA\Property(
+     *                     property="client",
+     *                     type="object",
+     *                     @OA\Property(property="nom", type="string", example="SARR"),
+     *                     @OA\Property(property="prenom", type="string", example="Mamadou"),
+     *                     @OA\Property(property="email", type="string", example="mamadou@example.com"),
+     *                     @OA\Property(property="telephone", type="string", example="+221 77 555 66 77")
+     *                 )
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=404, description="Compte non trouvé dans les archives")
+     *     @OA\Response(
+     *         response=400,
+     *         description="Compte déjà actif ou validation échouée",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="message", 
+     *                 type="string", 
+     *                 example="Ce compte est déjà actif et n'a pas besoin d'être restauré"
+     *             ),
+     *             @OA\Property(property="http_code", type="integer", example=400)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Compte non trouvé dans les archives",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="message", 
+     *                 type="string", 
+     *                 example="Le compte avec l'ID b12345aa-bb12-4c3d-9876-abc123def456 n'existe pas dans les archives"
+     *             ),
+     *             @OA\Property(property="http_code", type="integer", example=404)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié ou non autorisé",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Vous n'avez pas les droits pour restaurer des comptes")
+     *         )
+     *     )
      * )
      */
     public function restore(string $id): JsonResponse

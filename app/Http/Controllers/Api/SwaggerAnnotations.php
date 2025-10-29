@@ -6,7 +6,41 @@ namespace App\Http\Controllers\Api;
  * @OA\Info(
  *     version="1.0.0",
  *     title="API Bancaire - Documentation Complète",
- *     description="Documentation de l'API RESTful de gestion bancaire.\n\n\n**Authentification :**\n- Les clients web utilisent un cookie HttpOnly sécurisé (invisible pour Swagger UI).\n- Pour tester les endpoints protégés dans Swagger UI, utilisez le bouton 'Authorize' et collez le Bearer Token JWT retourné par l'endpoint /v1/auth/login.\n- Le cookie HttpOnly continue de fonctionner pour les vraies applications web.\n\n**Limite :** Swagger UI ne peut pas tester les cookies HttpOnly, mais tous les endpoints protégés acceptent aussi le header Authorization: Bearer <token>.\n\nPour automatiser vos tests, privilégiez Postman, Insomnia ou cURL si vous souhaitez tester le flux cookie.",
+ *     description="Documentation de l'API RESTful de gestion bancaire.
+
+**COMMENT UTILISER L'AUTHENTIFICATION DANS SWAGGER UI :**
+
+**Étape 1 : Se connecter**
+- Allez à l'endpoint POST /v1/auth/login
+- Utilisez les identifiants de test (voir ci-dessous)
+- Cliquez sur 'Execute'
+- Copiez le access_token de la réponse
+
+**Étape 2 : Autoriser Swagger UI**
+- Cliquez sur le bouton 'Authorize' 🔒 (en haut à droite de la page)
+- Collez votre token dans le champ 'Value'
+- Cliquez sur 'Authorize' puis 'Close'
+
+**Étape 3 : Tester les endpoints protégés**
+- Maintenant tous vos appels incluront automatiquement le Bearer token
+- Le cadenas 🔒 à côté de chaque endpoint sera verrouillé
+
+**IDENTIFIANTS DE TEST (créés par le seeder) :**
+
+Admin :
+- Email : admin@banque.sn
+- Password : Admin@2025
+- Accès : Tous les comptes et opérations
+
+Client :
+- Email : client@banque.sn
+- Password : Client@2025
+- Accès : Uniquement ses propres comptes
+
+**NOTE TECHNIQUE :**
+- Les clients web utilisent un cookie HttpOnly sécurisé (invisible pour Swagger UI)
+- Pour Swagger UI, utilisez le bouton 'Authorize' avec le Bearer Token JWT
+- Pour automatiser vos tests : Postman, Insomnia ou cURL",
  *     @OA\Contact(
  *         email="support@banque.sn",
  *         name="Support API Bancaire"
@@ -40,7 +74,7 @@ namespace App\Http\Controllers\Api;
  *     type="http",
  *     scheme="bearer",
  *     bearerFormat="JWT",
- *     description="Authentification via Bearer Token JWT pour Swagger UI."
+ *     description="CLIQUEZ SUR 'Authorize' 🔒 EN HAUT → Collez votre token (sans 'Bearer') → Validez. Pour obtenir un token : POST /v1/auth/login avec admin@banque.sn / Admin@2025"
  * )
  * 
  * @OA\Tag(
