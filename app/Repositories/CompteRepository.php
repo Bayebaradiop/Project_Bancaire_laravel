@@ -6,6 +6,7 @@ use App\Models\Compte;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CompteRepository
 {
@@ -147,26 +148,88 @@ class CompteRepository
             ->first();
 
         if (!$archivedCompte) {
+            Log::error("Compte non trouvé dans Neon : {$id}");
             return null;
         }
 
+        Log::info("Restauration du compte depuis Neon", [
+            'id' => $id,
+            'numerocompte' => $archivedCompte->numerocompte,
+            'client_id' => $archivedCompte->client_id
+        ]);
+
         return DB::transaction(function () use ($archivedCompte) {
-            // Recréer le compte dans PostgreSQL
-            $compte = $this->model->create([
+            // Vérifier si le compte existe déjà dans PostgreSQL
+            // IMPORTANT: Désactiver TOUS les scopes (ActiveCompteScope + SoftDeletes)
+            $existingCompte = $this->model
+                ->withoutGlobalScopes()
+                ->withTrashed()
+                ->find($archivedCompte->id);
+            
+            if ($existingCompte) {
+                Log::info("Compte existe déjà dans PostgreSQL, restauration simple", [
+                    'id' => $existingCompte->id,
+                    'statut_avant' => $existingCompte->statut,
+                    'deleted_at' => $existingCompte->deleted_at
+                ]);
+                
+                // Si le compte existe déjà, on le restaure simplement
+                if ($existingCompte->trashed()) {
+                    $existingCompte->restore(); // Enlève deleted_at
+                }
+                
+                // Réactiver le compte
+                $existingCompte->statut = 'actif';
+                $existingCompte->archived_at = null;
+                $existingCompte->save();
+                
+                // Supprimer de l'archive Neon
+                DB::connection('neon')->table('archives_comptes')
+                    ->where('id', $archivedCompte->id)
+                    ->delete();
+                
+                Log::info("Compte restauré avec succès depuis PostgreSQL");
+                
+                return $existingCompte->fresh(['client.user']);
+            }
+            
+            Log::info("Compte n'existe pas dans PostgreSQL, création depuis Neon");
+            
+            // Si le compte n'existe pas, le recréer avec toutes les données
+            $compteData = [
                 'id' => $archivedCompte->id,
                 'numeroCompte' => $archivedCompte->numerocompte,
                 'type' => $archivedCompte->type,
                 'client_id' => $archivedCompte->client_id,
+                'solde' => $archivedCompte->solde ?? 0,
                 'statut' => 'actif', // Réactivé
                 'devise' => $archivedCompte->devise ?? 'FCFA',
-            ]);
-
-            // Supprimer de l'archive Neon
-            DB::connection('neon')->table('archives_comptes')
-                ->where('id', $archivedCompte->id)
-                ->delete();
-
-            return $compte->fresh(['client.user']);
+                'archived_at' => null,
+                'created_at' => $archivedCompte->created_at,
+                'updated_at' => now(),
+            ];
+            
+            Log::info("Données du compte à créer", $compteData);
+            
+            try {
+                $compte = $this->model->create($compteData);
+                
+                // Supprimer de l'archive Neon
+                DB::connection('neon')->table('archives_comptes')
+                    ->where('id', $archivedCompte->id)
+                    ->delete();
+                
+                Log::info("Compte restauré avec succès depuis Neon : {$compte->id}");
+                
+                return $compte->fresh(['client.user']);
+                
+            } catch (\Exception $e) {
+                Log::error("Erreur lors de la création du compte", [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                throw $e;
+            }
         });
     }
 

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\CompteController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +32,16 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
         Route::post('/refresh', [AuthController::class, 'refresh'])->name('auth.refresh');
         Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('auth.logout');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Routes Clients Protégées (auth:api)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('clients')->middleware('auth:api')->group(function () {
+        // Récupérer un client par numéro de téléphone
+        Route::get('/telephone/{telephone}', [UserController::class, 'getByPhone'])->name('clients.getByPhone');
     });
 
     /*

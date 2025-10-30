@@ -183,8 +183,11 @@ NOTE: Seuls les comptes avec statut 'actif' sont retournés - les comptes bloqu�
      */
     public function index(ListCompteRequest $request): JsonResponse
     {
-        // Déléguer toute la logique au service
-        $response = $this->compteService->getComptesList($request);
+        // Récupérer l'utilisateur authentifié
+        $user = auth()->user();
+        
+        // Déléguer toute la logique au service avec l'utilisateur
+        $response = $this->compteService->getComptesList($request, $user);
         
         // Retourner la réponse
         return response()->json($response);

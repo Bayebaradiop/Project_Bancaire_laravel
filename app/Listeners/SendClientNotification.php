@@ -3,16 +3,30 @@
 namespace App\Listeners;
 
 use App\Events\CompteCreated;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 
-class SendClientNotification
+class SendClientNotification implements ShouldQueue
 {
+    /**
+     * The name of the queue the job should be sent to.
+     *
+     * @var string|null
+     */
+    public $queue = 'default';
+
+    /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+    public $tries = 3;
+
     /**
      * Handle the event.
      * Les envois SMS et Email sont non-bloquants : si ils échouent, la création continue
-     * TEMPORAIREMENT DÉSACTIVÉ pour tests de déploiement
      */
     public function handle(CompteCreated $event)
     {
@@ -48,16 +62,6 @@ class SendClientNotification
                 return;
             }
 
-            // Vérifier si on est en environnement de production (Render)
-            if (config('app.env') === 'production' && config('mail.disable_on_render', false)) {
-                Log::info("Email désactivé sur Render (simulation)", [
-                    'destinataire' => $email,
-                    'compte' => $compte->numeroCompte,
-                    'password' => $password,
-                ]);
-                return;
-            }
-
             // Envoi réel de l'email
             Mail::to($email)->send(new \App\Mail\CompteCreatedMail($compte, $password, $code));
             
@@ -71,6 +75,8 @@ class SendClientNotification
             Log::error("Erreur envoi email (non bloquant): " . $e->getMessage(), [
                 'client_id' => $client->id,
                 'compte' => $compte->numeroCompte,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }

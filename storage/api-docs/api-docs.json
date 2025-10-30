@@ -1353,9 +1353,9 @@
         "/v1/comptes/archives": {
             "get": {
                 "tags": [
-                    "Comptes - Archives"
+                    "Archivage Neon"
                 ],
-                "summary": "Lister les comptes archivés depuis Neon",
+                "summary": "Lister les comptes archivés dans Neon",
                 "description": "Récupère les comptes archivés stockés dans Neon (base serverless). Admin voit tous les comptes, Client voit uniquement les siens. Authentification requise via Bearer token.",
                 "operationId": "getArchivedComptes",
                 "responses": {
@@ -1845,162 +1845,10 @@
                 ]
             }
         },
-        "/v1/comptes/{compteId}/debloquer": {
-            "post": {
-                "tags": [
-                    "Comptes - Blocage/Déblocage"
-                ],
-                "summary": "Débloquer un compte épargne",
-                "description": "Débloque un compte épargne (restauration depuis Neon vers PostgreSQL) ou annule un blocage programmé. Authentification requise.",
-                "operationId": "debloquerCompte",
-                "parameters": [
-                    {
-                        "name": "compteId",
-                        "in": "path",
-                        "description": "UUID du compte épargne à débloquer",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "example": "a03902aa-a03a-4213-b865-0a05f77dee48"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "Paramètres du déblocage (optionnel)",
-                    "required": false,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "motif": {
-                                        "description": "📝 Motif du déblocage (optionnel, max 500 caractères)",
-                                        "type": "string",
-                                        "example": "Vérification complétée"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Compte débloqué avec succès",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Compte débloqué avec succès"
-                                        },
-                                        "data": {
-                                            "description": "Détails du compte après déblocage",
-                                            "properties": {
-                                                "id": {
-                                                    "type": "string",
-                                                    "format": "uuid",
-                                                    "example": "a03902aa-a03a-4213-b865-0a05f77dee48"
-                                                },
-                                                "numeroCompte": {
-                                                    "type": "string",
-                                                    "example": "CP4287048035"
-                                                },
-                                                "statut": {
-                                                    "description": "Toujours 'actif' après déblocage",
-                                                    "type": "string",
-                                                    "example": "actif"
-                                                },
-                                                "dateDeblocage": {
-                                                    "description": "Date effective du déblocage",
-                                                    "type": "string",
-                                                    "format": "date-time",
-                                                    "example": "2025-10-28T18:30:00+00:00"
-                                                },
-                                                "location": {
-                                                    "description": "Toujours 'PostgreSQL' après déblocage",
-                                                    "type": "string",
-                                                    "example": "PostgreSQL"
-                                                },
-                                                "restored_from_neon": {
-                                                    "description": "true si restauré depuis Neon, false si annulation blocage programmé",
-                                                    "type": "boolean",
-                                                    "example": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Erreur de validation métier",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte ne peut pas être débloqué. Statut actuel : actif"
-                                        },
-                                        "http_code": {
-                                            "type": "integer",
-                                            "example": 400
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Compte non trouvé",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Le compte avec l'ID spécifié n'existe pas"
-                                        },
-                                        "http_code": {
-                                            "type": "integer",
-                                            "example": 404
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/v1/comptes/{numeroCompte}": {
             "delete": {
                 "tags": [
-                    "Comptes - Archives"
+                    "Archivage Neon"
                 ],
                 "summary": "Supprimer un compte épargne (Soft Delete + Archive)",
                 "description": "**🗑️ SUPPRESSION SÉCURISÉE :**\nSupprime un compte épargne avec soft delete dans PostgreSQL et archivage automatique dans Neon.\n\n**⚠️ VALIDATIONS AUTOMATIQUES :**\n- ✅ Seuls les comptes **épargne** peuvent être supprimés (les comptes chèque sont protégés)\n- ✅ Le compte ne doit PAS avoir un **blocage programmé** en cours\n- ✅ Le compte ne doit PAS être actuellement **bloqué** (statut='bloque')\n- ✅ Le compte ne doit PAS être déjà supprimé\n- ✅ Le compte ne doit PAS être déjà archivé\n\n**📧 Si validation échoue :**\n- Blocage programmé → Message : 'Ce compte ne peut pas être supprimé car il a un blocage programmé prévu le {date}. Veuillez d'abord annuler le blocage ou attendre son exécution.'\n- Compte bloqué → Message : 'Ce compte est actuellement bloqué. Veuillez d'abord le débloquer avant de le supprimer.'\n- Compte chèque → Message : 'Les comptes chèque ne peuvent pas être supprimés'\n\n**♻️ RESTAURATION :**\nRestauration possible via POST /v1/comptes/restore/{id}\n\nAuthentification requise (admin uniquement).",
@@ -2198,9 +2046,9 @@
         "/v1/comptes/restore/{id}": {
             "post": {
                 "tags": [
-                    "Comptes - Archives"
+                    "Archivage Neon"
                 ],
-                "summary": "Restaurer un compte depuis les archives",
+                "summary": "Restaurer un compte depuis Neon",
                 "description": "Restaure un compte supprimé en le récupérant depuis Neon vers PostgreSQL. Le compte devient actif et utilisable. Admin uniquement. Authentification requise.",
                 "operationId": "restoreCompte",
                 "parameters": [
@@ -2421,6 +2269,138 @@
                     }
                 }
             }
+        },
+        "/v1/clients/telephone/{telephone}": {
+            "get": {
+                "tags": [
+                    "Clients"
+                ],
+                "summary": "Récupérer un client par numéro de téléphone",
+                "description": "Permet de récupérer les informations d'un client à partir de son numéro de téléphone",
+                "operationId": "36a04195814ab9ac7bc7053d68bfdcbb",
+                "parameters": [
+                    {
+                        "name": "telephone",
+                        "in": "path",
+                        "description": "Numéro de téléphone du client (format: +221XXXXXXXXX)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "+221771234567"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Client trouvé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Client trouvé avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "nomComplet": {
+                                                    "type": "string",
+                                                    "example": "Jean Dupont"
+                                                },
+                                                "nci": {
+                                                    "type": "string",
+                                                    "example": "1234567890123456"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "jean.dupont@example.com"
+                                                },
+                                                "telephone": {
+                                                    "type": "string",
+                                                    "example": "+221771234567"
+                                                },
+                                                "adresse": {
+                                                    "type": "string",
+                                                    "example": "Dakar, Sénégal"
+                                                },
+                                                "role": {
+                                                    "type": "string",
+                                                    "example": "client"
+                                                },
+                                                "statut": {
+                                                    "type": "string",
+                                                    "example": "actif"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-01-15T10:30:00.000000Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-01-15T10:30:00.000000Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Client non trouvé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Aucun client trouvé avec ce numéro de téléphone"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -2449,8 +2429,12 @@
             "description": "Gestion complète des comptes bancaires : création de nouveaux comptes, consultation, listing avec filtres et pagination, archivage dans le cloud."
         },
         {
-            "name": "Comptes - Archives",
-            "description": "Comptes - Archives"
+            "name": "Clients",
+            "description": "Gestion des clients"
+        },
+        {
+            "name": "Archivage Neon",
+            "description": "Archivage Neon"
         },
         {
             "name": "Comptes - Blocage/Déblocage",

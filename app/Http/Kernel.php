@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         'logging' => \App\Http\Middleware\LoggingMiddleware::class,
         'track.requests' => \App\Http\Middleware\TrackUserRequests::class,
         'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+        'auth.api' => \App\Http\Middleware\JwtMiddleware::class,
     ];
 }
