@@ -58,6 +58,22 @@ services:
         value: file
       - key: QUEUE_CONNECTION
         value: database
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USERNAME
+        value: bayebara2000@gmail.com
+      - key: MAIL_PASSWORD
+        value: cfvoaitjqqnofxwz
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        value: bayebara2000@gmail.com
+      - key: MAIL_FROM_NAME
+        value: "Faysany Banque"
       - key: SESSION_DRIVER
         value: file
       - key: SESSION_LIFETIME
