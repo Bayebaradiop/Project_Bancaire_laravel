@@ -1353,7 +1353,7 @@
         "/v1/comptes/archives": {
             "get": {
                 "tags": [
-                    "Archivage Neon"
+                    "Suppression"
                 ],
                 "summary": "Lister les comptes archivés dans Neon",
                 "description": "Récupère les comptes archivés stockés dans Neon (base serverless). Admin voit tous les comptes, Client voit uniquement les siens. Authentification requise via Bearer token.",
@@ -1848,7 +1848,7 @@
         "/v1/comptes/{numeroCompte}": {
             "delete": {
                 "tags": [
-                    "Archivage Neon"
+                    "Suppression"
                 ],
                 "summary": "Supprimer un compte épargne (Soft Delete + Archive)",
                 "description": "**🗑️ SUPPRESSION SÉCURISÉE :**\nSupprime un compte épargne avec soft delete dans PostgreSQL et archivage automatique dans Neon.\n\n**⚠️ VALIDATIONS AUTOMATIQUES :**\n- ✅ Seuls les comptes **épargne** peuvent être supprimés (les comptes chèque sont protégés)\n- ✅ Le compte ne doit PAS avoir un **blocage programmé** en cours\n- ✅ Le compte ne doit PAS être actuellement **bloqué** (statut='bloque')\n- ✅ Le compte ne doit PAS être déjà supprimé\n- ✅ Le compte ne doit PAS être déjà archivé\n\n**📧 Si validation échoue :**\n- Blocage programmé → Message : 'Ce compte ne peut pas être supprimé car il a un blocage programmé prévu le {date}. Veuillez d'abord annuler le blocage ou attendre son exécution.'\n- Compte bloqué → Message : 'Ce compte est actuellement bloqué. Veuillez d'abord le débloquer avant de le supprimer.'\n- Compte chèque → Message : 'Les comptes chèque ne peuvent pas être supprimés'\n\n**♻️ RESTAURATION :**\nRestauration possible via POST /v1/comptes/restore/{id}\n\nAuthentification requise (admin uniquement).",
@@ -2046,7 +2046,7 @@
         "/v1/comptes/restore/{id}": {
             "post": {
                 "tags": [
-                    "Archivage Neon"
+                    "Suppression"
                 ],
                 "summary": "Restaurer un compte depuis Neon",
                 "description": "Restaure un compte supprimé en le récupérant depuis Neon vers PostgreSQL. Le compte devient actif et utilisable. Admin uniquement. Authentification requise.",
@@ -2433,8 +2433,8 @@
             "description": "Gestion des clients"
         },
         {
-            "name": "Archivage Neon",
-            "description": "Archivage Neon"
+            "name": "Suppression",
+            "description": "Suppression"
         },
         {
             "name": "Comptes - Blocage/Déblocage",

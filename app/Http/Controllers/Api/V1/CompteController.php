@@ -749,7 +749,7 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
      *     summary="Lister les comptes archivés dans Neon",
      *     description="Récupère les comptes archivés stockés dans Neon (base serverless). Admin voit tous les comptes, Client voit uniquement les siens. Authentification requise via Bearer token.",
      *     operationId="getArchivedComptes",
-     *     tags={"Archivage Neon"},
+     *     tags={"Suppression"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Response(
      *         response=200,
@@ -1160,7 +1160,7 @@ Restauration possible via POST /v1/comptes/restore/{id}
 
 Authentification requise (admin uniquement).",
      *     operationId="deleteCompte",
-     *     tags={"Archivage Neon"},
+     *     tags={"Suppression"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="numeroCompte",
@@ -1293,7 +1293,7 @@ Authentification requise (admin uniquement).",
      *     summary="Restaurer un compte depuis Neon",
      *     description="Restaure un compte supprimé en le récupérant depuis Neon vers PostgreSQL. Le compte devient actif et utilisable. Admin uniquement. Authentification requise.",
      *     operationId="restoreCompte",
-     *     tags={"Archivage Neon"},
+     *     tags={"Suppression"},
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="id",
