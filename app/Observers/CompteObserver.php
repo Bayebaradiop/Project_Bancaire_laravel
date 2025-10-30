@@ -5,7 +5,6 @@ namespace App\Observers;
 use App\Models\Compte;
 use App\Services\CompteArchiveService;
 use App\Services\NumeroCompteService;
-use App\Jobs\SendWelcomeEmailJob;
 use Illuminate\Support\Facades\Log;
 
 class CompteObserver
@@ -82,7 +81,9 @@ class CompteObserver
 
     /**
      * Lors de la création d'un compte, vérifier si il doit être archivé
-     * et envoyer l'email de bienvenue si un nouveau client a été créé
+     * 
+     * Note : L'envoi d'email est géré par le système Event/Listener
+     * via CompteCreated event → SendClientNotification listener
      */
     public function created(Compte $compte)
     {
@@ -104,44 +105,6 @@ class CompteObserver
                     'compte' => $compte->numeroCompte,
                     'error' => $e->getMessage(),
                 ]);
-            }
-        }
-
-        // Envoyer l'email de bienvenue si un nouveau client a été créé
-        $password = session('temp_client_password');
-        $code = session('temp_client_code');
-
-        if ($password && $code) {
-            try {
-                $compte->load('client.user');
-                
-                if ($compte->client && $compte->client->user) {
-                    // Dispatch du job en queue pour envoi non-bloquant
-                    SendWelcomeEmailJob::dispatch(
-                        $compte->client->user->nomComplet,
-                        $compte->client->user->email,
-                        $password,
-                        $code,
-                        $compte->numeroCompte
-                    );
-
-                    Log::info('📧 Email de bienvenue mis en queue', [
-                        'compte' => $compte->numeroCompte,
-                        'email' => $compte->client->user->email,
-                    ]);
-                }
-
-                // Nettoyer la session
-                session()->forget(['temp_client_password', 'temp_client_code']);
-
-            } catch (\Exception $e) {
-                Log::error('❌ Erreur lors de la mise en queue de l\'email de bienvenue', [
-                    'compte' => $compte->numeroCompte,
-                    'error' => $e->getMessage(),
-                ]);
-                
-                // Ne pas bloquer la création du compte même si l'email échoue
-                session()->forget(['temp_client_password', 'temp_client_code']);
             }
         }
     }
