@@ -3,30 +3,26 @@
 namespace App\Listeners;
 
 use App\Events\CompteCreated;
-// TEMPORAIRE: Queue désactivée pour diagnostic - email envoyé directement
-// use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 
-class SendClientNotification // implements ShouldQueue
+class SendClientNotification implements ShouldQueue
 {
     /**
-     * QUEUE DÉSACTIVÉE TEMPORAIREMENT
-     * Email envoyé directement (synchrone) pour diagnostic
-     * 
      * The name of the queue the job should be sent to.
      *
      * @var string|null
      */
-    // public $queue = 'default';
+    public $queue = 'default';
 
     /**
      * The number of times the job may be attempted.
      *
      * @var int
      */
-    // public $tries = 3;
+    public $tries = 3;
 
     /**
      * Handle the event.
@@ -69,7 +65,7 @@ class SendClientNotification // implements ShouldQueue
             // Envoi réel de l'email
             Mail::to($email)->send(new \App\Mail\CompteCreatedMail($compte, $password, $code));
             
-            Log::info("Email envoyé avec succès", [
+            Log::info("✅ Email envoyé avec succès", [
                 'destinataire' => $email,
                 'compte' => $compte->numeroCompte,
             ]);
