@@ -94,7 +94,7 @@
         </div>
         
         <div class="content">
-            <p>Bonjour <strong>{{ $compte->client->user->name ?? $compte->client->titulaire }}</strong>,</p>
+            <p>Bonjour <strong>{{ $compte->client->titulaire }}</strong>,</p>
             
             <p>Nous sommes ravis de vous accueillir chez Faysany Banque. Votre compte bancaire a été créé avec succès.</p>
             
@@ -109,8 +109,11 @@
             
             <div class="credentials">
                 <h2 style="color: #667eea; margin-top: 0;">🔐 Vos identifiants de connexion</h2>
-                <p><strong>Email :</strong> {{ $compte->client->user->email }}</p>
+                <p><strong>Email :</strong> {{ $compte->client->email }}</p>
                 <p><strong>Mot de passe :</strong> <span style="font-family: monospace; background: #f8f9fa; padding: 5px 10px; border-radius: 4px; font-size: 20px;">{{ $password }}</span></p>
+                @if($code)
+                <p><strong>🔑 Code de première connexion :</strong> <span style="font-family: monospace; background: #fff3cd; padding: 8px 15px; border-radius: 4px; font-size: 24px; color: #856404; font-weight: bold; letter-spacing: 2px;">{{ $code }}</span></p>
+                @endif
             </div>
             
             <div class="warning">
@@ -135,7 +138,7 @@
         
         <div class="footer">
             <p>© {{ date('Y') }} Faysany Banque. Tous droits réservés.</p>
-            <p>Cet email a été envoyé à {{ $compte->client->user->email }}</p>
+            <p>Cet email a été envoyé à {{ $compte->client->email }}</p>
             <p style="font-size: 12px; color: #999;">
                 Si vous n'êtes pas à l'origine de cette demande, veuillez contacter immédiatement notre service client.
             </p>
