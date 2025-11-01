@@ -3,30 +3,16 @@
 namespace App\Listeners;
 
 use App\Events\CompteCreated;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 
-class SendClientNotification implements ShouldQueue
+class SendClientNotification
 {
     /**
-     * The name of the queue the job should be sent to.
-     *
-     * @var string|null
-     */
-    public $queue = 'default';
-
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
-    public $tries = 3;
-
-    /**
      * Handle the event.
-     * Les envois SMS et Email sont non-bloquants : si ils échouent, la création continue
+     * Les envois Email sont non-bloquants et envoyés immédiatement (pas de queue)
+     * Si l'envoi échoue, la création du compte continue
      */
     public function handle(CompteCreated $event)
     {
