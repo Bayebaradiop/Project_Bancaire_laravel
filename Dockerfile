@@ -51,7 +51,7 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
 
 # Copier les configurations
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

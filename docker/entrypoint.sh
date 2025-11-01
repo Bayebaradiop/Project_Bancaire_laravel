@@ -63,4 +63,4 @@ mkdir -p /var/log/supervisor
 
 # Démarrer Supervisor qui va gérer PHP-FPM, Nginx ET le queue worker
 echo "Starting Supervisor (PHP-FPM + Nginx + Queue Worker)..."
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
