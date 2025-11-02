@@ -34,6 +34,7 @@ Route::prefix('v1')->group(function () {
         
         return response()->json([
             'success' => true,
+            'email_method' => env('BREVO_API_KEY') ? 'API Brevo' : 'SMTP',
             'mail_config' => [
                 'mailer' => config('mail.default'),
                 'host' => config('mail.mailers.smtp.host'),
@@ -51,8 +52,9 @@ Route::prefix('v1')->group(function () {
                 'MAIL_PASSWORD_SET' => env('MAIL_PASSWORD') ? 'YES' : 'NO',
                 'BREVO_USERNAME' => env('BREVO_USERNAME'),
                 'BREVO_SMTP_KEY_SET' => env('BREVO_SMTP_KEY') ? 'YES' : 'NO',
+                'BREVO_API_KEY_SET' => env('BREVO_API_KEY') ? 'YES' : 'NO',
             ],
-            'issue_detected' => env('MAIL_MAILER') !== 'brevo' ? 'MAIL_MAILER should be "brevo" not "' . env('MAIL_MAILER') . '"' : null,
+            'recommendation' => !env('BREVO_API_KEY') ? 'Add BREVO_API_KEY to use API instead of SMTP (ports blocked on Render)' : 'Using API - SMTP variables no longer needed',
         ]);
     })->middleware('auth:api');
 

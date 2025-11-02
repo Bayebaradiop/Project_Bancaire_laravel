@@ -88,12 +88,12 @@ Client :
  * )
  * 
  * @OA\Server(
- *     url="https://baye-bara-diop-project-bancaire-laravel.onrender.com/api",
+ *     url="https://baye-bara-diop-project-bancaire-laravel.onrender.com/api/v1",
  *     description="Production Render + MongoDB Atlas + PostgreSQL Neon"
  * )
  * 
  * @OA\Server(
- *     url="http://localhost:8000/api",
+ *     url="http://localhost:8000/api/v1",
  *     description="Développement local"
  * )
  * 

@@ -23,10 +23,11 @@ class AuthService
      *
      * @param string $email
      * @param string $password
+     * @param string|null $code Code de sécurité (requis pour première connexion client)
      * @return array
      * @throws \Exception
      */
-    public function login(string $email, string $password): array
+    public function login(string $email, string $password, ?string $code = null): array
     {
         // 1. Vérifier les credentials
         $user = User::where('email', $email)->first();
@@ -35,17 +36,33 @@ class AuthService
             throw new \Exception('Email ou mot de passe incorrect', 401);
         }
 
-        // 2. Générer les tokens JWT
+        // 2. Vérifier le code pour les clients lors de la première connexion
+        if ($user->role === 'client' && $user->code !== null) {
+            // Le client a un code = première connexion
+            if (!$code) {
+                throw new \Exception('Le code de sécurité est requis pour la première connexion', 403);
+            }
+
+            if ($code !== $user->code) {
+                throw new \Exception('Code de sécurité invalide', 401);
+            }
+
+            // Supprimer le code après la première connexion réussie
+            $user->code = null;
+            $user->save();
+        }
+
+        // 3. Générer les tokens JWT
         $accessToken = JWTAuth::fromUser($user);
         
         // Générer un refresh token (simple UUID pour l'exemple)
         $refreshToken = Str::uuid()->toString();
 
-        // 3. Créer les cookies HttpOnly
+        // 4. Créer les cookies HttpOnly
         $accessCookie = $this->cookieManager->createAccessTokenCookie($accessToken);
         $refreshCookie = $this->cookieManager->createRefreshTokenCookie($refreshToken);
 
-        // 4. Retourner la réponse avec les cookies
+        // 5. Retourner la réponse avec les cookies
         return [
             'success' => true,
             'message' => 'Connexion réussie',

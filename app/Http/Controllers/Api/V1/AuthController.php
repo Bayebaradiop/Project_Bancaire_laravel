@@ -52,7 +52,8 @@ class AuthController extends Controller
      *         @OA\JsonContent(
      *             required={"email","password"},
      *             @OA\Property(property="email", type="string", format="email", example="admin@banque.sn", description="Email de l'utilisateur"),
-     *             @OA\Property(property="password", type="string", format="password", example="Admin@2025", description="Mot de passe de l'utilisateur")
+     *             @OA\Property(property="password", type="string", format="password", example="Admin@2025", description="Mot de passe de l'utilisateur"),
+     *             @OA\Property(property="code", type="string", example="123456", description="Code de sécurité (requis uniquement pour la première connexion d'un client)")
      *         )
      *     ),
      *     @OA\Response(
@@ -85,6 +86,14 @@ class AuthController extends Controller
      *         )
      *     ),
      *     @OA\Response(
+     *         response=403,
+     *         description="Code de sécurité requis (première connexion client)",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Le code de sécurité est requis pour la première connexion")
+     *         )
+     *     ),
+     *     @OA\Response(
      *         response=422,
      *         description="Erreur de validation",
      *         @OA\JsonContent(
@@ -105,7 +114,8 @@ class AuthController extends Controller
         try {
             $result = $this->authService->login(
                 $request->input('email'),
-                $request->input('password')
+                $request->input('password'),
+                $request->input('code') // Code de sécurité pour première connexion
             );
 
                         return response()->json([

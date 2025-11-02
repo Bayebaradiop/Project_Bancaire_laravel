@@ -705,6 +705,18 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
                 'client_id' => $client->id,
             ]);
 
+            // 4. Créer une transaction de dépôt initial de 50000 FCFA
+            $transactionInitiale = \App\Models\Transaction::create([
+                'numeroCompte' => $compte->numeroCompte,
+                'type' => 'depot',
+                'montant' => new \MongoDB\BSON\Decimal128('50000'),
+                'frais' => new \MongoDB\BSON\Decimal128('0'),
+                'devise' => $request->devise,
+                'statut' => 'complete',
+                'description' => 'Dépôt initial à l\'ouverture du compte',
+                'initiateur_id' => auth()->id(),
+            ]);
+
             // Charger les relations
             $compte->load(['client.user', 'transactions']);
 
@@ -740,11 +752,13 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->serverError(
-                config('app.debug') 
-                    ? 'Une erreur est survenue : ' . $e->getMessage() 
-                    : 'Une erreur est survenue lors de la création du compte'
-            );
+            \Log::error('Erreur création compte', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->serverError('Une erreur est survenue : ' . $e->getMessage());
         }
     }
 

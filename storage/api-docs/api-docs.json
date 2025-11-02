@@ -15,11 +15,11 @@
     },
     "servers": [
         {
-            "url": "https://baye-bara-diop-project-bancaire-laravel.onrender.com/api",
+            "url": "https://baye-bara-diop-project-bancaire-laravel.onrender.com/api/v1",
             "description": "Production Render + MongoDB Atlas + PostgreSQL Neon"
         },
         {
-            "url": "http://localhost:8000/api",
+            "url": "http://localhost:8000/api/v1",
             "description": "Développement local"
         }
     ],
@@ -54,6 +54,11 @@
                                         "type": "string",
                                         "format": "password",
                                         "example": "Admin@2025"
+                                    },
+                                    "code": {
+                                        "description": "Code de sécurité (requis uniquement pour la première connexion d'un client)",
+                                        "type": "string",
+                                        "example": "123456"
                                     }
                                 },
                                 "type": "object"
@@ -126,6 +131,26 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Email ou mot de passe incorrect"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Code de sécurité requis (première connexion client)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le code de sécurité est requis pour la première connexion"
                                         }
                                     },
                                     "type": "object"
