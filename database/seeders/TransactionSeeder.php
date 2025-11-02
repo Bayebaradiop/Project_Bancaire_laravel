@@ -29,6 +29,11 @@ class TransactionSeeder extends Seeder
             $this->createTransactionsForCompte($compte);
         }
 
+        // Créer quelques transferts entre comptes
+        if ($comptes->count() >= 2) {
+            $this->createTransfertsEntreComptes($comptes);
+        }
+
         $totalTransactions = Transaction::count();
         $this->command->info("✅ $totalTransactions transactions générées avec succès !");
     }
@@ -95,12 +100,11 @@ class TransactionSeeder extends Seeder
             
             $montant = rand(10000, 500000);
             $frais = max(100, min(5000, $montant * 0.005)); // 0.5%, min 100, max 5000
-            $numeroTransaction = 'TRF' . strtoupper(Str::random(10));
             $daysAgo = rand(1, 90);
             
-            // Transaction de débit (source)
+            // Transaction de débit (source) - numéro unique
             $this->createTransaction([
-                'numeroTransaction' => $numeroTransaction,
+                'numeroTransaction' => 'TRF' . strtoupper(Str::random(10)),
                 'compte_id' => $compteSource->id,
                 'compte_source_id' => $compteSource->id,
                 'compte_destinataire_id' => $compteDestination->id,
@@ -112,9 +116,9 @@ class TransactionSeeder extends Seeder
                 'created_at' => Carbon::now()->subDays($daysAgo),
             ]);
             
-            // Transaction de crédit (destination)
+            // Transaction de crédit (destination) - numéro unique différent
             $this->createTransaction([
-                'numeroTransaction' => $numeroTransaction,
+                'numeroTransaction' => 'TRF' . strtoupper(Str::random(10)),
                 'compte_id' => $compteDestination->id,
                 'compte_source_id' => $compteSource->id,
                 'compte_destinataire_id' => $compteDestination->id,
