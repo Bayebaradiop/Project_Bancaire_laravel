@@ -165,24 +165,74 @@ class Compte extends Model
     }
 
     /**
+     * Relation avec les transactions où ce compte est la source.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function transactionsSource()
+    {
+        return $this->hasMany(Transaction::class, 'compte_source_id');
+    }
+
+    /**
+     * Relation avec les transactions où ce compte est la destination.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function transactionsDestination()
+    {
+        return $this->hasMany(Transaction::class, 'compte_destinataire_id');
+    }
+
+    /**
      * Accesseur pour calculer le solde du compte.
-     * Solde = Somme des dépôts - Somme des retraits
+     * Solde = Dépôts - Retraits - Transferts sortants + Transferts entrants
      *
      * @return float
      */
     public function getSoldeAttribute(): float
     {
+        return $this->getSolde();
+    }
+
+    /**
+     * Calculer le solde du compte.
+     *
+     * @return float
+     */
+    public function getSolde(): float
+    {
+        // Dépôts
         $depots = $this->transactions()
             ->where('type', 'depot')
             ->where('statut', 'validee')
             ->sum('montant');
 
+        // Retraits
         $retraits = $this->transactions()
             ->where('type', 'retrait')
             ->where('statut', 'validee')
             ->sum('montant');
 
-        return (float) ($depots - $retraits);
+        // Transferts sortants (compte_source = ce compte)
+        $transfertsSortants = $this->transactionsSource()
+            ->where('type', 'transfert')
+            ->where('statut', 'validee')
+            ->sum('montant');
+
+        // Frais sur transferts sortants
+        $fraisTransferts = $this->transactionsSource()
+            ->where('type', 'transfert')
+            ->where('statut', 'validee')
+            ->sum('frais');
+
+        // Transferts entrants (compte_destinataire = ce compte)
+        $transfertsEntrants = $this->transactionsDestination()
+            ->where('type', 'transfert')
+            ->where('statut', 'validee')
+            ->sum('montant');
+
+        return (float) ($depots + $transfertsEntrants - $retraits - $transfertsSortants - $fraisTransferts);
     }
 
     /**

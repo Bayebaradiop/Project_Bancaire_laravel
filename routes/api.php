@@ -78,5 +78,31 @@ Route::prefix('v1')->group(function () {
         Route::delete('/{numeroCompte}', [CompteController::class, 'destroy'])->name('comptes.destroy');
         Route::post('/restore/{id}', [CompteController::class, 'restore'])->name('comptes.restore');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Routes Transactions Protégées (auth:api)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('transactions')->middleware('auth:api')->group(function () {
+        // Liste des transactions (Admin: toutes, Client: ses transactions uniquement)
+        Route::get('/', [App\Http\Controllers\TransactionController::class, 'index'])->name('transactions.index');
+        
+        // Effectuer un dépôt (Admin uniquement)
+        Route::post('/depot', [App\Http\Controllers\TransactionController::class, 'depot'])->name('transactions.depot');
+        
+        // Effectuer un retrait (Admin et Client propriétaire du compte)
+        Route::post('/retrait', [App\Http\Controllers\TransactionController::class, 'retrait'])->name('transactions.retrait');
+        
+        // Effectuer un transfert (Admin et Client propriétaire du compte source)
+        Route::post('/transfert', [App\Http\Controllers\TransactionController::class, 'transfert'])->name('transactions.transfert');
+        
+        // Afficher une transaction spécifique
+        Route::get('/{id}', [App\Http\Controllers\TransactionController::class, 'show'])->name('transactions.show')
+            ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+        
+        // Annuler une transaction (moins de 24h)
+        Route::delete('/{numeroTransaction}', [App\Http\Controllers\TransactionController::class, 'annuler'])->name('transactions.annuler');
+    });
 });
 
