@@ -18,6 +18,7 @@ class CompteResource extends JsonResource
             'id' => $this->id,
             'numeroCompte' => $this->numeroCompte,
             'titulaire' => $this->client->user->nomComplet ?? null,
+            'telephone' => $this->client->telephone ?? $this->client->user->telephone ?? null,
             'type' => $this->type,
             'solde' => $this->solde,
             'devise' => $this->devise,

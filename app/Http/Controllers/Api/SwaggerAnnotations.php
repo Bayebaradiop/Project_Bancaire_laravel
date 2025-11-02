@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 /**
  * @OA\Info(
- *     version="2.0.0",
+ *     version="2.1.0",
  *     title="API Bancaire Faysany - Architecture Hybride MongoDB Atlas + PostgreSQL Neon",
  *     description="Documentation complète de l'API RESTful de gestion bancaire avec architecture microservices distribuée.
 
@@ -32,6 +32,23 @@ namespace App\Http\Controllers\Api;
   * Extensions : MongoDB 1.20.1, PostgreSQL PDO
   * Queue Worker pour jobs asynchrones
 
+**📧 SYSTÈME EMAIL (Brevo API) :**
+- ✅ **Brevo API** pour contourner le blocage des ports SMTP (587/465) sur Render
+- ✅ Email automatique de bienvenue lors de la création de compte
+- ✅ Contenu : Numéro de compte, mot de passe auto-généré, code de sécurité
+- ✅ Emails envoyés de manière asynchrone (non-bloquant)
+
+**🔐 SÉCURITÉ PREMIÈRE CONNEXION CLIENT :**
+- ✅ Code de sécurité à 6 chiffres requis pour la 1ère connexion client
+- ✅ Le code est envoyé par email avec le mot de passe
+- ✅ Le code est supprimé automatiquement après la 1ère connexion réussie
+- ⚠️ Erreur 403 si le code est manquant ou invalide
+
+**💰 INITIALISATION DES COMPTES :**
+- ✅ Dépôt initial automatique de 50000 FCFA à la création du compte
+- ✅ Transaction MongoDB créée avec type 'depot' et statut 'complete'
+- ✅ Le solde est immédiatement disponible
+
 **Calculs cross-database (PostgreSQL ↔ MongoDB) :**
 - Les soldes sont calculés en temps réel depuis MongoDB Atlas
 - Conversion automatique MongoDB Decimal128 → PHP Float
@@ -41,8 +58,9 @@ namespace App\Http\Controllers\Api;
 **COMMENT UTILISER L'AUTHENTIFICATION DANS SWAGGER UI :**
 
 **Étape 1 : Se connecter**
-- Allez à l'endpoint POST /v1/auth/login
-- Utilisez les identifiants de test (voir ci-dessous)
+- Allez à l'endpoint POST /auth/login
+- **Pour un client (1ère connexion)** : email + password + **code de sécurité**
+- **Pour un admin** : email + password uniquement
 - Cliquez sur 'Execute'
 - Copiez le access_token de la réponse
 

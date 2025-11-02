@@ -735,6 +735,7 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
                 'id' => $compte->id,
                 'numeroCompte' => $compte->numeroCompte,
                 'titulaire' => $compte->client->user->nomComplet ?? 'N/A',
+                'telephone' => $compte->client->telephone ?? $compte->client->user->telephone ?? 'N/A',
                 'type' => $compte->type,
                 'solde' => $compte->solde,
                 'devise' => $compte->devise,
