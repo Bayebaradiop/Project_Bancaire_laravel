@@ -1,26 +1,26 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "API Bancaire - Documentation Complète",
-        "description": "Documentation de l'API RESTful de gestion bancaire.\n\n**COMMENT UTILISER L'AUTHENTIFICATION DANS SWAGGER UI :**\n\n**Étape 1 : Se connecter**\n- Allez à l'endpoint POST /v1/auth/login\n- Utilisez les identifiants de test (voir ci-dessous)\n- Cliquez sur 'Execute'\n- Copiez le access_token de la réponse\n\n**Étape 2 : Autoriser Swagger UI**\n- Cliquez sur le bouton 'Authorize' 🔒 (en haut à droite de la page)\n- Collez votre token dans le champ 'Value'\n- Cliquez sur 'Authorize' puis 'Close'\n\n**Étape 3 : Tester les endpoints protégés**\n- Maintenant tous vos appels incluront automatiquement le Bearer token\n- Le cadenas 🔒 à côté de chaque endpoint sera verrouillé\n\n**IDENTIFIANTS DE TEST (créés par le seeder) :**\n\nAdmin :\n- Email : admin@banque.sn\n- Password : Admin@2025\n- Accès : Tous les comptes et opérations\n\nClient :\n- Email : client@banque.sn\n- Password : Client@2025\n- Accès : Uniquement ses propres comptes\n\n**NOTE TECHNIQUE :**\n- Les clients web utilisent un cookie HttpOnly sécurisé (invisible pour Swagger UI)\n- Pour Swagger UI, utilisez le bouton 'Authorize' avec le Bearer Token JWT\n- Pour automatiser vos tests : Postman, Insomnia ou cURL",
+        "title": "API Bancaire Faysany - Architecture Hybride MongoDB Atlas + PostgreSQL",
+        "description": "Documentation complète de l'API RESTful de gestion bancaire avec architecture microservices.\n\n**🏗️ ARCHITECTURE TECHNIQUE :**\n\n**Base de données hybride :**\n- 🐘 **PostgreSQL Neon** : Users, Clients, Comptes (relationnelles)\n- 🍃 **MongoDB Atlas** : Transactions (scalabilité + performances)\n- 🚀 **Render Hosting** : Docker + PHP 8.3 + Nginx + Supervisor\n\n**Calculs cross-database :**\n- Les soldes sont calculés en temps réel depuis MongoDB\n- Conversion automatique Decimal128 → Float\n- Validation des retraits/transferts avec solde MongoDB\n\n**COMMENT UTILISER L'AUTHENTIFICATION DANS SWAGGER UI :**\n\n**Étape 1 : Se connecter**\n- Allez à l'endpoint POST /v1/auth/login\n- Utilisez les identifiants de test (voir ci-dessous)\n- Cliquez sur 'Execute'\n- Copiez le access_token de la réponse\n\n**Étape 2 : Autoriser Swagger UI**\n- Cliquez sur le bouton 'Authorize' 🔒 (en haut à droite de la page)\n- Collez votre token dans le champ 'Value'\n- Cliquez sur 'Authorize' puis 'Close'\n\n**Étape 3 : Tester les endpoints protégés**\n- Maintenant tous vos appels incluront automatiquement le Bearer token\n- Le cadenas 🔒 à côté de chaque endpoint sera verrouillé\n\n**IDENTIFIANTS DE TEST (créés par le seeder) :**\n\nAdmin :\n- Email : admin@banque.sn\n- Password : Admin@2025\n- Accès : Tous les comptes et opérations\n\nClient :\n- Email : client@banque.sn\n- Password : Client@2025\n- Accès : Uniquement ses propres comptes\n\n**📊 DONNÉES DE TEST :**\n- 10 comptes actifs dans PostgreSQL\n- 269+ transactions dans MongoDB Atlas\n- Soldes calculés en temps réel depuis MongoDB\n\n**NOTE TECHNIQUE :**\n- Les clients web utilisent un cookie HttpOnly sécurisé\n- Pour Swagger UI, utilisez le bouton 'Authorize' avec le Bearer Token JWT\n- Pour automatiser vos tests : Postman, Insomnia ou cURL\n- Les transactions retournent l'ID MongoDB (_id) au format ObjectId",
         "contact": {
-            "name": "Support API Bancaire",
-            "email": "support@banque.sn"
+            "name": "Support Faysany Banque",
+            "email": "bayebara2000@gmail.com"
         },
         "license": {
             "name": "MIT",
             "url": "https://opensource.org/licenses/MIT"
         },
-        "version": "1.0.0"
+        "version": "2.0.0"
     },
     "servers": [
         {
             "url": "https://baye-bara-diop-project-bancaire-laravel.onrender.com/api",
-            "description": "Serveur de production Render"
+            "description": "Production Render + MongoDB Atlas + PostgreSQL Neon"
         },
         {
             "url": "http://localhost:8000/api",
-            "description": "Serveur de développement local"
+            "description": "Développement local"
         }
     ],
     "paths": {
@@ -2401,6 +2401,663 @@
                     }
                 ]
             }
+        },
+        "/transactions": {
+            "get": {
+                "tags": [
+                    "Transactions MongoDB"
+                ],
+                "summary": "Lister les transactions depuis MongoDB Atlas",
+                "description": "Récupère la liste des transactions stockées dans MongoDB Atlas avec pagination et filtres. Les clients ne voient que leurs transactions, les admins voient tout.",
+                "operationId": "getTransactions",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre de transactions par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filtrer par type de transaction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "depot",
+                                "retrait",
+                                "transfert"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "description": "Filtrer par statut",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "validee",
+                                "en_attente",
+                                "annulee"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "date_debut",
+                        "in": "query",
+                        "description": "Date de début (format: Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-11-01"
+                        }
+                    },
+                    {
+                        "name": "date_fin",
+                        "in": "query",
+                        "description": "Date de fin (format: Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-11-30"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des transactions MongoDB récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste des transactions récupérée avec succès"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "_id": {
+                                                        "description": "ID MongoDB",
+                                                        "type": "string",
+                                                        "example": "690768971a41d958a1079d62"
+                                                    },
+                                                    "numeroTransaction": {
+                                                        "type": "string",
+                                                        "example": "TR202511021331342CVZ"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "example": "depot"
+                                                    },
+                                                    "montant": {
+                                                        "type": "number",
+                                                        "example": 50000
+                                                    },
+                                                    "devise": {
+                                                        "type": "string",
+                                                        "example": "FCFA"
+                                                    },
+                                                    "statut": {
+                                                        "type": "string",
+                                                        "example": "validee"
+                                                    },
+                                                    "compte_source_id": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "compte_destinataire_id": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 274
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "500": {
+                        "description": "Erreur serveur"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/transactions/depot": {
+            "post": {
+                "tags": [
+                    "Transactions MongoDB"
+                ],
+                "summary": "Effectuer un dépôt dans MongoDB Atlas",
+                "description": "Crée une transaction de dépôt stockée dans MongoDB Atlas. Réservé aux administrateurs uniquement.",
+                "operationId": "createDepot",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "compte_destinataire",
+                                    "montant"
+                                ],
+                                "properties": {
+                                    "compte_destinataire": {
+                                        "description": "Numéro du compte destinataire",
+                                        "type": "string",
+                                        "example": "CP7865908264"
+                                    },
+                                    "montant": {
+                                        "description": "Montant du dépôt en FCFA",
+                                        "type": "number",
+                                        "example": 200000
+                                    },
+                                    "devise": {
+                                        "type": "string",
+                                        "default": "FCFA",
+                                        "example": "FCFA"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Dépôt d'espèces",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Dépôt effectué avec succès dans MongoDB",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Dépôt effectué avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "_id": {
+                                                    "type": "string",
+                                                    "example": "690768971a41d958a1079d62"
+                                                },
+                                                "numeroTransaction": {
+                                                    "type": "string",
+                                                    "example": "TR202511021416354Y1U"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "depot"
+                                                },
+                                                "montant": {
+                                                    "type": "number",
+                                                    "example": 200000
+                                                },
+                                                "compte_destinataire_id": {
+                                                    "type": "string",
+                                                    "example": "a042d544-af20-4981-85d7-7b49fd7dcf4d"
+                                                },
+                                                "statut": {
+                                                    "type": "string",
+                                                    "example": "validee"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Erreur de validation ou compte bloqué"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Réservé aux administrateurs"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/transactions/retrait": {
+            "post": {
+                "tags": [
+                    "Transactions MongoDB"
+                ],
+                "summary": "Effectuer un retrait avec calcul de solde cross-database",
+                "description": "Crée une transaction de retrait dans MongoDB Atlas. Le solde est calculé en temps réel depuis MongoDB avant validation.",
+                "operationId": "createRetrait",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "compte_source",
+                                    "montant"
+                                ],
+                                "properties": {
+                                    "compte_source": {
+                                        "description": "Numéro du compte source",
+                                        "type": "string",
+                                        "example": "CP7865908264"
+                                    },
+                                    "montant": {
+                                        "description": "Montant du retrait en FCFA",
+                                        "type": "number",
+                                        "example": 95000
+                                    },
+                                    "devise": {
+                                        "type": "string",
+                                        "default": "FCFA",
+                                        "example": "FCFA"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Retrait d'espèces",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Retrait effectué avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Retrait effectué avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "_id": {
+                                                    "type": "string",
+                                                    "example": "690768971a41d958a1079d63"
+                                                },
+                                                "numeroTransaction": {
+                                                    "type": "string",
+                                                    "example": "TR20251102141703BVNU"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "retrait"
+                                                },
+                                                "montant": {
+                                                    "type": "number",
+                                                    "example": 95000
+                                                },
+                                                "compte_source_id": {
+                                                    "type": "string",
+                                                    "example": "a042d544-af20-4981-85d7-7b49fd7dcf4d"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Solde insuffisant ou compte bloqué"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/transactions/transfert": {
+            "post": {
+                "tags": [
+                    "Transactions MongoDB"
+                ],
+                "summary": "Effectuer un transfert avec calcul automatique des frais",
+                "description": "Crée une transaction de transfert dans MongoDB Atlas avec calcul automatique des frais (0.5% du montant). Crée 2 transactions liées.",
+                "operationId": "createTransfert",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "compte_source",
+                                    "compte_destinataire",
+                                    "montant"
+                                ],
+                                "properties": {
+                                    "compte_source": {
+                                        "description": "Numéro du compte source",
+                                        "type": "string",
+                                        "example": "CP7865908264"
+                                    },
+                                    "compte_destinataire": {
+                                        "description": "Numéro du compte destinataire",
+                                        "type": "string",
+                                        "example": "CP9518897764"
+                                    },
+                                    "montant": {
+                                        "description": "Montant du transfert en FCFA",
+                                        "type": "number",
+                                        "example": 125000
+                                    },
+                                    "devise": {
+                                        "type": "string",
+                                        "default": "FCFA",
+                                        "example": "FCFA"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Transfert entre comptes",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Transfert effectué avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Transfert effectué avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "_id": {
+                                                    "type": "string",
+                                                    "example": "690768971a41d958a1079d64"
+                                                },
+                                                "numeroTransaction": {
+                                                    "type": "string",
+                                                    "example": "TR20251102141937DCPS"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "transfert"
+                                                },
+                                                "montant": {
+                                                    "type": "number",
+                                                    "example": 125000
+                                                },
+                                                "frais": {
+                                                    "description": "Frais calculés automatiquement (0.5%)",
+                                                    "type": "number",
+                                                    "example": 625
+                                                },
+                                                "compte_source_id": {
+                                                    "type": "string"
+                                                },
+                                                "compte_destinataire_id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Solde insuffisant, compte bloqué ou comptes identiques"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/transactions/{id}": {
+            "get": {
+                "tags": [
+                    "Transactions MongoDB"
+                ],
+                "summary": "Afficher une transaction MongoDB par ID",
+                "description": "Récupère les détails d'une transaction stockée dans MongoDB Atlas par son ID (_id MongoDB).",
+                "operationId": "getTransaction",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID MongoDB de la transaction (_id ou numeroTransaction)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "690768971a41d958a1079d62"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails de la transaction MongoDB",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Transaction récupérée avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "_id": {
+                                                    "type": "string",
+                                                    "example": "690768971a41d958a1079d62"
+                                                },
+                                                "numeroTransaction": {
+                                                    "type": "string",
+                                                    "example": "TR202511021331342CVZ"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "depot"
+                                                },
+                                                "montant": {
+                                                    "type": "number",
+                                                    "example": 50000
+                                                },
+                                                "statut": {
+                                                    "type": "string",
+                                                    "example": "validee"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction non trouvée dans MongoDB"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès interdit"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/transactions/{numeroTransaction}": {
+            "delete": {
+                "tags": [
+                    "Transactions MongoDB"
+                ],
+                "summary": "Annuler une transaction MongoDB",
+                "description": "Annule une transaction stockée dans MongoDB Atlas et effectue les opérations inverses sur les comptes PostgreSQL.",
+                "operationId": "deleteTransaction",
+                "parameters": [
+                    {
+                        "name": "numeroTransaction",
+                        "in": "path",
+                        "description": "Numéro de la transaction à annuler",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "TR20251102141937DCPS"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction annulée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Transaction annulée avec succès"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "statut": {
+                                                    "type": "string",
+                                                    "example": "annulee"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Transaction déjà annulée ou non annulable"
+                    },
+                    "404": {
+                        "description": "Transaction non trouvée dans MongoDB"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès interdit"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -2425,12 +3082,16 @@
             "description": "Endpoints pour l'authentification des utilisateurs (Admin/Client). Utilise JWT avec cookies HttpOnly pour une sécurité renforcée."
         },
         {
-            "name": "Comptes",
-            "description": "Gestion complète des comptes bancaires : création de nouveaux comptes, consultation, listing avec filtres et pagination, archivage dans le cloud."
+            "name": "Transactions MongoDB",
+            "description": "🍃 Gestion des transactions stockées dans MongoDB Atlas - Dépôts, Retraits, Transferts avec calcul automatique des frais (0.5%). Total: 274+ transactions."
         },
         {
             "name": "Clients",
             "description": "Gestion des clients"
+        },
+        {
+            "name": "Comptes",
+            "description": "Comptes"
         },
         {
             "name": "Suppression",
