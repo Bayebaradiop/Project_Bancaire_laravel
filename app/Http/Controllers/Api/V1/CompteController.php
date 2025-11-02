@@ -713,6 +713,11 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
 
             DB::commit();
 
+            // Dispatcher l'événement pour l'envoi d'email si c'est un nouveau client
+            if ($password && $code) {
+                event(new \App\Events\CompteCreated($compte, $password, $code));
+            }
+
             // Utiliser le trait pour formater la réponse
             return $this->created([
                 'id' => $compte->id,
