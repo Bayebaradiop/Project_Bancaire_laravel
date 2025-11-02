@@ -32,8 +32,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     gd \
     zip
 
-# Installer l'extension MongoDB via PECL
-RUN pecl install mongodb \
+# Installer l'extension MongoDB via PECL (version 1.20.1 compatible avec laravel-mongodb 4.8.1)
+RUN pecl install mongodb-1.20.1 \
     && docker-php-ext-enable mongodb
 
 # Installer Composer
