@@ -71,8 +71,8 @@ return [
             'host' => env('MAIL_HOST', 'smtp-relay.brevo.com'),
             'port' => env('MAIL_PORT', 587),
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-            'username' => env('BREVO_USERNAME'),
-            'password' => env('BREVO_SMTP_KEY'),
+            'username' => env('MAIL_USERNAME', env('BREVO_USERNAME')),
+            'password' => env('MAIL_PASSWORD', env('BREVO_SMTP_KEY')),
             'timeout' => null,
         ],
 

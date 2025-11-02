@@ -23,6 +23,9 @@ Route::prefix('v1')->group(function () {
     // Health check endpoint (public)
     Route::get('/health', [HealthController::class, 'check']);
     
+    // Test email endpoint (admin only)
+    Route::post('/test/email', [\App\Http\Controllers\TestEmailController::class, 'testEmail'])->middleware('auth:api');
+    
     // Email diagnostic endpoint (admin only)
     Route::get('/diagnostic/email', function () {
         if (!auth()->check() || auth()->user()->role !== 'admin') {

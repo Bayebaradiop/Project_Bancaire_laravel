@@ -16,19 +16,36 @@ class SendClientNotification
      */
     public function handle(CompteCreated $event)
     {
-        $compte = $event->compte;
-        $client = $compte->client;
-        $password = $event->password;
-        $code = $event->code;
+        try {
+            $compte = $event->compte;
+            $client = $compte->client;
+            $password = $event->password;
+            $code = $event->code;
 
-        // Envoi de l'email avec le mot de passe (NON BLOQUANT)
-        if ($password) {
-            $this->envoyerEmail($client, $compte, $password, $code);
+            Log::info("🔔 Événement CompteCreated reçu", [
+                'compte' => $compte->numeroCompte,
+                'client_email' => $client->email ?? 'N/A',
+                'has_password' => !empty($password),
+                'has_code' => !empty($code),
+            ]);
+
+            // Envoi de l'email avec le mot de passe (NON BLOQUANT)
+            if ($password) {
+                $this->envoyerEmail($client, $compte, $password, $code);
+            } else {
+                Log::warning("⚠️ Pas de mot de passe fourni, email non envoyé", [
+                    'compte' => $compte->numeroCompte,
+                ]);
+            }
+
+            Log::info("✅ Notification terminée pour le compte #{$compte->numeroCompte}");
+            
+        } catch (\Exception $e) {
+            Log::error("❌ Erreur dans handle() SendClientNotification", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
-
-        // L'envoi du SMS Twilio a été supprimé
-
-        Log::info("Notification email envoyée pour le compte #{$compte->numeroCompte}");
     }
 
     /**
