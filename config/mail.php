@@ -56,6 +56,26 @@ return [
             'timeout' => null,
         ],
 
+        'mailjet' => [
+            'transport' => 'smtp',
+            'host' => env('MAIL_HOST', 'in-v3.mailjet.com'),
+            'port' => env('MAIL_PORT', 587),
+            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+            'username' => env('MAILJET_APIKEY'),
+            'password' => env('MAILJET_APISECRET'),
+            'timeout' => null,
+        ],
+
+        'brevo' => [
+            'transport' => 'smtp',
+            'host' => env('MAIL_HOST', 'smtp-relay.brevo.com'),
+            'port' => env('MAIL_PORT', 587),
+            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+            'username' => env('BREVO_USERNAME'),
+            'password' => env('BREVO_SMTP_KEY'),
+            'timeout' => null,
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],
