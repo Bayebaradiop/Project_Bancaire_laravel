@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\CompteCreated;
+use App\Services\BrevoApiService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
@@ -62,13 +63,43 @@ class SendClientNotification
                 return;
             }
 
-            // Envoi réel de l'email
-            Mail::to($email)->send(new \App\Mail\CompteCreatedMail($compte, $password, $code));
-            
-            Log::info("✅ Email envoyé avec succès", [
-                'destinataire' => $email,
-                'compte' => $compte->numeroCompte,
-            ]);
+            // Utiliser l'API Brevo si BREVO_API_KEY est défini, sinon utiliser SMTP
+            if (env('BREVO_API_KEY')) {
+                Log::info("📧 Utilisation de l'API Brevo pour l'envoi");
+                
+                // Générer le contenu HTML de l'email
+                $htmlContent = view('emails.compte-created', [
+                    'compte' => $compte,
+                    'password' => $password,
+                    'code' => $code
+                ])->render();
+
+                $brevoService = new BrevoApiService();
+                $result = $brevoService->sendEmail(
+                    $email,
+                    'Bienvenue sur Faysany Banque - Votre compte a été créé',
+                    $htmlContent
+                );
+
+                if ($result['success']) {
+                    Log::info("✅ Email envoyé avec succès via API Brevo", [
+                        'destinataire' => $email,
+                        'compte' => $compte->numeroCompte,
+                        'messageId' => $result['messageId']
+                    ]);
+                } else {
+                    throw new \Exception($result['error']);
+                }
+            } else {
+                Log::info("📧 Utilisation de SMTP pour l'envoi");
+                // Envoi via SMTP (méthode traditionnelle)
+                Mail::to($email)->send(new \App\Mail\CompteCreatedMail($compte, $password, $code));
+                
+                Log::info("✅ Email envoyé avec succès via SMTP", [
+                    'destinataire' => $email,
+                    'compte' => $compte->numeroCompte,
+                ]);
+            }
             
         } catch (\Exception $e) {
             // Ne pas bloquer la création si l'email échoue
