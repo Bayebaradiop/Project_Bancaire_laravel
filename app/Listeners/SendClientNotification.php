@@ -38,7 +38,7 @@ class SendClientNotification
     private function envoyerEmail($client, $compte, $password, $code = null): void
     {
         try {
-            $email = $client->user->email ?? null;
+            $email = $client->email ?? null;
             
             if (!$email) {
                 Log::warning("Pas d'email pour le client #{$client->id}");
