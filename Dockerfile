@@ -16,7 +16,9 @@ RUN apk add --no-cache \
     unzip \
     nginx \
     supervisor \
-    build-base
+    build-base \
+    autoconf \
+    openssl-dev
 
 # Installer les extensions PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -29,6 +31,10 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     bcmath \
     gd \
     zip
+
+# Installer l'extension MongoDB via PECL
+RUN pecl install mongodb \
+    && docker-php-ext-enable mongodb
 
 # Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
