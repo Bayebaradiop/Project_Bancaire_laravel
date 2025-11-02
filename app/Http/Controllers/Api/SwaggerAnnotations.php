@@ -5,20 +5,38 @@ namespace App\Http\Controllers\Api;
 /**
  * @OA\Info(
  *     version="2.0.0",
- *     title="API Bancaire Faysany - Architecture Hybride MongoDB Atlas + PostgreSQL",
- *     description="Documentation complète de l'API RESTful de gestion bancaire avec architecture microservices.
+ *     title="API Bancaire Faysany - Architecture Hybride MongoDB Atlas + PostgreSQL Neon",
+ *     description="Documentation complète de l'API RESTful de gestion bancaire avec architecture microservices distribuée.
 
 **🏗️ ARCHITECTURE TECHNIQUE :**
 
-**Base de données hybride :**
-- 🐘 **PostgreSQL Neon** : Users, Clients, Comptes (relationnelles)
-- 🍃 **MongoDB Atlas** : Transactions (scalabilité + performances)
-- 🚀 **Render Hosting** : Docker + PHP 8.3 + Nginx + Supervisor
+**Base de données hybride distribuée :**
+- 🐘 **PostgreSQL Neon (Production)** : Users, Clients, Comptes bancaires (données relationnelles)
+  * Serveur : dpg-d3t5riu3jp1c738hsgrg-a.oregon-postgres.render.com
+  * Base : db_ati7
+  * Features : Serverless, Auto-scaling, Point-in-time recovery
+  
+- 🍃 **MongoDB Atlas (Cloud)** : Transactions financières (scalabilité + performances)
+  * Cluster : Cluster0 (M0 Free tier)
+  * Région : eu-south-2 (Spain)
+  * Base : transactions_db
+  * Features : Sharding ready, Time-series optimization
+  
+- ☁️ **Neon Archive (Cloud)** : Comptes archivés (fermés/bloqués)
+  * Serveur : ep-crimson-river-afrihxt0-pooler.c-2.us-west-2.aws.neon.tech
+  * Base : neondb
+  * Purpose : Long-term storage des comptes inactifs
+  
+- 🚀 **Render Hosting** : Application Laravel
+  * Docker + PHP 8.3-fpm + Nginx + Supervisor
+  * Extensions : MongoDB 1.20.1, PostgreSQL PDO
+  * Queue Worker pour jobs asynchrones
 
-**Calculs cross-database :**
-- Les soldes sont calculés en temps réel depuis MongoDB
-- Conversion automatique Decimal128 → Float
-- Validation des retraits/transferts avec solde MongoDB
+**Calculs cross-database (PostgreSQL ↔ MongoDB) :**
+- Les soldes sont calculés en temps réel depuis MongoDB Atlas
+- Conversion automatique MongoDB Decimal128 → PHP Float
+- Validation des retraits/transferts avec solde calculé depuis MongoDB
+- Transactions cross-DB avec gestion d'erreurs robuste
 
 **COMMENT UTILISER L'AUTHENTIFICATION DANS SWAGGER UI :**
 
@@ -107,12 +125,12 @@ Client :
  * 
  * @OA\Tag(
  *     name="Comptes PostgreSQL",
- *     description="🐘 Gestion des comptes bancaires stockés dans PostgreSQL Neon : création, consultation, listing avec filtres, archivage cloud. Soldes calculés depuis MongoDB."
+ *     description="🐘 Gestion des comptes bancaires actifs stockés dans PostgreSQL Neon (Production) : création, consultation, listing avec filtres, blocage/déblocage, archivage automatique. Soldes calculés en temps réel depuis MongoDB Atlas."
  * )
  * 
  * @OA\Tag(
  *     name="Archives",
- *     description="Gestion des comptes archivés dans le cloud (Neon). Permet de consulter les comptes fermés ou bloqués qui ont été transférés vers le système d'archivage."
+ *     description="☁️ Gestion des comptes archivés dans Neon Cloud Archive. Système de sauvegarde long-terme pour les comptes fermés ou bloqués définitivement. Permet la consultation historique et la restauration si nécessaire."
  * )
  */
 class SwaggerAnnotations

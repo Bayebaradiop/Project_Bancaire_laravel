@@ -22,6 +22,36 @@ Route::prefix('v1')->group(function () {
     
     // Health check endpoint (public)
     Route::get('/health', [HealthController::class, 'check']);
+    
+    // Email diagnostic endpoint (admin only)
+    Route::get('/diagnostic/email', function () {
+        if (!auth()->check() || auth()->user()->role !== 'admin') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'mail_config' => [
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'encryption' => config('mail.mailers.smtp.encryption'),
+                'username' => config('mail.mailers.smtp.username'),
+                'from_address' => config('mail.from.address'),
+                'from_name' => config('mail.from.name'),
+            ],
+            'env_vars' => [
+                'MAIL_MAILER' => env('MAIL_MAILER'),
+                'MAIL_HOST' => env('MAIL_HOST'),
+                'MAIL_PORT' => env('MAIL_PORT'),
+                'MAIL_USERNAME' => env('MAIL_USERNAME'),
+                'MAIL_PASSWORD_SET' => env('MAIL_PASSWORD') ? 'YES' : 'NO',
+                'BREVO_USERNAME' => env('BREVO_USERNAME'),
+                'BREVO_SMTP_KEY_SET' => env('BREVO_SMTP_KEY') ? 'YES' : 'NO',
+            ],
+            'issue_detected' => env('MAIL_MAILER') !== 'brevo' ? 'MAIL_MAILER should be "brevo" not "' . env('MAIL_MAILER') . '"' : null,
+        ]);
+    })->middleware('auth:api');
 
     /*
     |--------------------------------------------------------------------------
