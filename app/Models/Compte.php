@@ -196,43 +196,54 @@ class Compte extends Model
     }
 
     /**
-     * Calculer le solde du compte.
+     * Calculer le solde du compte depuis MongoDB.
      *
      * @return float
      */
     public function getSolde(): float
     {
-        // Dépôts
-        $depots = $this->transactions()
+        // Query MongoDB directly since transactions are stored there
+        $Transaction = \App\Models\Transaction::class;
+        
+        // Helper to convert MongoDB Decimal128 to float
+        $toFloat = function($value) {
+            if ($value instanceof \MongoDB\BSON\Decimal128) {
+                return (float) $value->__toString();
+            }
+            return (float) $value;
+        };
+        
+        // Dépôts (compte_destinataire = ce compte)
+        $depots = $toFloat($Transaction::where('compte_destinataire_id', $this->id)
             ->where('type', 'depot')
             ->where('statut', 'validee')
-            ->sum('montant');
+            ->sum('montant'));
 
-        // Retraits
-        $retraits = $this->transactions()
+        // Retraits (compte_source = ce compte)
+        $retraits = $toFloat($Transaction::where('compte_source_id', $this->id)
             ->where('type', 'retrait')
             ->where('statut', 'validee')
-            ->sum('montant');
+            ->sum('montant'));
 
         // Transferts sortants (compte_source = ce compte)
-        $transfertsSortants = $this->transactionsSource()
+        $transfertsSortants = $toFloat($Transaction::where('compte_source_id', $this->id)
             ->where('type', 'transfert')
             ->where('statut', 'validee')
-            ->sum('montant');
+            ->sum('montant'));
 
         // Frais sur transferts sortants
-        $fraisTransferts = $this->transactionsSource()
+        $fraisTransferts = $toFloat($Transaction::where('compte_source_id', $this->id)
             ->where('type', 'transfert')
             ->where('statut', 'validee')
-            ->sum('frais');
+            ->sum('frais'));
 
         // Transferts entrants (compte_destinataire = ce compte)
-        $transfertsEntrants = $this->transactionsDestination()
+        $transfertsEntrants = $toFloat($Transaction::where('compte_destinataire_id', $this->id)
             ->where('type', 'transfert')
             ->where('statut', 'validee')
-            ->sum('montant');
+            ->sum('montant'));
 
-        return (float) ($depots + $transfertsEntrants - $retraits - $transfertsSortants - $fraisTransferts);
+        return $depots + $transfertsEntrants - $retraits - $transfertsSortants - $fraisTransferts;
     }
 
     /**

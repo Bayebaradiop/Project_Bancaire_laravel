@@ -43,8 +43,18 @@ class TransfertRequest extends FormRequest
                         return;
                     }
                     
+                    if ($compte->statut === 'bloqué') {
+                        $fail('Impossible d\'effectuer un transfert depuis un compte bloqué.');
+                        return;
+                    }
+                    
+                    if ($compte->statut === 'fermé') {
+                        $fail('Impossible d\'effectuer un transfert depuis un compte fermé.');
+                        return;
+                    }
+                    
                     if ($compte->statut !== 'actif') {
-                        $fail('Le compte source doit être actif.');
+                        $fail('Le compte source doit être actif pour effectuer un transfert.');
                         return;
                     }
                     
@@ -66,8 +76,22 @@ class TransfertRequest extends FormRequest
                 'different:compte_source',
                 function ($attribute, $value, $fail) {
                     $compte = Compte::where('numeroCompte', $value)->first();
-                    if ($compte && $compte->statut !== 'actif') {
-                        $fail('Le compte destinataire doit être actif.');
+                    if (!$compte) {
+                        return;
+                    }
+                    
+                    if ($compte->statut === 'bloqué') {
+                        $fail('Impossible d\'effectuer un transfert vers un compte bloqué.');
+                        return;
+                    }
+                    
+                    if ($compte->statut === 'fermé') {
+                        $fail('Impossible d\'effectuer un transfert vers un compte fermé.');
+                        return;
+                    }
+                    
+                    if ($compte->statut !== 'actif') {
+                        $fail('Le compte destinataire doit être actif pour recevoir un transfert.');
                     }
                 },
             ],

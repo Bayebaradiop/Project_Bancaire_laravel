@@ -42,8 +42,8 @@ class TransactionSeeder extends Seeder
     {
         // Dépôt initial important (1 à 3 millions FCFA)
         $depotInitial = rand(1000000, 3000000);
-                $this->createTransaction([
-            'compte_id' => $compte->id,
+        $this->createTransaction([
+            'compte_destinataire_id' => $compte->id,
             'type' => 'depot',
             'montant' => $depotInitial,
             'statut' => 'validee',
@@ -59,14 +59,22 @@ class TransactionSeeder extends Seeder
             $montant = $this->randomMontant($type);
             $daysAgo = rand(1, 180); // 6 mois
             
-            $this->createTransaction([
-                'compte_id' => $compte->id,
+            $transactionData = [
                 'type' => $type,
                 'montant' => $montant,
                 'statut' => rand(1, 100) > 95 ? 'en_attente' : 'validee', // 5% en attente
                 'description' => $this->getDescription($type),
                 'created_at' => Carbon::now()->subDays($daysAgo),
-            ]);
+            ];
+            
+            // Depot utilise compte_destinataire_id, Retrait utilise compte_source_id
+            if ($type === 'depot') {
+                $transactionData['compte_destinataire_id'] = $compte->id;
+            } else {
+                $transactionData['compte_source_id'] = $compte->id;
+            }
+            
+            $this->createTransaction($transactionData);
         }
 
         // Ajouter quelques transactions récentes (dernière semaine)
@@ -74,14 +82,22 @@ class TransactionSeeder extends Seeder
             $type = $this->randomTransactionType();
             $montant = $this->randomMontant($type);
             
-            $this->createTransaction([
-                'compte_id' => $compte->id,
+            $transactionData = [
                 'type' => $type,
                 'montant' => $montant,
                 'statut' => 'validee',
                 'description' => $this->getDescription($type),
                 'created_at' => Carbon::now()->subDays(rand(0, 7)),
-            ]);
+            ];
+            
+            // Depot utilise compte_destinataire_id, Retrait utilise compte_source_id
+            if ($type === 'depot') {
+                $transactionData['compte_destinataire_id'] = $compte->id;
+            } else {
+                $transactionData['compte_source_id'] = $compte->id;
+            }
+            
+            $this->createTransaction($transactionData);
         }
     }
 
@@ -105,7 +121,6 @@ class TransactionSeeder extends Seeder
             // Transaction de débit (source) - numéro unique
             $this->createTransaction([
                 'numeroTransaction' => 'TRF' . strtoupper(Str::random(10)),
-                'compte_id' => $compteSource->id,
                 'compte_source_id' => $compteSource->id,
                 'compte_destinataire_id' => $compteDestination->id,
                 'type' => 'transfert',
@@ -119,7 +134,6 @@ class TransactionSeeder extends Seeder
             // Transaction de crédit (destination) - numéro unique différent
             $this->createTransaction([
                 'numeroTransaction' => 'TRF' . strtoupper(Str::random(10)),
-                'compte_id' => $compteDestination->id,
                 'compte_source_id' => $compteSource->id,
                 'compte_destinataire_id' => $compteDestination->id,
                 'type' => 'transfert',

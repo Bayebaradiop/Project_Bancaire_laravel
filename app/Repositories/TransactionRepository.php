@@ -28,8 +28,7 @@ class TransactionRepository implements TransactionRepositoryInterface
      */
     public function find(string $id): ?Transaction
     {
-        return Transaction::with(['compte', 'compteSource', 'compteDestinataire'])
-            ->find($id);
+        return Transaction::find($id);
     }
 
     /**
@@ -40,9 +39,7 @@ class TransactionRepository implements TransactionRepositoryInterface
      */
     public function findByNumero(string $numeroTransaction): ?Transaction
     {
-        return Transaction::with(['compte', 'compteSource', 'compteDestinataire'])
-            ->where('numeroTransaction', $numeroTransaction)
-            ->first();
+        return Transaction::where('numeroTransaction', $numeroTransaction)->first();
     }
 
     /**
@@ -67,8 +64,8 @@ class TransactionRepository implements TransactionRepositoryInterface
      */
     public function filter(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = Transaction::query()
-            ->with(['compte', 'compteSource', 'compteDestinataire']);
+        // Note: Relations cross-database (MongoDB -> PostgreSQL) désactivées temporairement
+        $query = Transaction::query();
 
         // Filtrer par type
         if (!empty($filters['type'])) {

@@ -15,7 +15,8 @@ class TransactionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            '_id' => $this->_id ?? $this->id,
+            'id' => $this->_id ?? $this->id,
             'numeroTransaction' => $this->numeroTransaction,
             'type' => $this->type,
             'montant' => (float) $this->montant,
@@ -26,32 +27,12 @@ class TransactionResource extends JsonResource
             'date' => $this->created_at?->format('Y-m-d H:i:s'),
             'peut_etre_annulee' => $this->peutEtreAnnulee(),
             
-            // Compte principal
-            'compte' => $this->when($this->compte, function() {
-                return [
-                    'id' => $this->compte->id,
-                    'numeroCompte' => $this->compte->numeroCompte,
-                    'typeCompte' => $this->compte->typeCompte,
-                ];
-            }),
+            // IDs des comptes (cross-database relations not supported yet)
+            'compte_source_id' => $this->compte_source_id,
+            'compte_destinataire_id' => $this->compte_destinataire_id,
             
-            // Compte source (pour transferts et retraits)
-            'compte_source' => $this->when($this->compteSource, function() {
-                return [
-                    'id' => $this->compteSource->id,
-                    'numeroCompte' => $this->compteSource->numeroCompte,
-                    'typeCompte' => $this->compteSource->typeCompte,
-                ];
-            }),
-            
-            // Compte destinataire (pour dépôts et transferts)
-            'compte_destinataire' => $this->when($this->compteDestinataire, function() {
-                return [
-                    'id' => $this->compteDestinataire->id,
-                    'numeroCompte' => $this->compteDestinataire->numeroCompte,
-                    'typeCompte' => $this->compteDestinataire->typeCompte,
-                ];
-            }),
+            // Note: Relations with PostgreSQL Compte model disabled for MongoDB
+            // To enable, implement manual loading via Compte::find($this->compte_source_id)
             
             // Transaction parent (pour annulations)
             'transaction_parent' => $this->when($this->transactionParent, function() {

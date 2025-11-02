@@ -3,17 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 
 class Transaction extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
 
     /**
-     * The table associated with the model.
+     * The connection name for the model.
+     *
+     * @var string
+     */
+    protected $connection = 'mongodb';
+
+    /**
+     * The table/collection associated with the model.
      *
      * @var string
      */
@@ -24,14 +30,7 @@ class Transaction extends Model
      *
      * @var string
      */
-    protected $primaryKey = 'id';
-
-    /**
-     * Indicates if the model's ID is auto-incrementing.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
+    protected $primaryKey = '_id';
 
     /**
      * The data type of the primary key ID.

@@ -42,8 +42,18 @@ class RetraitRequest extends FormRequest
                         return;
                     }
                     
+                    if ($compte->statut === 'bloqué') {
+                        $fail('Impossible d\'effectuer un retrait sur un compte bloqué.');
+                        return;
+                    }
+                    
+                    if ($compte->statut === 'fermé') {
+                        $fail('Impossible d\'effectuer un retrait sur un compte fermé.');
+                        return;
+                    }
+                    
                     if ($compte->statut !== 'actif') {
-                        $fail('Le compte source doit être actif.');
+                        $fail('Le compte source doit être actif pour effectuer un retrait.');
                         return;
                     }
                     

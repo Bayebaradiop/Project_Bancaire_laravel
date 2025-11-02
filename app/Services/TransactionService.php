@@ -182,15 +182,19 @@ class TransactionService
             } elseif ($transaction->type === 'transfert') {
                 // Un transfert annulé = remboursement du montant + frais au compte source
                 // et débit du montant au compte destinataire
-                $compteDestinataire = $transaction->compteDestinataire;
-                if ($compteDestinataire && $compteDestinataire->getSolde() < $transaction->montant) {
-                    throw new \Exception('Le compte destinataire n\'a pas un solde suffisant pour annuler le transfert');
+                if ($transaction->compte_destinataire_id) {
+                    $compteDestinataire = \App\Models\Compte::find($transaction->compte_destinataire_id);
+                    if ($compteDestinataire && $compteDestinataire->getSolde() < $transaction->montant) {
+                        throw new \Exception('Le compte destinataire n\'a pas un solde suffisant pour annuler le transfert');
+                    }
                 }
             } elseif ($transaction->type === 'depot') {
                 // Un dépôt annulé = débit du montant
-                $compte = $transaction->compteDestinataire;
-                if ($compte && $compte->getSolde() < $transaction->montant) {
-                    throw new \Exception('Le compte n\'a pas un solde suffisant pour annuler le dépôt');
+                if ($transaction->compte_destinataire_id) {
+                    $compteDestinataire = \App\Models\Compte::find($transaction->compte_destinataire_id);
+                    if ($compteDestinataire && $compteDestinataire->getSolde() < $transaction->montant) {
+                        throw new \Exception('Le compte n\'a pas un solde suffisant pour annuler le dépôt');
+                    }
                 }
             }
 

@@ -30,8 +30,22 @@ class DepotRequest extends FormRequest
                 'exists:comptes,numeroCompte',
                 function ($attribute, $value, $fail) {
                     $compte = Compte::where('numeroCompte', $value)->first();
-                    if ($compte && $compte->statut !== 'actif') {
-                        $fail('Le compte destinataire doit être actif.');
+                    if (!$compte) {
+                        return;
+                    }
+                    
+                    if ($compte->statut === 'bloqué') {
+                        $fail('Impossible d\'effectuer un dépôt sur un compte bloqué.');
+                        return;
+                    }
+                    
+                    if ($compte->statut === 'fermé') {
+                        $fail('Impossible d\'effectuer un dépôt sur un compte fermé.');
+                        return;
+                    }
+                    
+                    if ($compte->statut !== 'actif') {
+                        $fail('Le compte destinataire doit être actif pour recevoir un dépôt.');
                     }
                 },
             ],
