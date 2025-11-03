@@ -24,7 +24,7 @@
         }
     ],
     "paths": {
-        "/v1/auth/login": {
+        "/auth/login": {
             "post": {
                 "tags": [
                     "Authentification"
@@ -200,7 +200,7 @@
                 }
             }
         },
-        "/v1/auth/refresh": {
+        "/auth/refresh": {
             "post": {
                 "tags": [
                     "Authentification"
@@ -277,7 +277,7 @@
                 ]
             }
         },
-        "/v1/auth/logout": {
+        "/auth/logout": {
             "post": {
                 "tags": [
                     "Authentification"
@@ -337,7 +337,7 @@
                 ]
             }
         },
-        "/v1/comptes": {
+        "/comptes": {
             "get": {
                 "tags": [
                     "Comptes"
@@ -630,7 +630,7 @@
                 ],
                 "summary": "Créer un nouveau compte bancaire avec auto-création du client",
                 "description": "**🎯 FONCTIONNALITÉ AUTO-CRÉATION :**\nCette API crée automatiquement un nouveau compte bancaire. Si le client n'existe pas :\n- ✅ Un nouveau client est créé automatiquement\n- ✅ Un mot de passe aléatoire est généré\n- ✅ Un code de sécurité est généré\n- ✅ Un numéro de compte unique est généré (format: CPxxxxxxxxxx)\n- ✅ **Un email de bienvenue est envoyé automatiquement** avec :\n  - Le mot de passe (en clair, avant hashage)\n  - Le code de sécurité\n  - Le numéro de compte\n  - Les instructions de connexion\n\n**📧 EMAIL AUTOMATIQUE :**\nL'email est envoyé via SendGrid avec un design professionnel incluant :\n- Toutes les informations de connexion\n- Conseils de sécurité\n- Avertissement pour changer le mot de passe à la première connexion\n\n**AUTHENTIFICATION REQUISE :**\nSi vous voyez 'Unauthenticated', suivez ces étapes :\n1. Allez à POST /v1/auth/login et connectez-vous avec admin@banque.sn / Admin@2025\n2. Copiez le access_token de la réponse\n3. Cliquez sur 'Authorize' (cadenas en haut)\n4. Collez : Bearer VOTRE_TOKEN (n'oubliez pas 'Bearer ' avec l'espace)\n5. Cliquez Authorize puis Close\n6. Réessayez cette requête",
-                "operationId": "1ec0ce255279af65d9481a1deab7bed1",
+                "operationId": "458db376a3bd23c52102bbd05cda318b",
                 "requestBody": {
                     "description": "Données du compte à créer",
                     "required": true,
@@ -929,7 +929,7 @@
                 ]
             }
         },
-        "/v1/comptes/{id}": {
+        "/comptes/{id}": {
             "get": {
                 "tags": [
                     "Comptes"
@@ -1199,7 +1199,7 @@
                 ]
             }
         },
-        "/v1/comptes/numero/{numero}": {
+        "/comptes/numero/{numero}": {
             "get": {
                 "tags": [
                     "Comptes"
@@ -1375,7 +1375,7 @@
                 ]
             }
         },
-        "/v1/comptes/archives": {
+        "/comptes/archives": {
             "get": {
                 "tags": [
                     "Suppression"
@@ -1517,7 +1517,7 @@
                 ]
             }
         },
-        "/v1/comptes/{compteId}": {
+        "/comptes/{compteId}": {
             "patch": {
                 "tags": [
                     "Comptes"
@@ -1644,7 +1644,7 @@
                 ]
             }
         },
-        "/v1/comptes/{compteId}/bloquer": {
+        "/comptes/{compteId}/bloquer": {
             "post": {
                 "tags": [
                     "Comptes - Blocage/Déblocage"
@@ -1870,7 +1870,7 @@
                 ]
             }
         },
-        "/v1/comptes/{numeroCompte}": {
+        "/comptes/{numeroCompte}": {
             "delete": {
                 "tags": [
                     "Suppression"
@@ -2068,7 +2068,7 @@
                 ]
             }
         },
-        "/v1/comptes/restore/{id}": {
+        "/comptes/restore/{id}": {
             "post": {
                 "tags": [
                     "Suppression"
@@ -2254,7 +2254,7 @@
                 ]
             }
         },
-        "/v1/health": {
+        "/health": {
             "get": {
                 "tags": [
                     "Health"
@@ -2295,14 +2295,14 @@
                 }
             }
         },
-        "/v1/clients/telephone/{telephone}": {
+        "/clients/telephone/{telephone}": {
             "get": {
                 "tags": [
                     "Clients"
                 ],
                 "summary": "Récupérer un client par numéro de téléphone",
                 "description": "Permet de récupérer les informations d'un client à partir de son numéro de téléphone",
-                "operationId": "36a04195814ab9ac7bc7053d68bfdcbb",
+                "operationId": "66c8e270ea65f797b3c5d09ebbfdf292",
                 "parameters": [
                     {
                         "name": "telephone",

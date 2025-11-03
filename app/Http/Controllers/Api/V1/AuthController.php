@@ -22,7 +22,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/v1/auth/login",
+     *     path="/auth/login",
      *     summary="Connexion utilisateur",
      *     description="Authentifie un utilisateur (Admin ou Client) et retourne un token JWT dans un cookie HttpOnly sécurisé.
 
@@ -132,7 +132,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/v1/auth/refresh",
+     *     path="/auth/refresh",
      *     summary="Rafraîchir le token JWT",
      *     description="Génère un nouveau token d'accès en utilisant le refresh token stocké dans les cookies.",
      *     operationId="refresh",
@@ -188,7 +188,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/v1/auth/logout",
+     *     path="/auth/logout",
      *     summary="Déconnexion utilisateur",
      *     description="Déconnecte l'utilisateur authentifié et invalide le token JWT. Les cookies sont supprimés.",
      *     operationId="logout",

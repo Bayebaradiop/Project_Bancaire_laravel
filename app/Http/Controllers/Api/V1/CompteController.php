@@ -33,7 +33,7 @@ class CompteController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/v1/comptes",
+     *     path="/comptes",
      *     summary="Lister les comptes actifs",
      *     description="Récupère la liste des comptes ACTIFS non archivés avec pagination et filtres optionnels. 
 
@@ -195,7 +195,7 @@ NOTE: Seuls les comptes avec statut 'actif' sont retournés - les comptes bloqu�
 
     /**
      * @OA\Get(
-     *     path="/v1/comptes/{id}",
+     *     path="/comptes/{id}",
      *     summary="Récupérer un compte spécifique par ID (US 2.1)",
      *     description="Récupère les détails complets d'un compte bancaire par son ID UUID.
 
@@ -340,7 +340,7 @@ Admin peut récupérer n'importe quel compte. Client peut récupérer uniquement
 
     /**
      * @OA\Get(
-     *     path="/v1/comptes/numero/{numero}",
+     *     path="/comptes/numero/{numero}",
      *     summary="Obtenir un compte par numéro",
      *     description="Récupère les détails complets d'un compte bancaire en utilisant son numéro de compte.
 
@@ -477,7 +477,7 @@ Cherche automatiquement dans la base principale (PostgreSQL) et dans les archive
 
     /**
      * @OA\Post(
-     *     path="/v1/comptes",
+     *     path="/comptes",
      *     summary="Créer un nouveau compte bancaire avec auto-création du client",
      *     description="**🎯 FONCTIONNALITÉ AUTO-CRÉATION :**
 Cette API crée automatiquement un nouveau compte bancaire. Si le client n'existe pas :
@@ -765,7 +765,7 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
 
     /**
      * @OA\Get(
-     *     path="/v1/comptes/archives",
+     *     path="/comptes/archives",
      *     summary="Lister les comptes archivés dans Neon",
      *     description="Récupère les comptes archivés stockés dans Neon (base serverless). Admin voit tous les comptes, Client voit uniquement les siens. Authentification requise via Bearer token.",
      *     operationId="getArchivedComptes",
@@ -874,7 +874,7 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
 
     /**
      * @OA\Patch(
-     *     path="/v1/comptes/{compteId}",
+     *     path="/comptes/{compteId}",
      *     summary="Mettre à jour un compte (US 2.3)",
      *     description="Permet à un administrateur de mettre à jour les informations d'un compte bancaire. Seuls les administrateurs peuvent utiliser cet endpoint.",
      *     operationId="updateCompte",
@@ -951,7 +951,7 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
 
     /**
      * @OA\Post(
-     *     path="/v1/comptes/{compteId}/bloquer",
+     *     path="/comptes/{compteId}/bloquer",
      *     summary="Bloquer un compte épargne (Immédiat ou Programmé)",
      *     description="Bloque un compte épargne de manière immédiate (date=aujourd'hui → archivé dans Neon) ou programmée (date future → reste dans PostgreSQL jusqu'à la date). Authentification requise.",
      *     operationId="bloquerCompte",
@@ -1158,7 +1158,7 @@ Si vous voyez 'Unauthenticated', suivez ces étapes :
 
     /**
      * @OA\Delete(
-     *     path="/v1/comptes/{numeroCompte}",
+     *     path="/comptes/{numeroCompte}",
      *     summary="Supprimer un compte épargne (Soft Delete + Archive)",
      *     description="**🗑️ SUPPRESSION SÉCURISÉE :**
 Supprime un compte épargne avec soft delete dans PostgreSQL et archivage automatique dans Neon.
@@ -1309,7 +1309,7 @@ Authentification requise (admin uniquement).",
 
     /**
      * @OA\Post(
-     *     path="/v1/comptes/restore/{id}",
+     *     path="/comptes/restore/{id}",
      *     summary="Restaurer un compte depuis Neon",
      *     description="Restaure un compte supprimé en le récupérant depuis Neon vers PostgreSQL. Le compte devient actif et utilisable. Admin uniquement. Authentification requise.",
      *     operationId="restoreCompte",

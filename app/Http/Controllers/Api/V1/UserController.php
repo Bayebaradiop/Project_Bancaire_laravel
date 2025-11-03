@@ -19,7 +19,7 @@ class UserController extends Controller
      * Récupérer un client à partir de son numéro de téléphone
      *
      * @OA\Get(
-     *     path="/v1/clients/telephone/{telephone}",
+     *     path="/clients/telephone/{telephone}",
      *     tags={"Clients"},
      *     summary="Récupérer un client par numéro de téléphone",
      *     description="Permet de récupérer les informations d'un client à partir de son numéro de téléphone",
